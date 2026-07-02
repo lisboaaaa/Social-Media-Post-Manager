@@ -93,7 +93,8 @@ create table profiles (
 create table posts (
   id               uuid primary key default gen_random_uuid(),
   platform         platform_enum not null,
-  text_description text not null default '',
+  title            text not null default '', -- etiqueta curta interna, só para identificar o post no quadro; nunca é publicada
+  description      text not null default '', -- a copy real do post; é isto que é publicado, com limite de caracteres por plataforma
   status           post_status not null default 'backlog',
   target_date      date,                          -- opcional; obrigatório ao entrar em 'scheduled' (regra de app, não de DB)
   needs_changes    boolean not null default false, -- flag "changes requested", independente do status
@@ -214,7 +215,8 @@ interface Category {
 interface Post {
   id: string
   platform: Platform
-  textDescription: string
+  title: string
+  description: string
   status: PostStatus
   targetDate: string | null
   needsChanges: boolean

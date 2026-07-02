@@ -1,0 +1,108 @@
+"use client";
+
+import { useState } from "react";
+import {
+  addMonths,
+  eachDayOfInterval,
+  endOfMonth,
+  endOfWeek,
+  format,
+  isSameDay,
+  isSameMonth,
+  isToday,
+  startOfMonth,
+  startOfWeek,
+  subMonths,
+} from "date-fns";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { useStore } from "@/lib/store";
+import { cn } from "@/lib/utils";
+import { PlatformBadge } from "@/components/posts/PlatformBadge";
+
+const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const MAX_VISIBLE_PER_DAY = 3;
+
+export function CalendarView() {
+  const { filteredPosts, openPreview } = useStore();
+  const [cursor, setCursor] = useState(() => new Date());
+
+  const monthStart = startOfMonth(cursor);
+  const monthEnd = endOfMonth(cursor);
+  const gridStart = startOfWeek(monthStart);
+  const gridEnd = endOfWeek(monthEnd);
+  const days = eachDayOfInterval({ start: gridStart, end: gridEnd });
+
+  const postsForDay = (day: Date) =>
+    filteredPosts.filter((post) => post.targetDate && isSameDay(new Date(post.targetDate), day));
+
+  return (
+    <div className="overflow-hidden rounded-lg border bg-background">
+      <div className="flex items-center justify-between border-b px-4 py-3">
+        <h2 className="text-[15px] font-semibold">{format(cursor, "MMMM yyyy")}</h2>
+        <div className="flex gap-1.5">
+          <Button variant="outline" size="icon-sm" aria-label="Previous month" onClick={() => setCursor((d) => subMonths(d, 1))}>
+            <ChevronLeft className="size-4" />
+          </Button>
+          <Button variant="outline" size="icon-sm" aria-label="Next month" onClick={() => setCursor((d) => addMonths(d, 1))}>
+            <ChevronRight className="size-4" />
+          </Button>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-7 border-b">
+        {WEEKDAYS.map((day) => (
+          <div key={day} className="px-2.5 py-2 font-mono text-[10.5px] uppercase tracking-wide text-muted-foreground">
+            {day}
+          </div>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-7">
+        {days.map((day) => {
+          const dayPosts = postsForDay(day);
+          const visible = dayPosts.slice(0, MAX_VISIBLE_PER_DAY);
+          const overflow = dayPosts.length - visible.length;
+          const inMonth = isSameMonth(day, cursor);
+
+          return (
+            <div
+              key={day.toISOString()}
+              className={cn(
+                "flex min-h-[108px] flex-col gap-1 border-b border-r p-1.5 last:border-r-0",
+                !inMonth && "bg-muted/20",
+              )}
+            >
+              <span
+                className={cn(
+                  "font-mono text-[11.5px] text-muted-foreground",
+                  !inMonth && "text-muted-foreground/50",
+                  isToday(day) &&
+                    "flex h-5 w-5 items-center justify-center rounded-full bg-primary text-primary-foreground",
+                )}
+              >
+                {format(day, "d")}
+              </span>
+              <div className="flex flex-col gap-1">
+                {visible.map((post) => (
+                  <button
+                    key={post.id}
+                    onClick={() => openPreview(post.id)}
+                    className="flex items-center gap-1 truncate rounded px-1 py-0.5 text-left text-[10.5px] hover:bg-muted"
+                    title={post.title}
+                  >
+                    <PlatformBadge platform={post.platform} className="px-1 py-0 gap-1 shrink-0" />
+                    <span className="truncate">{post.title}</span>
+                  </button>
+                ))}
+                {overflow > 0 && (
+                  <span className="px-1 font-mono text-[10px] text-muted-foreground">+{overflow} more</span>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
