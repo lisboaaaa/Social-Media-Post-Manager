@@ -9,7 +9,15 @@ import { ImageGrid } from "./ImageGrid";
 import { Lightbox } from "./Lightbox";
 import type { Device } from "./device";
 
-export function XMockup({ post, device = "mobile" }: { post: Post; device?: Device }) {
+export function XMockup({
+  post,
+  description,
+  device = "mobile",
+}: {
+  post: Post;
+  description: string;
+  device?: Device;
+}) {
   const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
   const desktop = device === "desktop";
 
@@ -33,7 +41,7 @@ export function XMockup({ post, device = "mobile" }: { post: Post; device?: Devi
         </div>
 
         <p className="mt-1.5 line-clamp-4 whitespace-pre-wrap pb-2.5 text-[14px] leading-snug">
-          {post.description || "No text yet."}
+          {description || "No text yet."}
         </p>
       </div>
 

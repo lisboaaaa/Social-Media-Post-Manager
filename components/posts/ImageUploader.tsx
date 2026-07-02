@@ -7,9 +7,11 @@ import type { PostImage } from "@/lib/types";
 export function ImageUploader({
   images,
   onChange,
+  limitWarning,
 }: {
   images: PostImage[];
   onChange: (images: PostImage[]) => void;
+  limitWarning?: string;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -27,7 +29,9 @@ export function ImageUploader({
   const remove = (id: string) => onChange(images.filter((img) => img.id !== id));
 
   return (
-    <div className="flex flex-wrap gap-2">
+    <div className="flex flex-col gap-1.5">
+      {limitWarning && <p className="text-xs text-amber-600">{limitWarning}</p>}
+      <div className="flex flex-wrap gap-2">
       {images.map((img) => (
         // eslint-disable-next-line @next/next/no-img-element
         <div key={img.id} className="group relative h-20 w-20 shrink-0 overflow-hidden rounded-md border">
@@ -61,6 +65,7 @@ export function ImageUploader({
           e.target.value = "";
         }}
       />
+      </div>
     </div>
   );
 }

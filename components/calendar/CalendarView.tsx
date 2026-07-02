@@ -91,7 +91,12 @@ export function CalendarView() {
                     className="flex items-center gap-1 truncate rounded px-1 py-0.5 text-left text-[10.5px] hover:bg-muted"
                     title={post.title}
                   >
-                    <PlatformBadge platform={post.platform} className="px-1 py-0 gap-1 shrink-0" />
+                    <PlatformBadge platform={post.platforms[0]} className="px-1 py-0 gap-1 shrink-0" />
+                    {post.platforms.length > 1 && (
+                      <span className="shrink-0 font-mono text-[9px] text-muted-foreground">
+                        +{post.platforms.length - 1}
+                      </span>
+                    )}
                     <span className="truncate">{post.title}</span>
                   </button>
                 ))}

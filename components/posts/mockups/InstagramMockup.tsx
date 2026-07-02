@@ -4,21 +4,29 @@ import { cn } from "@/lib/utils";
 import { ImageCarousel } from "./ImageCarousel";
 import type { Device } from "./device";
 
-export function InstagramMockup({ post, device = "mobile" }: { post: Post; device?: Device }) {
+export function InstagramMockup({
+  post,
+  description,
+  device = "mobile",
+}: {
+  post: Post;
+  description: string;
+  device?: Device;
+}) {
   const desktop = device === "desktop";
 
   const media =
     post.images.length > 0 ? (
-      <ImageCarousel images={post.images} className={cn("h-full w-full", !desktop && "aspect-square")} />
+      <ImageCarousel images={post.images} className={cn("w-full", desktop ? "h-full" : "aspect-square")} />
     ) : (
       <div
         className={cn(
-          "flex h-full w-full items-center justify-center bg-gradient-to-br from-teal-500 via-sky-600 to-fuchsia-500",
-          !desktop && "aspect-square",
+          "flex w-full items-center justify-center bg-gradient-to-br from-teal-500 via-sky-600 to-fuchsia-500",
+          desktop ? "h-full" : "aspect-square",
         )}
       >
         <span className="px-8 text-center text-lg font-extrabold uppercase tracking-wide text-white">
-          {post.description.slice(0, 40) || "New post"}
+          {description.slice(0, 40) || "New post"}
         </span>
       </div>
     );
@@ -42,7 +50,7 @@ export function InstagramMockup({ post, device = "mobile" }: { post: Post; devic
           </div>
           <div className="flex-1 overflow-y-auto px-3 py-2.5 text-[13px] leading-snug">
             <span className="font-semibold">genos.hq</span>{" "}
-            <span className="whitespace-pre-wrap">{post.description || "No caption yet."}</span>
+            <span className="whitespace-pre-wrap">{description || "No caption yet."}</span>
             <div className="mt-2 font-mono text-[10px] uppercase text-muted-foreground">
               {post.targetDate ?? "no date"}
             </div>
@@ -86,9 +94,9 @@ export function InstagramMockup({ post, device = "mobile" }: { post: Post; devic
       <div className="px-3 pb-3 pt-2 text-[13px] leading-snug">
         <span className="font-semibold">genos.hq</span>{" "}
         <span className="line-clamp-2 whitespace-pre-wrap">
-          {post.description || "No caption yet."}
+          {description || "No caption yet."}
         </span>
-        {post.description.length > 60 && <span className="text-muted-foreground"> …more</span>}
+        {description.length > 60 && <span className="text-muted-foreground"> …more</span>}
         <div className="mt-1 font-mono text-[10px] uppercase text-muted-foreground">
           {post.targetDate ?? "no date"}
         </div>

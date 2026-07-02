@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { DragDropContext, type DropResult } from "@hello-pangea/dnd";
 import { Column } from "./Column";
+import { PublishedUrlDialog } from "./PublishedUrlDialog";
 import { ScheduleDateDialog } from "./ScheduleDateDialog";
 import { useStore } from "@/lib/store";
 import { POST_STATUSES, type PostStatus } from "@/lib/types";
@@ -24,7 +25,8 @@ function needsChangesPatch(oldStatus: PostStatus, newStatus: PostStatus): { need
 
 export function Board() {
   const { filteredPosts, movePost, getPostById } = useStore();
-  const [pendingMove, setPendingMove] = useState<{ postId: string; status: PostStatus; index: number } | null>(null);
+  const [pendingSchedule, setPendingSchedule] = useState<{ postId: string; status: PostStatus; index: number } | null>(null);
+  const [pendingPublish, setPendingPublish] = useState<{ postId: string; status: PostStatus; index: number } | null>(null);
 
   const onDragEnd = (result: DropResult) => {
     const { destination, source, draggableId } = result;
@@ -36,7 +38,12 @@ export function Board() {
     if (!post) return;
 
     if (newStatus === "scheduled" && !post.targetDate) {
-      setPendingMove({ postId: draggableId, status: newStatus, index: destination.index });
+      setPendingSchedule({ postId: draggableId, status: newStatus, index: destination.index });
+      return;
+    }
+
+    if (newStatus === "published" && !post.publishedUrl) {
+      setPendingPublish({ postId: draggableId, status: newStatus, index: destination.index });
       return;
     }
 
@@ -59,16 +66,38 @@ export function Board() {
       </DragDropContext>
 
       <ScheduleDateDialog
-        open={pendingMove !== null}
-        onCancel={() => setPendingMove(null)}
+        open={pendingSchedule !== null}
+        onCancel={() => setPendingSchedule(null)}
         onConfirm={(date) => {
-          if (!pendingMove) return;
-          const post = getPostById(pendingMove.postId);
-          movePost(pendingMove.postId, pendingMove.status, pendingMove.index, {
+          if (!pendingSchedule) return;
+          const post = getPostById(pendingSchedule.postId);
+          movePost(pendingSchedule.postId, pendingSchedule.status, pendingSchedule.index, {
             targetDate: date,
-            ...(post ? needsChangesPatch(post.status, pendingMove.status) : {}),
+            ...(post ? needsChangesPatch(post.status, pendingSchedule.status) : {}),
           });
-          setPendingMove(null);
+          setPendingSchedule(null);
+        }}
+      />
+
+      <PublishedUrlDialog
+        open={pendingPublish !== null}
+        onCancel={() => setPendingPublish(null)}
+        onSkip={() => {
+          if (!pendingPublish) return;
+          const post = getPostById(pendingPublish.postId);
+          movePost(pendingPublish.postId, pendingPublish.status, pendingPublish.index, {
+            ...(post ? needsChangesPatch(post.status, pendingPublish.status) : {}),
+          });
+          setPendingPublish(null);
+        }}
+        onConfirm={(url) => {
+          if (!pendingPublish) return;
+          const post = getPostById(pendingPublish.postId);
+          movePost(pendingPublish.postId, pendingPublish.status, pendingPublish.index, {
+            publishedUrl: url,
+            ...(post ? needsChangesPatch(post.status, pendingPublish.status) : {}),
+          });
+          setPendingPublish(null);
         }}
       />
     </>

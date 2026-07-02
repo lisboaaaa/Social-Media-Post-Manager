@@ -9,7 +9,15 @@ import { ImageGrid } from "./ImageGrid";
 import { Lightbox } from "./Lightbox";
 import type { Device } from "./device";
 
-export function LinkedInMockup({ post, device = "mobile" }: { post: Post; device?: Device }) {
+export function LinkedInMockup({
+  post,
+  description,
+  device = "mobile",
+}: {
+  post: Post;
+  description: string;
+  device?: Device;
+}) {
   const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
   const desktop = device === "desktop";
 
@@ -33,7 +41,7 @@ export function LinkedInMockup({ post, device = "mobile" }: { post: Post; device
       </div>
 
       <p className="line-clamp-4 whitespace-pre-wrap px-3 py-2.5 text-[13px] leading-snug">
-        {post.description || "No text yet."}
+        {description || "No text yet."}
       </p>
 
       {post.images.length === 1 && (

@@ -9,7 +9,7 @@ import { Separator } from "@/components/ui/separator";
 import { useStore } from "@/lib/store";
 import { POST_STATUSES } from "@/lib/types";
 import { CommentThread } from "@/components/comments/CommentThread";
-import { PlatformBadge } from "./PlatformBadge";
+import { PlatformBadgeGroup } from "./PlatformBadge";
 import { PlatformMockup } from "./mockups/PlatformMockup";
 
 export function PostPreviewModal() {
@@ -27,16 +27,21 @@ export function PostPreviewModal() {
         {post && (
           <>
             <DialogHeader>
-              <div className="mb-1 flex items-center gap-2">
-                <PlatformBadge platform={post.platform} />
-                {post.needsChanges && (
-                  <Badge variant="outline" className="border-amber-300 bg-amber-50 text-amber-700 font-mono text-[10px] uppercase tracking-wide">
-                    Needs changes
+              <div className="mb-1 flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <PlatformBadgeGroup platforms={post.platforms} />
+                  {post.needsChanges && (
+                    <Badge variant="outline" className="border-amber-300 bg-amber-50 text-amber-700 font-mono text-[10px] uppercase tracking-wide">
+                      Needs changes
+                    </Badge>
+                  )}
+                  <Badge variant="secondary" className="font-mono text-[10px] uppercase tracking-wide">
+                    {statusLabel}
                   </Badge>
-                )}
-                <Badge variant="secondary" className="font-mono text-[10px] uppercase tracking-wide">
-                  {statusLabel}
-                </Badge>
+                </div>
+                <Link href={`/posts/${post.id}`} onClick={closePreview} className={buttonVariants({ size: "default" })}>
+                  Edit post
+                </Link>
               </div>
               <DialogTitle>{post.title || "Untitled post"}</DialogTitle>
             </DialogHeader>
@@ -53,10 +58,10 @@ export function PostPreviewModal() {
               </div>
             )}
 
-            <div className="grid grid-cols-2 gap-3 rounded-md bg-muted/50 p-3 text-sm">
+            <div className="grid grid-cols-2 gap-3 border-t pt-3 text-sm">
               <div>
                 <div className="text-xs text-muted-foreground">Assignee</div>
-                <div className="flex items-center gap-1.5 mt-0.5">
+                <div className="flex items-center gap-1.5 mt-1">
                   {assignee ? (
                     <>
                       <Avatar className="h-5 w-5"><AvatarFallback className="text-[9px]">{assignee.initials}</AvatarFallback></Avatar>
@@ -69,26 +74,18 @@ export function PostPreviewModal() {
               </div>
               <div>
                 <div className="text-xs text-muted-foreground">Target date</div>
-                <div className="font-mono mt-0.5">{post.targetDate ?? <span className="font-sans text-muted-foreground">no date</span>}</div>
+                <div className="font-mono mt-1">{post.targetDate ?? <span className="font-sans text-muted-foreground">no date</span>}</div>
               </div>
-              <div className="col-span-2">
-                <div className="text-xs text-muted-foreground">Published URL</div>
-                <div className="mt-0.5 truncate">
-                  {post.publishedUrl ? (
+              {post.publishedUrl && (
+                <div className="col-span-2">
+                  <div className="text-xs text-muted-foreground">Published URL</div>
+                  <div className="mt-1 truncate">
                     <a href={post.publishedUrl} target="_blank" rel="noreferrer" className="text-primary underline underline-offset-2">
                       {post.publishedUrl}
                     </a>
-                  ) : (
-                    <span className="text-muted-foreground">—</span>
-                  )}
+                  </div>
                 </div>
-              </div>
-            </div>
-
-            <div className="flex justify-end">
-              <Link href={`/posts/${post.id}`} onClick={closePreview} className={buttonVariants({ size: "sm" })}>
-                Edit post
-              </Link>
+              )}
             </div>
 
             <Separator />

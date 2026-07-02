@@ -15,7 +15,7 @@ export function Column({
   return (
     <div className="flex w-56 shrink-0 flex-col">
       <div className="mb-2.5 flex items-center justify-between px-0.5">
-        <h2 className="text-[12.5px] font-semibold tracking-wide">{label}</h2>
+        <h2 className="text-base font-semibold tracking-wide">{label}</h2>
         <span className="rounded-full border bg-background px-1.5 py-0.5 font-mono text-[10.5px] text-muted-foreground">
           {posts.length}
         </span>

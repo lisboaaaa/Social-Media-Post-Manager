@@ -30,6 +30,7 @@ export function ImageCarousel({
 
   const onPointerDown = (e: PointerEvent<HTMLDivElement>) => {
     if (images.length <= 1) return;
+    if ((e.target as HTMLElement).closest("button")) return;
     containerRef.current?.setPointerCapture(e.pointerId);
     startXRef.current = e.clientX;
     widthRef.current = containerRef.current?.clientWidth || 1;

@@ -21,3 +21,21 @@ export function PlatformBadge({ platform, className }: { platform: Platform; cla
     </span>
   );
 }
+
+export function PlatformBadgeGroup({
+  platforms,
+  className,
+  badgeClassName,
+}: {
+  platforms: Platform[];
+  className?: string;
+  badgeClassName?: string;
+}) {
+  return (
+    <div className={cn("flex flex-wrap items-center gap-1", className)}>
+      {platforms.map((platform) => (
+        <PlatformBadge key={platform} platform={platform} className={badgeClassName} />
+      ))}
+    </div>
+  );
+}

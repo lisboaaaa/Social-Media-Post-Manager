@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { ArrowLeft, Trash2 } from "lucide-react";
 import { Button, buttonVariants } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -14,18 +15,30 @@ import { Textarea } from "@/components/ui/textarea";
 import { CategoryPicker } from "./CategoryPicker";
 import { CharacterCounter } from "./CharacterCounter";
 import { ImageUploader } from "./ImageUploader";
+import { PlatformBadge } from "./PlatformBadge";
 import { useStore } from "@/lib/store";
-import { PLATFORMS, PLATFORM_LABELS, POST_STATUSES, type Platform, type Post, type PostStatus } from "@/lib/types";
+import {
+  PLATFORMS,
+  PLATFORM_IMAGE_LIMITS,
+  PLATFORM_LABELS,
+  POST_STATUSES,
+  type Platform,
+  type Post,
+  type PostStatus,
+} from "@/lib/types";
 
 const NONE = "__none__";
+const EMPTY_DESCRIPTIONS: Record<Platform, string> = { linkedin: "", instagram: "", x: "" };
 
 export function PostForm({ post }: { post?: Post }) {
   const router = useRouter();
   const { profiles, addPost, updatePost, deletePost, currentUser } = useStore();
 
-  const [platform, setPlatform] = useState<Platform>(post?.platform ?? "linkedin");
+  const [platforms, setPlatforms] = useState<Platform[]>(post?.platforms ?? ["linkedin"]);
   const [title, setTitle] = useState(post?.title ?? "");
-  const [description, setDescription] = useState(post?.description ?? "");
+  const [descriptions, setDescriptions] = useState<Record<Platform, string>>(
+    post?.descriptions ?? EMPTY_DESCRIPTIONS,
+  );
   const [status, setStatus] = useState<PostStatus>(post?.status ?? "backlog");
   const [targetDate, setTargetDate] = useState(post?.targetDate ?? "");
   const [needsChanges, setNeedsChanges] = useState(post?.needsChanges ?? false);
@@ -37,9 +50,22 @@ export function PostForm({ post }: { post?: Post }) {
   const targetDateRef = useRef<HTMLInputElement>(null);
 
   const needsDateForScheduled = status === "scheduled" && !targetDate;
+  const imageLimit = platforms.length > 0 ? Math.min(...platforms.map((p) => PLATFORM_IMAGE_LIMITS[p])) : undefined;
+  const overLimitPlatform = imageLimit !== undefined && images.length > imageLimit
+    ? platforms.find((p) => PLATFORM_IMAGE_LIMITS[p] === imageLimit)
+    : undefined;
+
+  const togglePlatform = (platform: Platform, checked: boolean) => {
+    setPlatforms((prev) => (checked ? [...prev, platform] : prev.filter((p) => p !== platform)));
+  };
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
+
+    if (platforms.length === 0) {
+      toast.error("Pick at least one platform for this post.");
+      return;
+    }
 
     if (needsDateForScheduled) {
       toast.error("Pick a target date before moving this post to Scheduled.");
@@ -48,9 +74,9 @@ export function PostForm({ post }: { post?: Post }) {
     }
 
     const payload = {
-      platform,
+      platforms,
       title,
-      description,
+      descriptions,
       status,
       targetDate: targetDate || null,
       needsChanges,
@@ -97,19 +123,21 @@ export function PostForm({ post }: { post?: Post }) {
       <h1 className="text-lg font-semibold tracking-tight">{post ? "Edit post" : "New post"}</h1>
 
       <div className="flex flex-col gap-1.5">
-        <Label htmlFor="platform">Platform</Label>
-        <Select value={platform} onValueChange={(value) => setPlatform(value as Platform)}>
-          <SelectTrigger id="platform" className="w-48">
-            <SelectValue>{(value: Platform) => PLATFORM_LABELS[value]}</SelectValue>
-          </SelectTrigger>
-          <SelectContent>
-            {PLATFORMS.map((p) => (
-              <SelectItem key={p} value={p}>
-                {PLATFORM_LABELS[p]}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <Label>Platforms</Label>
+        <p className="text-xs text-muted-foreground">
+          Pick every platform this post is going out on — each gets its own copy below.
+        </p>
+        <div className="flex flex-wrap gap-x-4 gap-y-2">
+          {PLATFORMS.map((p) => (
+            <label key={p} className="flex items-center gap-1.5">
+              <Checkbox
+                checked={platforms.includes(p)}
+                onCheckedChange={(checked) => togglePlatform(p, checked === true)}
+              />
+              <PlatformBadge platform={p} />
+            </label>
+          ))}
+        </div>
       </div>
 
       <div className="flex flex-col gap-1.5">
@@ -125,23 +153,36 @@ export function PostForm({ post }: { post?: Post }) {
         />
       </div>
 
-      <div className="flex flex-col gap-1.5">
-        <div className="flex items-center justify-between">
-          <Label htmlFor="description">Description</Label>
-          <CharacterCounter platform={platform} length={description.length} />
+      {PLATFORMS.filter((p) => platforms.includes(p)).map((p) => (
+        <div key={p} className="flex flex-col gap-1.5">
+          <div className="flex items-center justify-between">
+            <Label htmlFor={`description-${p}`}>
+              <PlatformBadge platform={p} /> copy
+            </Label>
+            <CharacterCounter platform={p} length={descriptions[p].length} />
+          </div>
+          <Textarea
+            id={`description-${p}`}
+            value={descriptions[p]}
+            onChange={(e) => setDescriptions((prev) => ({ ...prev, [p]: e.target.value }))}
+            rows={6}
+            placeholder="Write the post copy — this is what actually gets published…"
+          />
         </div>
-        <Textarea
-          id="description"
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-          rows={6}
-          placeholder="Write the post copy — this is what actually gets published…"
-        />
-      </div>
+      ))}
 
       <div className="flex flex-col gap-1.5">
         <Label>Images</Label>
-        <ImageUploader images={images} onChange={setImages} />
+        <p className="text-xs text-muted-foreground">Shared across every platform picked above.</p>
+        <ImageUploader
+          images={images}
+          onChange={setImages}
+          limitWarning={
+            overLimitPlatform
+              ? `${images.length} photos added — ${PLATFORM_LABELS[overLimitPlatform]} only shows the first ${imageLimit}.`
+              : undefined
+          }
+        />
       </div>
 
       <div className="flex flex-col gap-1.5">

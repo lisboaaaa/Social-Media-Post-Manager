@@ -1,7 +1,7 @@
 import { Draggable } from "@hello-pangea/dnd";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { PlatformBadge } from "@/components/posts/PlatformBadge";
+import { PlatformBadgeGroup } from "@/components/posts/PlatformBadge";
 import { useStore } from "@/lib/store";
 import type { Post } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -25,7 +25,7 @@ export function PostCard({ post, index }: { post: Post; index: number }) {
           )}
         >
           <div className="mb-2 flex items-center justify-between gap-1.5">
-            <PlatformBadge platform={post.platform} />
+            <PlatformBadgeGroup platforms={post.platforms} />
             {post.needsChanges && (
               <Badge
                 variant="outline"

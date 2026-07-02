@@ -14,6 +14,15 @@ export const PLATFORM_LIMITS: Record<Platform, number> = {
   x: 280,
 };
 
+// Max photos each platform accepts in a single post. Images are shared across
+// every platform on a post, so the tightest of the selected platforms' limits
+// is just a heads-up — it isn't enforced at upload time (see ImageUploader).
+export const PLATFORM_IMAGE_LIMITS: Record<Platform, number> = {
+  instagram: 20,
+  linkedin: 9,
+  x: 4,
+};
+
 export type PostStatus =
   | "backlog"
   | "writing"
@@ -62,9 +71,9 @@ export interface Comment {
 
 export interface Post {
   id: string;
-  platform: Platform;
+  platforms: Platform[];
   title: string; // short internal label, just for scanning the tracker — never posted, no character limit
-  description: string; // the actual post copy — this is what gets published, character-limited per platform
+  descriptions: Record<Platform, string>; // the actual post copy per platform — character-limited per platform
   status: PostStatus;
   targetDate: string | null; // ISO date (yyyy-mm-dd)
   needsChanges: boolean;

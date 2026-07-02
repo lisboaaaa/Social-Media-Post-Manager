@@ -1,7 +1,7 @@
 "use client";
 
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { PlatformBadge } from "@/components/posts/PlatformBadge";
+import { PlatformBadgeGroup } from "@/components/posts/PlatformBadge";
 import { isCommentUnread, useStore } from "@/lib/store";
 
 const MAX_RECENT = 8;
@@ -49,7 +49,7 @@ export function RecentPostComments({
               className="flex flex-col gap-1.5 rounded-md p-2 text-left hover:bg-muted"
             >
               <div className="flex items-center gap-1.5">
-                <PlatformBadge platform={post.platform} />
+                <PlatformBadgeGroup platforms={post.platforms} />
                 <span className="truncate text-xs text-muted-foreground">{post.title}</span>
               </div>
               <div className="flex gap-2">
