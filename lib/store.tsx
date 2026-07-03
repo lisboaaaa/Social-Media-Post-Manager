@@ -37,6 +37,7 @@ interface StoreValue {
   movePost: (id: string, destStatus: PostStatus, destIndex: number, extraPatch?: Partial<Post>) => void;
   deletePost: (id: string) => void;
   addCategory: (name: string) => Category;
+  deleteCategory: (id: string) => void;
   addComment: (postId: string | null, body: string) => void;
   hasUnreadTeamNotes: boolean;
   lastReadTeamNotesAt: string | null;
@@ -277,6 +278,20 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     return category;
   };
 
+  const deleteCategory = (id: string) => {
+    setCategories((prev) => prev.filter((c) => c.id !== id));
+    setPosts((prev) => prev.map((p) => (p.categoryIds.includes(id) ? { ...p, categoryIds: p.categoryIds.filter((c) => c !== id) } : p)));
+    if (filters.categoryId === id) setFiltersState((prev) => ({ ...prev, categoryId: "all" }));
+
+    (async () => {
+      // post_categories rows reference this category, so they'd block the
+      // delete via foreign key if not cleared first.
+      await supabase.from("post_categories").delete().eq("category_id", id);
+      const { error } = await supabase.from("categories").delete().eq("id", id);
+      if (error) toast.error(`Couldn't delete the category: ${error.message}`);
+    })();
+  };
+
   const addComment = (postId: string | null, body: string) => {
     const comment: Comment = {
       id: crypto.randomUUID(),
@@ -334,6 +349,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     movePost,
     deletePost,
     addCategory,
+    deleteCategory,
     addComment,
     hasUnreadTeamNotes,
     lastReadTeamNotesAt,
