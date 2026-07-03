@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Plus } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";
 import { TeamNotesTab } from "./TeamNotesTab";
+import { UserMenu } from "./UserMenu";
 import { ViewTabs } from "./ViewTabs";
 import { FilterBar } from "@/components/filters/FilterBar";
 
@@ -16,6 +17,7 @@ export function Header() {
             <Plus className="size-4" />
             New post
           </Link>
+          <UserMenu />
         </div>
       </div>
       <div className="flex flex-wrap items-center justify-between gap-3 px-6 pb-4">

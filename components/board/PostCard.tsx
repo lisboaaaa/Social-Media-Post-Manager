@@ -1,4 +1,5 @@
 import { Draggable } from "@hello-pangea/dnd";
+import { Play } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { PlatformBadgeGroup } from "@/components/posts/PlatformBadge";
@@ -37,13 +38,22 @@ export function PostCard({ post, index }: { post: Post; index: number }) {
           </div>
 
           {post.images.length > 0 ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={post.images[0].imageUrl} alt="" className="mb-2 h-20 w-full rounded-md object-cover" />
+            post.images[0].mediaType === "video" ? (
+              <div className="relative mb-2 h-20 w-full overflow-hidden rounded-md bg-muted">
+                <video src={post.images[0].imageUrl} muted className="h-full w-full object-cover" />
+                <span className="absolute inset-0 flex items-center justify-center bg-black/20">
+                  <Play className="size-5 fill-white text-white" />
+                </span>
+              </div>
+            ) : (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={post.images[0].imageUrl} alt="" className="mb-2 h-20 w-full rounded-md object-cover" />
+            )
           ) : (
             <div className="mb-2 h-20 rounded-md border border-dashed bg-muted/40" />
           )}
 
-          <p className="mb-2 line-clamp-2 text-[13px] leading-snug">{post.title}</p>
+          <p className="mb-2 line-clamp-2 text-sm font-medium leading-snug">{post.title}</p>
 
           {postCategories.length > 0 && (
             <div className="mb-2 flex flex-wrap gap-1">

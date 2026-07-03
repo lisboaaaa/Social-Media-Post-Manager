@@ -54,6 +54,9 @@ export function PostForm({ post }: { post?: Post }) {
   const overLimitPlatform = imageLimit !== undefined && images.length > imageLimit
     ? platforms.find((p) => PLATFORM_IMAGE_LIMITS[p] === imageLimit)
     : undefined;
+  const hasVideo = images.some((img) => img.mediaType === "video");
+  const hasMixedMedia = hasVideo && images.length > 1;
+  const isArchived = post?.status === "published";
 
   const togglePlatform = (platform: Platform, checked: boolean) => {
     setPlatforms((prev) => (checked ? [...prev, platform] : prev.filter((p) => p !== platform)));
@@ -99,7 +102,10 @@ export function PostForm({ post }: { post?: Post }) {
 
   const handleDelete = () => {
     if (!post) return;
-    if (!confirm("Delete this post? This can't be undone.")) return;
+    const message = isArchived
+      ? "Delete this published post forever? This can't be undone — it will disappear from the Archive too."
+      : "Delete this post? This can't be undone.";
+    if (!confirm(message)) return;
     deletePost(post.id);
     toast.success("Post deleted");
     router.push("/board");
@@ -115,24 +121,28 @@ export function PostForm({ post }: { post?: Post }) {
         {post && (
           <Button type="button" variant="destructive" size="sm" onClick={handleDelete}>
             <Trash2 className="size-3.5" />
-            Delete
+            Delete post
           </Button>
         )}
       </div>
 
-      <h1 className="text-lg font-semibold tracking-tight">{post ? "Edit post" : "New post"}</h1>
+      <h1 className="text-2xl font-bold tracking-tight">{post ? "Edit post" : "New post"}</h1>
+
+      {isArchived && (
+        <p className="rounded-lg border bg-muted/50 p-3 text-sm text-muted-foreground">
+          This post is published — it's locked as a historical record. You can still update the published URL below.
+        </p>
+      )}
 
       <div className="flex flex-col gap-1.5">
-        <Label>Platforms</Label>
-        <p className="text-xs text-muted-foreground">
-          Pick every platform this post is going out on — each gets its own copy below.
-        </p>
+        <Label className="text-base">Platforms</Label>
         <div className="flex flex-wrap gap-x-4 gap-y-2">
           {PLATFORMS.map((p) => (
             <label key={p} className="flex items-center gap-1.5">
               <Checkbox
                 checked={platforms.includes(p)}
                 onCheckedChange={(checked) => togglePlatform(p, checked === true)}
+                disabled={isArchived}
               />
               <PlatformBadge platform={p} />
             </label>
@@ -141,7 +151,7 @@ export function PostForm({ post }: { post?: Post }) {
       </div>
 
       <div className="flex flex-col gap-1.5">
-        <Label htmlFor="title">Title</Label>
+        <Label htmlFor="title" className="text-base">Title</Label>
         <p className="text-xs text-muted-foreground">
           Short internal label, just so the team can scan the board — never published.
         </p>
@@ -150,6 +160,7 @@ export function PostForm({ post }: { post?: Post }) {
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           placeholder="e.g. Q3 webinar announcement"
+          disabled={isArchived}
         />
       </div>
 
@@ -157,7 +168,7 @@ export function PostForm({ post }: { post?: Post }) {
         <div key={p} className="flex flex-col gap-1.5">
           <div className="flex items-center justify-between">
             <Label htmlFor={`description-${p}`}>
-              <PlatformBadge platform={p} /> copy
+              <PlatformBadge platform={p} />
             </Label>
             <CharacterCounter platform={p} length={descriptions[p].length} />
           </div>
@@ -167,33 +178,37 @@ export function PostForm({ post }: { post?: Post }) {
             onChange={(e) => setDescriptions((prev) => ({ ...prev, [p]: e.target.value }))}
             rows={6}
             placeholder="Write the post copy — this is what actually gets published…"
+            disabled={isArchived}
           />
         </div>
       ))}
 
       <div className="flex flex-col gap-1.5">
-        <Label>Images</Label>
+        <Label className="text-base">Images / video</Label>
         <p className="text-xs text-muted-foreground">Shared across every platform picked above.</p>
         <ImageUploader
           images={images}
           onChange={setImages}
+          disabled={isArchived}
           limitWarning={
-            overLimitPlatform
-              ? `${images.length} photos added — ${PLATFORM_LABELS[overLimitPlatform]} only shows the first ${imageLimit}.`
-              : undefined
+            hasMixedMedia
+              ? "Most platforms don't support mixing photos with video — only the video will be used."
+              : overLimitPlatform
+                ? `${images.length} photos added — ${PLATFORM_LABELS[overLimitPlatform]} only shows the first ${imageLimit}.`
+                : undefined
           }
         />
       </div>
 
       <div className="flex flex-col gap-1.5">
-        <Label>Categories</Label>
-        <CategoryPicker selectedIds={categoryIds} onChange={setCategoryIds} />
+        <Label className="text-base">Categories</Label>
+        <CategoryPicker selectedIds={categoryIds} onChange={setCategoryIds} disabled={isArchived} />
       </div>
 
       <div className="grid grid-cols-2 gap-4">
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="status">Status</Label>
-          <Select value={status} onValueChange={(value) => setStatus(value as PostStatus)}>
+          <Select value={status} onValueChange={(value) => setStatus(value as PostStatus)} disabled={isArchived}>
             <SelectTrigger id="status" className="w-full">
               <SelectValue>
                 {(value: PostStatus) => POST_STATUSES.find((s) => s.value === value)?.label}
@@ -218,6 +233,7 @@ export function PostForm({ post }: { post?: Post }) {
             value={targetDate}
             onChange={(e) => setTargetDate(e.target.value)}
             aria-invalid={needsDateForScheduled}
+            disabled={isArchived}
           />
           {needsDateForScheduled && (
             <p className="text-xs text-destructive">Required to move this post to Scheduled.</p>
@@ -226,7 +242,7 @@ export function PostForm({ post }: { post?: Post }) {
 
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="assignee">Assignee</Label>
-          <Select value={assigneeId} onValueChange={(value) => setAssigneeId(value ?? NONE)}>
+          <Select value={assigneeId} onValueChange={(value) => setAssigneeId(value ?? NONE)} disabled={isArchived}>
             <SelectTrigger id="assignee" className="w-full">
               <SelectValue>
                 {(value: string) => (value === NONE ? "Unassigned" : profiles.find((p) => p.id === value)?.fullName)}
@@ -245,7 +261,7 @@ export function PostForm({ post }: { post?: Post }) {
 
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="requested-by">Requested by</Label>
-          <Select value={requestedById} onValueChange={(value) => setRequestedById(value ?? NONE)}>
+          <Select value={requestedById} onValueChange={(value) => setRequestedById(value ?? NONE)} disabled={isArchived}>
             <SelectTrigger id="requested-by" className="w-full">
               <SelectValue>
                 {(value: string) => (value === NONE ? "—" : profiles.find((p) => p.id === value)?.fullName)}
@@ -263,16 +279,18 @@ export function PostForm({ post }: { post?: Post }) {
         </div>
       </div>
 
-      <div className="flex items-center justify-between rounded-lg border p-3">
-        <div>
-          <Label htmlFor="needs-changes">Needs changes</Label>
-          <p className="text-xs text-muted-foreground">Flag this post for the assignee, independent of its column.</p>
+      {post && (
+        <div className="flex items-center justify-between rounded-lg border p-3">
+          <div>
+            <Label htmlFor="needs-changes" className="text-base">Needs changes</Label>
+            <p className="text-xs text-muted-foreground">Flag this post for the assignee, independent of its column.</p>
+          </div>
+          <Switch id="needs-changes" checked={needsChanges} onCheckedChange={setNeedsChanges} disabled={isArchived} />
         </div>
-        <Switch id="needs-changes" checked={needsChanges} onCheckedChange={setNeedsChanges} />
-      </div>
+      )}
 
       <div className="flex flex-col gap-1.5">
-        <Label htmlFor="published-url">Published URL</Label>
+        <Label htmlFor="published-url" className="text-base">Published URL</Label>
         <Input
           id="published-url"
           type="url"

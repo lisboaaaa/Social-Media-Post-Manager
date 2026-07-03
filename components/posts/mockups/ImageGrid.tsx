@@ -4,8 +4,12 @@ import { cn } from "@/lib/utils";
 function Tile({ image, onClick, overflow }: { image: PostImage; onClick: () => void; overflow?: number }) {
   return (
     <button type="button" onClick={onClick} className="relative block h-full w-full overflow-hidden bg-muted">
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={image.imageUrl} alt="" draggable={false} className="h-full w-full object-cover" />
+      {image.mediaType === "video" ? (
+        <video src={image.imageUrl} muted className="h-full w-full object-cover" />
+      ) : (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={image.imageUrl} alt="" draggable={false} className="h-full w-full object-cover" />
+      )}
       {!!overflow && (
         <span className="absolute inset-0 flex items-center justify-center bg-black/50 text-lg font-semibold text-white">
           +{overflow}

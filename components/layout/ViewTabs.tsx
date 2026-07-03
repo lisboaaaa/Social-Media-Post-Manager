@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 const TABS = [
   { href: "/board", label: "Board" },
   { href: "/calendar", label: "Calendar" },
+  { href: "/archive", label: "Archive" },
 ];
 
 export function ViewTabs() {

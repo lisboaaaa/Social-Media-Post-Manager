@@ -6,16 +6,15 @@ import { createClient } from "./supabase/client";
 import { mapCategoryRow, mapCommentRow, mapPostRow, mapProfileRow, POST_SELECT } from "./supabase/mappers";
 import type { Category, Comment, Platform, Post, PostStatus, Profile } from "./types";
 
-const CURRENT_USER_EMAIL = "laura.lisboa@daredata.engineering";
-
 export interface Filters {
   platform: Platform | "all";
   categoryId: string | "all";
+  assigneeId: string | "all";
   dateFrom: string | null; // ISO date, inclusive lower bound on targetDate
   dateTo: string | null; // ISO date, inclusive upper bound on targetDate
 }
 
-const EMPTY_FILTERS: Filters = { platform: "all", categoryId: "all", dateFrom: null, dateTo: null };
+const EMPTY_FILTERS: Filters = { platform: "all", categoryId: "all", assigneeId: "all", dateFrom: null, dateTo: null };
 
 type NewPostInput = Omit<Post, "id" | "createdAt" | "updatedAt" | "createdBy"> & {
   createdBy?: string;
@@ -45,6 +44,7 @@ interface StoreValue {
   previewPostId: string | null;
   openPreview: (postId: string) => void;
   closePreview: () => void;
+  signOut: () => void;
 }
 
 const StoreContext = createContext<StoreValue | null>(null);
@@ -52,11 +52,11 @@ const StoreContext = createContext<StoreValue | null>(null);
 export function StoreProvider({ children }: { children: ReactNode }) {
   const [supabase] = useState(() => createClient());
   const [loading, setLoading] = useState(true);
+  const [userEmail, setUserEmail] = useState<string | null>(null);
   const [posts, setPosts] = useState<Post[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [comments, setComments] = useState<Comment[]>([]);
-  const [lastReadTeamNotesAt, setLastReadTeamNotesAt] = useState<string | null>(null);
   const [filters, setFiltersState] = useState<Filters>(EMPTY_FILTERS);
   const [previewPostId, setPreviewPostId] = useState<string | null>(null);
 
@@ -64,7 +64,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     let cancelled = false;
 
     async function load() {
-      const [profilesRes, categoriesRes, postsRes, commentsRes] = await Promise.all([
+      const [userRes, profilesRes, categoriesRes, postsRes, commentsRes] = await Promise.all([
+        supabase.auth.getUser(),
         supabase.from("profiles").select("*"),
         supabase.from("categories").select("*"),
         supabase.from("posts").select(POST_SELECT).order("created_at", { ascending: true }),
@@ -78,6 +79,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         toast.error(`Couldn't load data from Supabase: ${firstError.message}`);
       }
 
+      setUserEmail(userRes.data.user?.email ?? null);
       setProfiles((profilesRes.data ?? []).map(mapProfileRow));
       setCategories((categoriesRes.data ?? []).map(mapCategoryRow));
       setPosts((postsRes.data ?? []).map(mapPostRow));
@@ -92,9 +94,15 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   }, [supabase]);
 
   const currentUser = useMemo(
-    () => profiles.find((p) => p.email === CURRENT_USER_EMAIL) ?? profiles[0],
-    [profiles],
+    () => profiles.find((p) => p.email === userEmail) ?? profiles[0],
+    [profiles, userEmail],
   );
+
+  const signOut = () => {
+    supabase.auth.signOut().then(() => {
+      window.location.href = "/login";
+    });
+  };
 
   const setFilters = (patch: Partial<Filters>) =>
     setFiltersState((prev) => ({ ...prev, ...patch }));
@@ -104,6 +112,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     return posts.filter((post) => {
       if (filters.platform !== "all" && !post.platforms.includes(filters.platform)) return false;
       if (filters.categoryId !== "all" && !post.categoryIds.includes(filters.categoryId)) return false;
+      if (filters.assigneeId !== "all" && post.assigneeId !== filters.assigneeId) return false;
       if (filters.dateFrom || filters.dateTo) {
         if (!post.targetDate) return false;
         if (filters.dateFrom && post.targetDate < filters.dateFrom) return false;
@@ -127,7 +136,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     }
     if ("images" in patch) {
       await supabase.from("post_images").delete().eq("post_id", postId);
-      const rows = merged.images.map((img, i) => ({ post_id: postId, image_url: img.imageUrl, position: i }));
+      const rows = merged.images.map((img, i) => ({ post_id: postId, image_url: img.imageUrl, position: i, media_type: img.mediaType }));
       if (rows.length) await supabase.from("post_images").insert(rows);
     }
     if ("categoryIds" in patch) {
@@ -236,10 +245,17 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   };
 
   const deletePost = (id: string) => {
+    const current = posts.find((p) => p.id === id);
     setPosts((prev) => prev.filter((p) => p.id !== id));
     setComments((prev) => prev.filter((c) => c.postId !== id));
 
     (async () => {
+      // Published posts can't be deleted directly (database rule) — stepping
+      // it off "published" first is how the explicit "Delete forever" action
+      // in the Archive gets around that safety net on purpose.
+      if (current?.status === "published") {
+        await supabase.from("posts").update({ status: "backlog" }).eq("id", id);
+      }
       const { error } = await supabase.from("posts").delete().eq("id", id);
       if (error) toast.error(`Couldn't delete the post: ${error.message}`);
     })();
@@ -283,12 +299,23 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     })();
   };
 
+  const lastReadTeamNotesAt = currentUser?.lastReadTeamNotesAt ?? null;
+
   const hasUnreadTeamNotes = useMemo(
     () => comments.some((c) => isCommentUnread(c, currentUser?.id, lastReadTeamNotesAt)),
     [comments, currentUser, lastReadTeamNotesAt],
   );
 
-  const markTeamNotesRead = () => setLastReadTeamNotesAt(new Date().toISOString());
+  const markTeamNotesRead = () => {
+    if (!currentUser) return;
+    const now = new Date().toISOString();
+    setProfiles((prev) => prev.map((p) => (p.id === currentUser.id ? { ...p, lastReadTeamNotesAt: now } : p)));
+
+    (async () => {
+      const { error } = await supabase.from("profiles").update({ last_read_team_notes_at: now }).eq("id", currentUser.id);
+      if (error) toast.error(`Couldn't save read status: ${error.message}`);
+    })();
+  };
 
   const value: StoreValue = {
     loading,
@@ -314,6 +341,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     previewPostId,
     openPreview: setPreviewPostId,
     closePreview: () => setPreviewPostId(null),
+    signOut,
   };
 
   if (loading || !currentUser) {

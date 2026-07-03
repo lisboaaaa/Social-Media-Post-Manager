@@ -7,19 +7,22 @@ export function Column({
   status,
   label,
   posts,
+  hint,
 }: {
   status: PostStatus;
   label: string;
   posts: Post[];
+  hint?: string;
 }) {
   return (
     <div className="flex w-56 shrink-0 flex-col">
-      <div className="mb-2.5 flex items-center justify-between px-0.5">
+      <div className="mb-1 flex items-center justify-between px-0.5">
         <h2 className="text-base font-semibold tracking-wide">{label}</h2>
         <span className="rounded-full border bg-background px-1.5 py-0.5 font-mono text-[10.5px] text-muted-foreground">
           {posts.length}
         </span>
       </div>
+      {hint && <p className="mb-2 px-0.5 text-[10.5px] text-muted-foreground">{hint}</p>}
       <Droppable droppableId={status}>
         {(provided, snapshot) => (
           <div

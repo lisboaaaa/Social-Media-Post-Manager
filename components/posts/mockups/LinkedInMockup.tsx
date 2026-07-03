@@ -20,6 +20,7 @@ export function LinkedInMockup({
 }) {
   const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
   const desktop = device === "desktop";
+  const video = post.images.find((img) => img.mediaType === "video");
 
   return (
     <div className={cn("relative mx-auto w-full overflow-hidden rounded-lg border bg-white", desktop ? "max-w-xl" : "max-w-sm")}>
@@ -44,12 +45,13 @@ export function LinkedInMockup({
         {description || "No text yet."}
       </p>
 
-      {post.images.length === 1 && (
+      {video && <ImageCarousel images={[video]} className="aspect-[1.91/1] w-full" fit="contain" />}
+      {!video && post.images.length === 1 && (
         <button type="button" onClick={() => setExpandedIndex(0)} className="block w-full">
           <ImageCarousel images={post.images} className="aspect-[1.91/1] w-full" fit="contain" />
         </button>
       )}
-      {post.images.length > 1 && (
+      {!video && post.images.length > 1 && (
         <ImageGrid images={post.images} onImageClick={setExpandedIndex} className="w-full" />
       )}
 

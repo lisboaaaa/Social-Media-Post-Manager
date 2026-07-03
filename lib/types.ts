@@ -47,6 +47,7 @@ export interface Profile {
   fullName: string;
   email: string;
   initials: string;
+  lastReadTeamNotesAt: string | null;
 }
 
 export interface Category {
@@ -59,6 +60,7 @@ export interface PostImage {
   postId: string;
   imageUrl: string;
   position: number;
+  mediaType: "image" | "video";
 }
 
 export interface Comment {

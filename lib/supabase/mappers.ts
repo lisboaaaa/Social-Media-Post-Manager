@@ -5,7 +5,13 @@ import type { Category, Comment, Platform, Post, PostImage, Profile } from "@/li
 // into the camelCase app types the rest of the codebase already expects.
 
 export function mapProfileRow(row: any): Profile {
-  return { id: row.id, fullName: row.full_name, email: row.email, initials: row.initials };
+  return {
+    id: row.id,
+    fullName: row.full_name,
+    email: row.email,
+    initials: row.initials,
+    lastReadTeamNotesAt: row.last_read_team_notes_at,
+  };
 }
 
 export function mapCategoryRow(row: any): Category {
@@ -26,7 +32,13 @@ export function mapPostRow(row: any): Post {
 
   const images: PostImage[] = [...(row.post_images ?? [])]
     .sort((a, b) => a.position - b.position)
-    .map((img) => ({ id: img.id, postId: row.id, imageUrl: img.image_url, position: img.position }));
+    .map((img) => ({
+      id: img.id,
+      postId: row.id,
+      imageUrl: img.image_url,
+      position: img.position,
+      mediaType: img.media_type ?? "image",
+    }));
 
   const categoryIds: string[] = (row.post_categories ?? []).map((pc: any) => pc.category_id);
 
@@ -49,4 +61,4 @@ export function mapPostRow(row: any): Post {
   };
 }
 
-export const POST_SELECT = "*, post_platforms(platform, description), post_images(id, image_url, position), post_categories(category_id)";
+export const POST_SELECT = "*, post_platforms(platform, description), post_images(id, image_url, position, media_type), post_categories(category_id)";

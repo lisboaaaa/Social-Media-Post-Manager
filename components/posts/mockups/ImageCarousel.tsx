@@ -69,16 +69,25 @@ export function ImageCarousel({
         )}
         style={{ transform: `translate3d(calc(${-current * 100}% + ${isDragging ? dragOffset : 0}px), 0, 0)` }}
       >
-        {images.map((img) => (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            key={img.id}
-            src={img.imageUrl}
-            alt=""
-            draggable={false}
-            className={cn("h-full w-full shrink-0", fit === "contain" ? "object-contain" : "object-cover")}
-          />
-        ))}
+        {images.map((img) =>
+          img.mediaType === "video" ? (
+            <video
+              key={img.id}
+              src={img.imageUrl}
+              controls
+              className={cn("h-full w-full shrink-0", fit === "contain" ? "object-contain" : "object-cover")}
+            />
+          ) : (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              key={img.id}
+              src={img.imageUrl}
+              alt=""
+              draggable={false}
+              className={cn("h-full w-full shrink-0", fit === "contain" ? "object-contain" : "object-cover")}
+            />
+          ),
+        )}
       </div>
 
       {images.length > 1 && (

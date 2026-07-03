@@ -126,5 +126,6 @@
   }
   html {
     @apply font-sans;
+    font-size: 106.25%; /* nudges every rem-based text/spacing size up a little, app-wide */
   }
 }

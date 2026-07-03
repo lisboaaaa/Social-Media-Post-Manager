@@ -17,9 +17,13 @@ function FilterGroup({ label, children }: { label: string; children: React.React
 }
 
 export function FilterBar() {
-  const { filters, setFilters, clearFilters, categories } = useStore();
+  const { filters, setFilters, clearFilters, categories, profiles } = useStore();
   const active =
-    filters.platform !== "all" || filters.categoryId !== "all" || Boolean(filters.dateFrom) || Boolean(filters.dateTo);
+    filters.platform !== "all" ||
+    filters.categoryId !== "all" ||
+    filters.assigneeId !== "all" ||
+    Boolean(filters.dateFrom) ||
+    Boolean(filters.dateTo);
 
   return (
     <div className="flex flex-wrap items-end gap-2">
@@ -58,6 +62,26 @@ export function FilterBar() {
             {categories.map((category) => (
               <SelectItem key={category.id} value={category.id}>
                 {category.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </FilterGroup>
+
+      <FilterGroup label="Assignee">
+        <Select value={filters.assigneeId} onValueChange={(value) => setFilters({ assigneeId: value ?? "all" })}>
+          <SelectTrigger size="sm" className="w-40">
+            <SelectValue placeholder="Assignee">
+              {(value: string) =>
+                value === "all" ? "Everyone" : profiles.find((p) => p.id === value)?.fullName
+              }
+            </SelectValue>
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Everyone</SelectItem>
+            {profiles.map((profile) => (
+              <SelectItem key={profile.id} value={profile.id}>
+                {profile.fullName}
               </SelectItem>
             ))}
           </SelectContent>
