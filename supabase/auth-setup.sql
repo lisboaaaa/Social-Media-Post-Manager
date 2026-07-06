@@ -41,3 +41,11 @@ drop trigger if exists on_auth_user_created on auth.users;
 create trigger on_auth_user_created
   after insert on auth.users
   for each row execute function public.handle_new_user();
+
+-- Belt-and-braces: the app also tries to create your profile itself the
+-- moment you sign in, in case the trigger above ever doesn't run. This
+-- policy is what lets that succeed — a uniquely-named addition, so it's
+-- safe to run even if profiles already has other policies.
+alter table public.profiles enable row level security;
+drop policy if exists "profiles self-provision insert" on public.profiles;
+create policy "profiles self-provision insert" on public.profiles for insert with check (true);

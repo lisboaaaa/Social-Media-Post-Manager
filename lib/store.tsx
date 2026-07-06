@@ -6,6 +6,21 @@ import { createClient } from "./supabase/client";
 import { mapCategoryRow, mapCommentReactionRow, mapCommentRow, mapPostRow, mapProfileRow, POST_SELECT } from "./supabase/mappers";
 import type { Category, Comment, CommentReaction, Platform, Post, PostStatus, Profile } from "./types";
 
+// Mirrors the SQL side (handle_new_user() in auth-setup.sql) — company
+// emails are firstname.lastname@daredata.engineering. Used as a client-side
+// fallback so a first-time sign-in never depends solely on the database
+// trigger having run.
+function deriveNameFromEmail(email: string): { fullName: string; initials: string } {
+  const namePart = email.split("@")[0] ?? email;
+  const [first, last] = namePart.split(".");
+  const cap = (s: string) => (s ? s[0].toUpperCase() + s.slice(1).toLowerCase() : "");
+
+  if (!last) {
+    return { fullName: cap(first), initials: first.slice(0, 2).toUpperCase() };
+  }
+  return { fullName: `${cap(first)} ${cap(last)}`, initials: `${first[0]}${last[0]}`.toUpperCase() };
+}
+
 export interface Filters {
   platform: Platform | "all";
   categoryId: string | "all";
@@ -65,6 +80,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [commentReactions, setCommentReactions] = useState<CommentReaction[]>([]);
   const [filters, setFiltersState] = useState<Filters>(EMPTY_FILTERS);
   const [previewPostId, setPreviewPostId] = useState<string | null>(null);
+  const [profileError, setProfileError] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -97,6 +113,29 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         if (cancelled) return;
         const retryRes = await supabase.from("profiles").select("*");
         loadedProfiles = (retryRes.data ?? []).map(mapProfileRow);
+      }
+
+      // Still nothing after retrying — the trigger may never have run at
+      // all. Rather than leave the sign-in stuck waiting forever, create the
+      // profile from here as a fallback. If that's blocked (e.g. by row
+      // security), surface a clear error instead of a silent, endless spinner.
+      if (email && !loadedProfiles.some((p) => p.email === email)) {
+        const { fullName, initials } = deriveNameFromEmail(email);
+        const selfProvisioned: Profile = { id: crypto.randomUUID(), fullName, email, initials, lastReadTeamNotesAt: null };
+        const { error: insertError } = await supabase.from("profiles").insert({
+          id: selfProvisioned.id,
+          full_name: selfProvisioned.fullName,
+          email: selfProvisioned.email,
+          initials: selfProvisioned.initials,
+        });
+
+        if (cancelled) return;
+
+        if (insertError) {
+          setProfileError(`Couldn't set up your profile automatically (${insertError.message}). Contact Laura for help.`);
+        } else {
+          loadedProfiles = [...loadedProfiles, selfProvisioned];
+        }
       }
 
       if (cancelled) return;
@@ -447,8 +486,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   if (loading || !currentUser) {
     return (
-      <div className="flex min-h-screen items-center justify-center text-sm text-muted-foreground">
-        Loading…
+      <div className="flex min-h-screen items-center justify-center px-4 text-center text-sm text-muted-foreground">
+        {profileError ?? "Loading…"}
       </div>
     );
   }
