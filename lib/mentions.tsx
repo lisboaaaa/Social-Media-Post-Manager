@@ -13,6 +13,12 @@ function escapeRegExp(value: string): string {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
+export function mentionsProfile(body: string, fullName: string): boolean {
+  const token = mentionToken(fullName);
+  if (!token) return false;
+  return new RegExp(`@${escapeRegExp(token)}\\b`).test(body);
+}
+
 // Splits a comment body into plain strings and highlighted mention spans,
 // for rendering — matches whichever known profiles' tokens actually appear.
 export function renderWithMentions(body: string, profiles: Profile[]): ReactNode[] {

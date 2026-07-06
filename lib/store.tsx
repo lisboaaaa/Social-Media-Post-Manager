@@ -3,6 +3,7 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { toast } from "sonner";
 import { createClient } from "./supabase/client";
+import { mentionsProfile } from "./mentions";
 import { mapCategoryRow, mapCommentReactionRow, mapCommentRow, mapPostRow, mapProfileRow, POST_SELECT } from "./supabase/mappers";
 import type { Category, Comment, CommentReaction, Platform, Post, PostStatus, Profile } from "./types";
 
@@ -250,6 +251,30 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     () => profiles.find((p) => p.email === userEmail),
     [profiles, userEmail],
   );
+
+  // A separate, small subscription just for @mentions — kept apart from the
+  // main realtime effect above so it can depend on currentUser directly
+  // (re-subscribing only on actual sign-in, not on every comment), instead
+  // of reaching for a ref to dodge a stale closure.
+  useEffect(() => {
+    if (!currentUser) return;
+
+    const channel = supabase
+      .channel(`mentions-${currentUser.id}`)
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "comments" }, async (payload) => {
+        const incoming = mapCommentRow(payload.new as Parameters<typeof mapCommentRow>[0]);
+        if (incoming.authorId === currentUser.id) return;
+        if (!mentionsProfile(incoming.body, currentUser.fullName)) return;
+
+        const { data } = await supabase.from("profiles").select("full_name").eq("id", incoming.authorId).single();
+        toast.info(`${data?.full_name ?? "Someone"} mentioned you in a comment`);
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [supabase, currentUser]);
 
   const signOut = () => {
     supabase.auth.signOut().then(() => {
