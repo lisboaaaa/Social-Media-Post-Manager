@@ -8,6 +8,20 @@ import { CommentForm } from "./CommentForm";
 import { CommentItem } from "./CommentItem";
 import { DateSeparator } from "./DateSeparator";
 
+// Threads are flattened to one level, like most lightweight comment
+// systems: a reply-to-a-reply still nests under the original top-level
+// comment (not under its immediate parent), so the layout never has to
+// handle arbitrarily deep indentation.
+function findRootId(comment: Comment, byId: Map<string, Comment>): string {
+  let current = comment;
+  while (current.parentId) {
+    const parent = byId.get(current.parentId);
+    if (!parent) break;
+    current = parent;
+  }
+  return current.id;
+}
+
 export function CommentThread({ postId }: { postId: string }) {
   const { comments, profiles, currentUser, addComment } = useStore();
   const [replyingTo, setReplyingTo] = useState<Comment | null>(null);
@@ -15,7 +29,19 @@ export function CommentThread({ postId }: { postId: string }) {
   const threadComments = comments
     .filter((c) => c.postId === postId)
     .sort((a, b) => a.createdAt.localeCompare(b.createdAt));
-  const groups = groupByDay(threadComments);
+
+  const byId = new Map(threadComments.map((c) => [c.id, c]));
+  const topLevel = threadComments.filter((c) => !c.parentId);
+  const repliesByRoot = new Map<string, Comment[]>();
+  for (const comment of threadComments) {
+    if (!comment.parentId) continue;
+    const rootId = findRootId(comment, byId);
+    const list = repliesByRoot.get(rootId) ?? [];
+    list.push(comment);
+    repliesByRoot.set(rootId, list);
+  }
+
+  const groups = groupByDay(topLevel);
 
   const authorName = (comment: Comment) => {
     const author = profiles.find((p) => p.id === comment.authorId);
@@ -35,14 +61,30 @@ export function CommentThread({ postId }: { postId: string }) {
           <div key={group.label} className="flex flex-col gap-3">
             <DateSeparator label={group.label} />
             {group.items.map((comment) => {
-              const parent = comment.parentId ? threadComments.find((c) => c.id === comment.parentId) : undefined;
+              const replies = repliesByRoot.get(comment.id) ?? [];
               return (
-                <CommentItem
-                  key={comment.id}
-                  comment={comment}
-                  parentAuthorName={parent ? authorName(parent) : undefined}
-                  onReply={setReplyingTo}
-                />
+                <div key={comment.id} className="flex flex-col gap-2">
+                  <CommentItem comment={comment} onReply={setReplyingTo} />
+                  {replies.length > 0 && (
+                    <div className="ml-8 flex flex-col gap-2 border-l-2 border-muted pl-3">
+                      {replies.map((reply) => {
+                        const parent = reply.parentId ? byId.get(reply.parentId) : undefined;
+                        // Nesting already shows what this replies to when it's
+                        // the root comment — only spell it out when replying
+                        // to another reply further down the same thread.
+                        const showParentLabel = parent && parent.id !== comment.id;
+                        return (
+                          <CommentItem
+                            key={reply.id}
+                            comment={reply}
+                            parentAuthorName={showParentLabel ? authorName(parent!) : undefined}
+                            onReply={setReplyingTo}
+                          />
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
               );
             })}
           </div>
