@@ -129,3 +129,13 @@
     font-size: 106.25%; /* nudges every rem-based text/spacing size up a little, app-wide */
   }
 }
+
+/* Hides a scrollable element's own scrollbar while it stays scrollable —
+   used where a second, fixed scrollbar mirrors it, so only one is visible. */
+.scrollbar-hide {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}

@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { DragDropContext, type DropResult } from "@hello-pangea/dnd";
 import { Column } from "./Column";
 import { PublishedUrlDialog } from "./PublishedUrlDialog";
 import { ScheduleDateDialog } from "./ScheduleDateDialog";
+import { StickyScrollbar } from "./StickyScrollbar";
 import { useStore } from "@/lib/store";
 import { POST_STATUSES, type PostStatus } from "@/lib/types";
 
@@ -35,6 +36,7 @@ export function Board() {
   const { filteredPosts, movePost, getPostById } = useStore();
   const [pendingSchedule, setPendingSchedule] = useState<{ postId: string; status: PostStatus; index: number } | null>(null);
   const [pendingPublish, setPendingPublish] = useState<{ postId: string; status: PostStatus; index: number } | null>(null);
+  const rowRef = useRef<HTMLDivElement>(null);
 
   const onDragEnd = (result: DropResult) => {
     const { destination, source, draggableId } = result;
@@ -61,7 +63,7 @@ export function Board() {
   return (
     <>
       <DragDropContext onDragEnd={onDragEnd}>
-        <div className="flex flex-1 items-stretch gap-3 overflow-x-auto pb-2">
+        <div ref={rowRef} className="scrollbar-hide flex flex-1 items-stretch gap-3 overflow-x-auto pb-2">
           {POST_STATUSES.map(({ value, label }) => (
             <Column
               key={value}
@@ -73,6 +75,7 @@ export function Board() {
           ))}
         </div>
       </DragDropContext>
+      <StickyScrollbar targetRef={rowRef} />
 
       <ScheduleDateDialog
         open={pendingSchedule !== null}

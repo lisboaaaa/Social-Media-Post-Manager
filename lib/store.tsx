@@ -39,6 +39,7 @@ interface StoreValue {
   addCategory: (name: string) => Category;
   deleteCategory: (id: string) => void;
   addComment: (postId: string | null, body: string) => void;
+  deleteComment: (id: string) => void;
   hasUnreadTeamNotes: boolean;
   lastReadTeamNotesAt: string | null;
   markTeamNotesRead: () => void;
@@ -314,6 +315,15 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     })();
   };
 
+  const deleteComment = (id: string) => {
+    setComments((prev) => prev.filter((c) => c.id !== id));
+
+    (async () => {
+      const { error } = await supabase.from("comments").delete().eq("id", id);
+      if (error) toast.error(`Couldn't delete the comment: ${error.message}`);
+    })();
+  };
+
   const lastReadTeamNotesAt = currentUser?.lastReadTeamNotesAt ?? null;
 
   const hasUnreadTeamNotes = useMemo(
@@ -351,6 +361,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     addCategory,
     deleteCategory,
     addComment,
+    deleteComment,
     hasUnreadTeamNotes,
     lastReadTeamNotesAt,
     markTeamNotesRead,

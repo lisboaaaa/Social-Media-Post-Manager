@@ -1,5 +1,6 @@
 import { Draggable } from "@hello-pangea/dnd";
 import { Play } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { PlatformBadgeGroup } from "@/components/posts/PlatformBadge";
@@ -8,6 +9,7 @@ import type { Post } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 export function PostCard({ post, index }: { post: Post; index: number }) {
+  const router = useRouter();
   const { profiles, categories, openPreview } = useStore();
   const assignee = profiles.find((p) => p.id === post.assigneeId);
   const postCategories = categories.filter((c) => post.categoryIds.includes(c.id));
@@ -20,6 +22,7 @@ export function PostCard({ post, index }: { post: Post; index: number }) {
           {...provided.draggableProps}
           {...provided.dragHandleProps}
           onClick={() => openPreview(post.id)}
+          onDoubleClick={() => router.push(`/posts/${post.id}`)}
           className={cn(
             "cursor-pointer rounded-lg border bg-background p-2.5 shadow-sm transition-shadow hover:shadow-md",
             snapshot.isDragging && "ring-2 ring-primary/40",
