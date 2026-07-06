@@ -1,3 +1,4 @@
+import { useRef } from "react";
 import { Draggable } from "@hello-pangea/dnd";
 import { Play } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -8,11 +9,28 @@ import { useStore } from "@/lib/store";
 import type { Post } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
+const DOUBLE_CLICK_WINDOW_MS = 350;
+
 export function PostCard({ post, index }: { post: Post; index: number }) {
   const router = useRouter();
   const { profiles, categories, openPreview } = useStore();
   const assignee = profiles.find((p) => p.id === post.assigneeId);
   const postCategories = categories.filter((c) => post.categoryIds.includes(c.id));
+  const lastClickRef = useRef(0);
+
+  // The drag-and-drop library handles raw mouse events on this element
+  // itself (to tell a click apart from the start of a drag), which in
+  // practice swallows the browser's native dblclick — so double-click is
+  // detected by hand here, off two ordinary clicks close together in time.
+  const handleClick = () => {
+    const now = Date.now();
+    if (now - lastClickRef.current < DOUBLE_CLICK_WINDOW_MS) {
+      router.push(`/posts/${post.id}`);
+    } else {
+      openPreview(post.id);
+    }
+    lastClickRef.current = now;
+  };
 
   return (
     <Draggable draggableId={post.id} index={index}>
@@ -21,8 +39,7 @@ export function PostCard({ post, index }: { post: Post; index: number }) {
           ref={provided.innerRef}
           {...provided.draggableProps}
           {...provided.dragHandleProps}
-          onClick={() => openPreview(post.id)}
-          onDoubleClick={() => router.push(`/posts/${post.id}`)}
+          onClick={handleClick}
           className={cn(
             "cursor-pointer rounded-lg border bg-background p-2.5 shadow-sm transition-shadow hover:shadow-md",
             snapshot.isDragging && "ring-2 ring-primary/40",
