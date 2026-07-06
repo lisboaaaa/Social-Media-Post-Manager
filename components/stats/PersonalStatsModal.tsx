@@ -83,7 +83,7 @@ export function PersonalStatsModal({ open, onOpenChange }: PersonalStatsModalPro
           />
         </StatsSection>
 
-        <StatsSection title="Posts created, last 10 weeks" color={TREND_COLOR}>
+        <StatsSection title="Posts published, last 10 weeks" color={TREND_COLOR}>
           <WeeklyTrendChart points={stats.weeklyActivity} color={TREND_COLOR} />
         </StatsSection>
       </DialogContent>

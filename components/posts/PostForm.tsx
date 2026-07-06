@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -53,6 +53,39 @@ export function PostForm({ post }: { post?: Post }) {
   const [categoryIds, setCategoryIds] = useState<string[]>(post?.categoryIds ?? []);
   const [images, setImages] = useState(post?.images ?? []);
   const [dateOpen, setDateOpen] = useState(false);
+
+  const snapshot = JSON.stringify({
+    platforms,
+    title,
+    descriptions,
+    status,
+    targetDate,
+    publishedUrl,
+    assigneeId,
+    requestedById,
+    categoryIds,
+    images,
+  });
+  const [initialSnapshot] = useState(snapshot);
+  const isDirty = snapshot !== initialSnapshot;
+
+  // Covers closing the tab, refreshing, or typing a new URL — in-app
+  // navigation (the Cancel/Back links) is guarded separately below since
+  // beforeunload doesn't fire for client-side route changes.
+  useEffect(() => {
+    const handler = (e: BeforeUnloadEvent) => {
+      if (!isDirty) return;
+      e.preventDefault();
+    };
+    window.addEventListener("beforeunload", handler);
+    return () => window.removeEventListener("beforeunload", handler);
+  }, [isDirty]);
+
+  const confirmDiscard = (e: React.MouseEvent) => {
+    if (isDirty && !confirm("You have unsaved changes — discard them?")) {
+      e.preventDefault();
+    }
+  };
 
   const needsDateForScheduled = status === "scheduled" && !targetDate;
   const imageLimit = platforms.length > 0 ? Math.min(...platforms.map((p) => PLATFORM_IMAGE_LIMITS[p])) : undefined;
@@ -122,7 +155,7 @@ export function PostForm({ post }: { post?: Post }) {
   return (
     <form onSubmit={handleSubmit} className="mx-auto flex w-full max-w-5xl flex-col gap-6">
       <div className="flex items-center justify-between">
-        <Link href="/board" className={buttonVariants({ variant: "ghost", size: "sm" })}>
+        <Link href="/board" onClick={confirmDiscard} className={buttonVariants({ variant: "ghost", size: "sm" })}>
           <ArrowLeft className="size-3.5" />
           Back to board
         </Link>
@@ -215,7 +248,7 @@ export function PostForm({ post }: { post?: Post }) {
           </div>
 
           <div className="flex justify-end gap-2 border-t pt-4">
-            <Link href="/board" className={buttonVariants({ variant: "outline", size: "lg" })}>
+            <Link href="/board" onClick={confirmDiscard} className={buttonVariants({ variant: "outline", size: "lg" })}>
               Cancel
             </Link>
             <Button type="submit" size="lg">{post ? "Save changes" : "Create post"}</Button>

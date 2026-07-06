@@ -36,7 +36,7 @@ export function WeeklyTrendChart({ points, color }: WeeklyTrendChartProps) {
   const areaPath = `${linePath} L ${lastCoord.x.toFixed(1)} ${BASELINE_Y} L ${firstCoord.x.toFixed(1)} ${BASELINE_Y} Z`;
 
   return (
-    <svg viewBox={`0 0 ${WIDTH} ${HEIGHT}`} className="w-full" role="img" aria-label="Posts created per week, last 10 weeks">
+    <svg viewBox={`0 0 ${WIDTH} ${HEIGHT}`} className="w-full" role="img" aria-label="Posts published per week, last 10 weeks">
       <defs>
         <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stopColor={color} stopOpacity={0.22} />

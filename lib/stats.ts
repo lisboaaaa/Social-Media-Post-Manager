@@ -56,13 +56,20 @@ export function computePersonalStats(posts: Post[], categories: Category[], user
     .slice(0, 5);
 
   const now = Date.now();
+  // Published posts only, keyed by their target date — this tracks actual
+  // output (what went out the door), not how many posts were merely added
+  // to the tracker that week.
+  const published = mine.filter((p) => p.status === "published" && p.targetDate);
   const weeklyActivity: WeeklyActivityPoint[] = Array.from({ length: TREND_WEEKS }, (_, i) => {
     const weeksAgo = TREND_WEEKS - 1 - i;
     const weekEnd = now - weeksAgo * WEEK_MS;
     const weekStart = weekEnd - WEEK_MS;
-    const count = mine.filter((p) => {
-      const created = new Date(p.createdAt).getTime();
-      return created > weekStart && created <= weekEnd;
+    const count = published.filter((p) => {
+      // Appending a local time avoids the browser parsing the date-only
+      // string as UTC midnight, which shifts it a day earlier in timezones
+      // behind UTC.
+      const publishedAt = new Date(`${p.targetDate}T00:00:00`).getTime();
+      return publishedAt > weekStart && publishedAt <= weekEnd;
     }).length;
     return {
       weekStart: new Date(weekStart).toISOString().slice(0, 10),
