@@ -484,12 +484,28 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     signOut,
   };
 
-  if (loading || !currentUser) {
+  if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center px-4 text-center text-sm text-muted-foreground">
-        {profileError ?? "Loading…"}
+        Loading…
       </div>
     );
+  }
+
+  if (!currentUser) {
+    if (userEmail) {
+      // Signed in, but the profile still hasn't resolved (or failed to).
+      return (
+        <div className="flex min-h-screen items-center justify-center px-4 text-center text-sm text-muted-foreground">
+          {profileError ?? "Setting up your account…"}
+        </div>
+      );
+    }
+    // Not signed in — this covers the public /login page, which doesn't
+    // need anything from the store. Protected pages never reach this state:
+    // the middleware already redirects signed-out visitors to /login before
+    // the app renders.
+    return <>{children}</>;
   }
 
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>;
