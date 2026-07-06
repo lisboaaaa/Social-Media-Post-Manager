@@ -14,7 +14,9 @@ const PUBLISHED_WINDOW_MS = 21 * 24 * 60 * 60 * 1000; // 3 weeks — older posts
 
 function isRecentlyPublished(post: { targetDate: string | null }) {
   if (!post.targetDate) return false;
-  return Date.now() - new Date(post.targetDate).getTime() <= PUBLISHED_WINDOW_MS;
+  // Appending a local time avoids the browser parsing the date-only string
+  // as UTC midnight, which shifts it a day earlier in timezones behind UTC.
+  return Date.now() - new Date(`${post.targetDate}T00:00:00`).getTime() <= PUBLISHED_WINDOW_MS;
 }
 
 // Sending a post back from In Review (e.g. to Writing or Designing) is how

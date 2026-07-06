@@ -1,12 +1,45 @@
 "use client";
 
-import { Play } from "lucide-react";
+import { format } from "date-fns";
+import { ExternalLink, Play } from "lucide-react";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { PlatformBadgeGroup } from "@/components/posts/PlatformBadge";
 import { useStore } from "@/lib/store";
+import type { Post } from "@/lib/types";
+
+interface MonthGroup {
+  label: string;
+  items: Post[];
+}
+
+function monthLabel(post: Post): string {
+  if (!post.targetDate) return "No date";
+  return format(new Date(`${post.targetDate}T00:00:00`), "MMMM yyyy");
+}
+
+// Posts arrive already sorted newest-first (with "no date" posts trailing at
+// the end) — grouping just has to fold consecutive same-label runs together.
+function groupByMonth(posts: Post[]): MonthGroup[] {
+  const groups: MonthGroup[] = [];
+  for (const post of posts) {
+    const label = monthLabel(post);
+    const current = groups[groups.length - 1];
+    if (current?.label === label) current.items.push(post);
+    else groups.push({ label, items: [post] });
+  }
+  return groups;
+}
 
 export function ArchiveView() {
-  const { filteredPosts, openPreview } = useStore();
-  const published = filteredPosts.filter((p) => p.status === "published");
+  const { filteredPosts, openPreview, profiles } = useStore();
+  const published = filteredPosts
+    .filter((p) => p.status === "published")
+    .sort((a, b) => {
+      if (!a.targetDate && !b.targetDate) return b.createdAt.localeCompare(a.createdAt);
+      if (!a.targetDate) return 1;
+      if (!b.targetDate) return -1;
+      return b.targetDate.localeCompare(a.targetDate);
+    });
 
   if (published.length === 0) {
     return (
@@ -16,41 +49,83 @@ export function ArchiveView() {
     );
   }
 
+  const groups = groupByMonth(published);
+
   return (
-    <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
-      {published.map((post) => {
-        const cover = post.images[0];
-        return (
-          <button
-            key={post.id}
-            onClick={() => openPreview(post.id)}
-            className="group flex flex-col overflow-hidden rounded-lg border bg-background text-left transition-shadow hover:shadow-md"
-          >
-            <div className="relative aspect-square w-full overflow-hidden bg-muted">
-              {cover ? (
-                cover.mediaType === "video" ? (
-                  <video src={cover.imageUrl} muted className="h-full w-full object-cover" />
-                ) : (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={cover.imageUrl} alt="" className="h-full w-full object-cover transition-transform group-hover:scale-105" />
-                )
-              ) : (
-                <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-teal-500 via-sky-600 to-fuchsia-500" />
-              )}
-              {cover?.mediaType === "video" && (
-                <span className="absolute inset-0 flex items-center justify-center bg-black/10">
-                  <Play className="size-6 fill-white text-white" />
-                </span>
-              )}
-            </div>
-            <div className="flex flex-col gap-1.5 p-2.5">
-              <PlatformBadgeGroup platforms={post.platforms} />
-              <p className="line-clamp-2 text-sm font-medium leading-snug">{post.title}</p>
-              <span className="font-mono text-[10.5px] text-muted-foreground">{post.targetDate ?? "no date"}</span>
-            </div>
-          </button>
-        );
-      })}
+    <div className="flex flex-col gap-6">
+      <p className="text-sm text-muted-foreground">
+        {published.length} post{published.length === 1 ? "" : "s"} published
+      </p>
+
+      {groups.map((group) => (
+        <div key={group.label} className="flex flex-col gap-3">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">{group.label}</h2>
+          <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
+            {group.items.map((post) => {
+              const cover = post.images[0];
+              const assignee = profiles.find((p) => p.id === post.assigneeId);
+              return (
+                <div
+                  key={post.id}
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => openPreview(post.id)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      openPreview(post.id);
+                    }
+                  }}
+                  className="group flex cursor-pointer flex-col overflow-hidden rounded-lg border bg-background text-left transition-shadow hover:shadow-md"
+                >
+                  <div className="relative aspect-square w-full overflow-hidden bg-muted">
+                    {cover ? (
+                      cover.mediaType === "video" ? (
+                        <video src={cover.imageUrl} muted className="h-full w-full object-cover" />
+                      ) : (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={cover.imageUrl} alt="" className="h-full w-full object-cover transition-transform group-hover:scale-105" />
+                      )
+                    ) : (
+                      <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-teal-500 via-sky-600 to-fuchsia-500" />
+                    )}
+                    {cover?.mediaType === "video" && (
+                      <span className="absolute inset-0 flex items-center justify-center bg-black/10">
+                        <Play className="size-6 fill-white text-white" />
+                      </span>
+                    )}
+                    {post.publishedUrl && (
+                      <a
+                        href={post.publishedUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        onClick={(e) => e.stopPropagation()}
+                        aria-label="Open the published post"
+                        title="Open the published post"
+                        className="absolute right-1.5 top-1.5 flex size-7 items-center justify-center rounded-full bg-background/90 text-foreground opacity-0 shadow transition-opacity group-hover:opacity-100"
+                      >
+                        <ExternalLink className="size-3.5" />
+                      </a>
+                    )}
+                  </div>
+                  <div className="flex flex-col gap-1.5 p-2.5">
+                    <PlatformBadgeGroup platforms={post.platforms} />
+                    <p className="line-clamp-2 text-sm font-medium leading-snug">{post.title}</p>
+                    <div className="flex items-center justify-between">
+                      <span className="font-mono text-[10.5px] text-muted-foreground">{post.targetDate ?? "no date"}</span>
+                      {assignee && (
+                        <Avatar size="sm" title={assignee.fullName}>
+                          <AvatarFallback className="text-[9px]">{assignee.initials}</AvatarFallback>
+                        </Avatar>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      ))}
     </div>
   );
 }

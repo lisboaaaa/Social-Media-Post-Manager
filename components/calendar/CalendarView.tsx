@@ -21,7 +21,6 @@ import { cn } from "@/lib/utils";
 import { PlatformBadge } from "@/components/posts/PlatformBadge";
 
 const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-const MAX_VISIBLE_PER_DAY = 3;
 
 export function CalendarView() {
   const { filteredPosts, openPreview } = useStore();
@@ -34,7 +33,12 @@ export function CalendarView() {
   const days = eachDayOfInterval({ start: gridStart, end: gridEnd });
 
   const postsForDay = (day: Date) =>
-    filteredPosts.filter((post) => post.targetDate && isSameDay(new Date(post.targetDate), day));
+    filteredPosts.filter(
+      // Appending a local time avoids the browser parsing the date-only
+      // string as UTC midnight, which shifts it a day earlier in timezones
+      // behind UTC.
+      (post) => post.targetDate && isSameDay(new Date(`${post.targetDate}T00:00:00`), day),
+    );
 
   return (
     <div className="overflow-hidden rounded-lg border bg-background">
@@ -61,8 +65,6 @@ export function CalendarView() {
       <div className="grid grid-cols-7">
         {days.map((day) => {
           const dayPosts = postsForDay(day);
-          const visible = dayPosts.slice(0, MAX_VISIBLE_PER_DAY);
-          const overflow = dayPosts.length - visible.length;
           const inMonth = isSameMonth(day, cursor);
 
           return (
@@ -84,7 +86,7 @@ export function CalendarView() {
                 {format(day, "d")}
               </span>
               <div className="flex flex-col gap-1">
-                {visible.map((post) => (
+                {dayPosts.map((post) => (
                   <button
                     key={post.id}
                     onClick={() => openPreview(post.id)}
@@ -97,12 +99,12 @@ export function CalendarView() {
                         +{post.platforms.length - 1}
                       </span>
                     )}
+                    {post.needsChanges && (
+                      <span className="size-1.5 shrink-0 rounded-full bg-amber-500" title="Needs changes" />
+                    )}
                     <span className="truncate">{post.title}</span>
                   </button>
                 ))}
-                {overflow > 0 && (
-                  <span className="px-1 font-mono text-[10px] text-muted-foreground">+{overflow} more</span>
-                )}
               </div>
             </div>
           );

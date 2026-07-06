@@ -1,16 +1,29 @@
 "use client";
 
-import { X } from "lucide-react";
+import { useState } from "react";
+import { Settings2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useStore } from "@/lib/store";
 import { PLATFORMS, PLATFORM_LABELS, type Platform } from "@/lib/types";
 import { DateRangeFilter } from "./DateRangeFilter";
+import { ManageCategoriesModal } from "./ManageCategoriesModal";
 
-function FilterGroup({ label, children }: { label: string; children: React.ReactNode }) {
+function FilterGroup({
+  label,
+  action,
+  children,
+}: {
+  label: string;
+  action?: React.ReactNode;
+  children: React.ReactNode;
+}) {
   return (
     <div className="flex flex-col gap-1">
-      <span className="text-[10.5px] font-medium uppercase tracking-wide text-muted-foreground">{label}</span>
+      <div className="flex items-center justify-between gap-2">
+        <span className="text-[10.5px] font-medium uppercase tracking-wide text-muted-foreground">{label}</span>
+        {action}
+      </div>
       {children}
     </div>
   );
@@ -18,6 +31,7 @@ function FilterGroup({ label, children }: { label: string; children: React.React
 
 export function FilterBar() {
   const { filters, setFilters, clearFilters, categories, profiles } = useStore();
+  const [manageCategoriesOpen, setManageCategoriesOpen] = useState(false);
   const active =
     filters.platform !== "all" ||
     filters.categoryId !== "all" ||
@@ -48,7 +62,20 @@ export function FilterBar() {
         </Select>
       </FilterGroup>
 
-      <FilterGroup label="Category">
+      <FilterGroup
+        label="Category"
+        action={
+          <button
+            type="button"
+            onClick={() => setManageCategoriesOpen(true)}
+            aria-label="Manage categories"
+            title="Manage categories"
+            className="text-muted-foreground hover:text-foreground"
+          >
+            <Settings2 className="size-3" />
+          </button>
+        }
+      >
         <Select value={filters.categoryId} onValueChange={(value) => setFilters({ categoryId: value ?? "all" })}>
           <SelectTrigger size="sm" className="w-40">
             <SelectValue placeholder="Category">
@@ -98,6 +125,8 @@ export function FilterBar() {
           Clear
         </Button>
       )}
+
+      <ManageCategoriesModal open={manageCategoriesOpen} onOpenChange={setManageCategoriesOpen} />
     </div>
   );
 }

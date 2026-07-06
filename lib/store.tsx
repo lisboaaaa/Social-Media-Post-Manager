@@ -37,6 +37,7 @@ interface StoreValue {
   movePost: (id: string, destStatus: PostStatus, destIndex: number, extraPatch?: Partial<Post>) => void;
   deletePost: (id: string) => void;
   addCategory: (name: string) => Category;
+  updateCategory: (id: string, name: string) => void;
   deleteCategory: (id: string) => void;
   addComment: (postId: string | null, body: string) => void;
   deleteComment: (id: string) => void;
@@ -279,6 +280,17 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     return category;
   };
 
+  const updateCategory = (id: string, name: string) => {
+    const trimmed = name.trim();
+    if (!trimmed) return;
+    setCategories((prev) => prev.map((c) => (c.id === id ? { ...c, name: trimmed } : c)));
+
+    (async () => {
+      const { error } = await supabase.from("categories").update({ name: trimmed }).eq("id", id);
+      if (error) toast.error(`Couldn't rename the category: ${error.message}`);
+    })();
+  };
+
   const deleteCategory = (id: string) => {
     setCategories((prev) => prev.filter((c) => c.id !== id));
     setPosts((prev) => prev.map((p) => (p.categoryIds.includes(id) ? { ...p, categoryIds: p.categoryIds.filter((c) => c !== id) } : p)));
@@ -359,6 +371,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     movePost,
     deletePost,
     addCategory,
+    updateCategory,
     deleteCategory,
     addComment,
     deleteComment,
