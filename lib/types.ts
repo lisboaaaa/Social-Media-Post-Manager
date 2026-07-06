@@ -68,6 +68,7 @@ export interface Comment {
   postId: string | null; // null = general team comment, not tied to a post
   authorId: string;
   body: string;
+  parentId: string | null; // the comment this one is replying to, if any
   createdAt: string; // ISO datetime
 }
 

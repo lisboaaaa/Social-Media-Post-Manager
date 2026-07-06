@@ -1,7 +1,8 @@
-import { X } from "lucide-react";
+import { CornerUpLeft, X } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 import { isCommentUnread, useStore } from "@/lib/store";
+import { renderWithMentions } from "@/lib/mentions";
 import type { Comment } from "@/lib/types";
 import { CommentReactions } from "./CommentReactions";
 
@@ -15,9 +16,13 @@ function formatWhen(iso: string) {
 export function CommentItem({
   comment,
   unreadSince,
+  parentAuthorName,
+  onReply,
 }: {
   comment: Comment;
   unreadSince?: string | null;
+  parentAuthorName?: string;
+  onReply?: (comment: Comment) => void;
 }) {
   const { profiles, currentUser, deleteComment } = useStore();
   const author = profiles.find((p) => p.id === comment.authorId);
@@ -40,23 +45,44 @@ export function CommentItem({
         <AvatarFallback className="text-[10px]">{author?.initials ?? "?"}</AvatarFallback>
       </Avatar>
       <div className="min-w-0 flex-1">
+        {parentAuthorName && (
+          <div className="mb-0.5 flex items-center gap-1 text-[11px] text-muted-foreground">
+            <CornerUpLeft className="size-3" />
+            Replying to {parentAuthorName}
+          </div>
+        )}
         <div className="flex items-baseline gap-2">
           {isUnread && <span className="size-1.5 shrink-0 rounded-full bg-destructive" aria-label="Unread" />}
           <span className="text-sm font-medium">{isOwn ? "You" : (author?.fullName ?? "Unknown")}</span>
           <span className="font-mono text-[11px] text-muted-foreground">{formatWhen(comment.createdAt)}</span>
-          {isOwn && (
-            <button
-              type="button"
-              onClick={handleDelete}
-              aria-label="Delete note"
-              title="Delete note"
-              className="ml-auto rounded text-muted-foreground opacity-0 hover:text-destructive focus-visible:opacity-100 group-hover:opacity-100"
-            >
-              <X className="size-3" />
-            </button>
-          )}
+          <div className="ml-auto flex items-center gap-1">
+            {onReply && (
+              <button
+                type="button"
+                onClick={() => onReply(comment)}
+                aria-label="Reply"
+                title="Reply"
+                className="rounded text-muted-foreground opacity-0 hover:text-foreground focus-visible:opacity-100 group-hover:opacity-100"
+              >
+                <CornerUpLeft className="size-3" />
+              </button>
+            )}
+            {isOwn && (
+              <button
+                type="button"
+                onClick={handleDelete}
+                aria-label="Delete note"
+                title="Delete note"
+                className="rounded text-muted-foreground opacity-0 hover:text-destructive focus-visible:opacity-100 group-hover:opacity-100"
+              >
+                <X className="size-3" />
+              </button>
+            )}
+          </div>
         </div>
-        <p className="text-sm text-foreground/90 whitespace-pre-wrap break-words">{comment.body}</p>
+        <p className="text-sm text-foreground/90 whitespace-pre-wrap break-words">
+          {renderWithMentions(comment.body, profiles)}
+        </p>
         <CommentReactions commentId={comment.id} />
       </div>
     </div>

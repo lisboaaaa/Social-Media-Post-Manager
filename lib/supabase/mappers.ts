@@ -22,6 +22,7 @@ interface CommentRow {
   post_id: string | null;
   author_id: string;
   body: string;
+  parent_id: string | null;
   created_at: string;
 }
 
@@ -81,7 +82,14 @@ export function mapCategoryRow(row: CategoryRow): Category {
 }
 
 export function mapCommentRow(row: CommentRow): Comment {
-  return { id: row.id, postId: row.post_id, authorId: row.author_id, body: row.body, createdAt: row.created_at };
+  return {
+    id: row.id,
+    postId: row.post_id,
+    authorId: row.author_id,
+    body: row.body,
+    parentId: row.parent_id,
+    createdAt: row.created_at,
+  };
 }
 
 export function mapCommentReactionRow(row: CommentReactionRow): CommentReaction {

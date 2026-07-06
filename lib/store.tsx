@@ -55,7 +55,7 @@ interface StoreValue {
   addCategory: (name: string) => Category;
   updateCategory: (id: string, name: string) => void;
   deleteCategory: (id: string) => void;
-  addComment: (postId: string | null, body: string) => void;
+  addComment: (postId: string | null, body: string, parentId?: string | null) => void;
   deleteComment: (id: string) => void;
   toggleReaction: (commentId: string, emoji: string) => void;
   hasUnreadTeamNotes: boolean;
@@ -455,12 +455,13 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     })();
   };
 
-  const addComment = (postId: string | null, body: string) => {
+  const addComment = (postId: string | null, body: string, parentId: string | null = null) => {
     const comment: Comment = {
       id: crypto.randomUUID(),
       postId,
       authorId: currentUser!.id,
       body,
+      parentId,
       createdAt: new Date().toISOString(),
     };
     setComments((prev) => [...prev, comment]);
@@ -471,6 +472,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         post_id: comment.postId,
         author_id: comment.authorId,
         body: comment.body,
+        parent_id: comment.parentId,
         created_at: comment.createdAt,
       });
       if (error) toast.error(`Couldn't save the comment: ${error.message}`);
