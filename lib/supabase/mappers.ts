@@ -1,10 +1,72 @@
-import type { Category, Comment, Platform, Post, PostImage, Profile } from "@/lib/types";
+import type { Category, Comment, CommentReaction, Platform, Post, PostImage, Profile } from "@/lib/types";
 
 // Shapes coming back from Supabase are snake_case and (for posts) nest their
 // related rows via PostgREST's embedded-resource syntax — these turn that
 // into the camelCase app types the rest of the codebase already expects.
 
-export function mapProfileRow(row: any): Profile {
+interface ProfileRow {
+  id: string;
+  full_name: string;
+  email: string;
+  initials: string;
+  last_read_team_notes_at: string | null;
+}
+
+interface CategoryRow {
+  id: string;
+  name: string;
+}
+
+interface CommentRow {
+  id: string;
+  post_id: string | null;
+  author_id: string;
+  body: string;
+  created_at: string;
+}
+
+interface CommentReactionRow {
+  id: string;
+  comment_id: string;
+  author_id: string;
+  emoji: string;
+  created_at: string;
+}
+
+interface PostPlatformRow {
+  platform: Platform;
+  description: string | null;
+}
+
+interface PostImageRow {
+  id: string;
+  image_url: string;
+  position: number;
+  media_type: PostImage["mediaType"] | null;
+}
+
+interface PostCategoryRow {
+  category_id: string;
+}
+
+interface PostRow {
+  id: string;
+  title: string;
+  status: Post["status"];
+  target_date: string | null;
+  needs_changes: boolean;
+  published_url: string | null;
+  assignee_id: string | null;
+  requested_by_id: string | null;
+  created_by: string;
+  created_at: string;
+  updated_at: string;
+  post_platforms?: PostPlatformRow[];
+  post_images?: PostImageRow[];
+  post_categories?: PostCategoryRow[];
+}
+
+export function mapProfileRow(row: ProfileRow): Profile {
   return {
     id: row.id,
     fullName: row.full_name,
@@ -14,20 +76,24 @@ export function mapProfileRow(row: any): Profile {
   };
 }
 
-export function mapCategoryRow(row: any): Category {
+export function mapCategoryRow(row: CategoryRow): Category {
   return { id: row.id, name: row.name };
 }
 
-export function mapCommentRow(row: any): Comment {
+export function mapCommentRow(row: CommentRow): Comment {
   return { id: row.id, postId: row.post_id, authorId: row.author_id, body: row.body, createdAt: row.created_at };
 }
 
-export function mapPostRow(row: any): Post {
+export function mapCommentReactionRow(row: CommentReactionRow): CommentReaction {
+  return { id: row.id, commentId: row.comment_id, authorId: row.author_id, emoji: row.emoji, createdAt: row.created_at };
+}
+
+export function mapPostRow(row: PostRow): Post {
   const descriptions: Record<Platform, string> = { linkedin: "", instagram: "", x: "" };
   const platforms: Platform[] = [];
   for (const p of row.post_platforms ?? []) {
     platforms.push(p.platform);
-    descriptions[p.platform as Platform] = p.description ?? "";
+    descriptions[p.platform] = p.description ?? "";
   }
 
   const images: PostImage[] = [...(row.post_images ?? [])]
@@ -40,7 +106,7 @@ export function mapPostRow(row: any): Post {
       mediaType: img.media_type ?? "image",
     }));
 
-  const categoryIds: string[] = (row.post_categories ?? []).map((pc: any) => pc.category_id);
+  const categoryIds: string[] = (row.post_categories ?? []).map((pc) => pc.category_id);
 
   return {
     id: row.id,

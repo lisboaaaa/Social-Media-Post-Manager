@@ -3,6 +3,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 import { isCommentUnread, useStore } from "@/lib/store";
 import type { Comment } from "@/lib/types";
+import { CommentReactions } from "./CommentReactions";
 
 function formatWhen(iso: string) {
   return new Date(iso).toLocaleString(undefined, {
@@ -56,6 +57,7 @@ export function CommentItem({
           )}
         </div>
         <p className="text-sm text-foreground/90 whitespace-pre-wrap break-words">{comment.body}</p>
+        <CommentReactions commentId={comment.id} />
       </div>
     </div>
   );

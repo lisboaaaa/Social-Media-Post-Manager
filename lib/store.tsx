@@ -3,8 +3,8 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { toast } from "sonner";
 import { createClient } from "./supabase/client";
-import { mapCategoryRow, mapCommentRow, mapPostRow, mapProfileRow, POST_SELECT } from "./supabase/mappers";
-import type { Category, Comment, Platform, Post, PostStatus, Profile } from "./types";
+import { mapCategoryRow, mapCommentReactionRow, mapCommentRow, mapPostRow, mapProfileRow, POST_SELECT } from "./supabase/mappers";
+import type { Category, Comment, CommentReaction, Platform, Post, PostStatus, Profile } from "./types";
 
 export interface Filters {
   platform: Platform | "all";
@@ -26,6 +26,7 @@ interface StoreValue {
   categories: Category[];
   profiles: Profile[];
   comments: Comment[];
+  commentReactions: CommentReaction[];
   currentUser: Profile;
   filters: Filters;
   setFilters: (filters: Partial<Filters>) => void;
@@ -41,6 +42,7 @@ interface StoreValue {
   deleteCategory: (id: string) => void;
   addComment: (postId: string | null, body: string) => void;
   deleteComment: (id: string) => void;
+  toggleReaction: (commentId: string, emoji: string) => void;
   hasUnreadTeamNotes: boolean;
   lastReadTeamNotesAt: string | null;
   markTeamNotesRead: () => void;
@@ -60,6 +62,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [categories, setCategories] = useState<Category[]>([]);
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [comments, setComments] = useState<Comment[]>([]);
+  const [commentReactions, setCommentReactions] = useState<CommentReaction[]>([]);
   const [filters, setFiltersState] = useState<Filters>(EMPTY_FILTERS);
   const [previewPostId, setPreviewPostId] = useState<string | null>(null);
 
@@ -67,12 +70,13 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     let cancelled = false;
 
     async function load() {
-      const [userRes, profilesRes, categoriesRes, postsRes, commentsRes] = await Promise.all([
+      const [userRes, profilesRes, categoriesRes, postsRes, commentsRes, reactionsRes] = await Promise.all([
         supabase.auth.getUser(),
         supabase.from("profiles").select("*"),
         supabase.from("categories").select("*"),
         supabase.from("posts").select(POST_SELECT).order("created_at", { ascending: true }),
         supabase.from("comments").select("*").order("created_at", { ascending: true }),
+        supabase.from("comment_reactions").select("*"),
       ]);
 
       if (cancelled) return;
@@ -87,6 +91,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       setCategories((categoriesRes.data ?? []).map(mapCategoryRow));
       setPosts((postsRes.data ?? []).map(mapPostRow));
       setComments((commentsRes.data ?? []).map(mapCommentRow));
+      setCommentReactions((reactionsRes.data ?? []).map(mapCommentReactionRow));
       setLoading(false);
     }
 
@@ -336,6 +341,43 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     })();
   };
 
+  // Toggling mirrors most chat apps: picking an emoji you've already reacted
+  // with removes it again, rather than stacking duplicate reactions.
+  const toggleReaction = (commentId: string, emoji: string) => {
+    const existing = commentReactions.find(
+      (r) => r.commentId === commentId && r.authorId === currentUser.id && r.emoji === emoji,
+    );
+
+    if (existing) {
+      setCommentReactions((prev) => prev.filter((r) => r.id !== existing.id));
+      (async () => {
+        const { error } = await supabase.from("comment_reactions").delete().eq("id", existing.id);
+        if (error) toast.error(`Couldn't remove the reaction: ${error.message}`);
+      })();
+      return;
+    }
+
+    const reaction: CommentReaction = {
+      id: crypto.randomUUID(),
+      commentId,
+      authorId: currentUser.id,
+      emoji,
+      createdAt: new Date().toISOString(),
+    };
+    setCommentReactions((prev) => [...prev, reaction]);
+
+    (async () => {
+      const { error } = await supabase.from("comment_reactions").insert({
+        id: reaction.id,
+        comment_id: reaction.commentId,
+        author_id: reaction.authorId,
+        emoji: reaction.emoji,
+        created_at: reaction.createdAt,
+      });
+      if (error) toast.error(`Couldn't add the reaction: ${error.message}`);
+    })();
+  };
+
   const lastReadTeamNotesAt = currentUser?.lastReadTeamNotesAt ?? null;
 
   const hasUnreadTeamNotes = useMemo(
@@ -360,6 +402,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     categories,
     profiles,
     comments,
+    commentReactions,
     currentUser,
     filters,
     setFilters,
@@ -375,6 +418,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     deleteCategory,
     addComment,
     deleteComment,
+    toggleReaction,
     hasUnreadTeamNotes,
     lastReadTeamNotesAt,
     markTeamNotesRead,

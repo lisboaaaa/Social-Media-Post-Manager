@@ -71,6 +71,14 @@ export interface Comment {
   createdAt: string; // ISO datetime
 }
 
+export interface CommentReaction {
+  id: string;
+  commentId: string;
+  authorId: string;
+  emoji: string;
+  createdAt: string; // ISO datetime
+}
+
 export interface Post {
   id: string;
   platforms: Platform[];
