@@ -75,6 +75,10 @@ export function ImageCarousel({
               key={img.id}
               src={img.imageUrl}
               controls
+              autoPlay
+              loop
+              muted
+              playsInline
               className={cn("h-full w-full shrink-0", fit === "contain" ? "object-contain" : "object-cover")}
             />
           ) : (

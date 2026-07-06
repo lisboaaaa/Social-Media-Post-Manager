@@ -15,7 +15,7 @@ export function Column({
   hint?: string;
 }) {
   return (
-    <div className="flex w-56 shrink-0 flex-col">
+    <div className="flex min-w-0 flex-col">
       <div className="mb-1 flex items-center justify-between px-0.5">
         <h2 className="text-base font-semibold tracking-wide">{label}</h2>
         <span className="rounded-full border bg-background px-1.5 py-0.5 font-mono text-[10.5px] text-muted-foreground">

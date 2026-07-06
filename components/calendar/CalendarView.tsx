@@ -94,6 +94,11 @@ export function CalendarView() {
                     title={post.title}
                   >
                     <PlatformBadge platform={post.platforms[0]} className="px-1 py-0 gap-1 shrink-0" />
+                    {post.platforms.length > 1 && (
+                      <span className="shrink-0 font-mono text-[9px] text-muted-foreground" title={`Also on ${post.platforms.length - 1} more platform${post.platforms.length > 2 ? "s" : ""}`}>
+                        +{post.platforms.length - 1}
+                      </span>
+                    )}
                     {post.needsChanges && (
                       <span className="size-1.5 shrink-0 rounded-full bg-amber-500" title="Needs changes" />
                     )}

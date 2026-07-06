@@ -65,7 +65,10 @@ export function Board() {
   return (
     <>
       <DragDropContext onDragEnd={onDragEnd}>
-        <div ref={rowRef} className="scrollbar-hide flex flex-1 items-stretch gap-3 overflow-x-auto pb-2">
+        <div
+          ref={rowRef}
+          className="scrollbar-hide grid flex-1 grid-cols-[repeat(7,minmax(168px,1fr))] items-stretch gap-3 overflow-x-auto pb-2 mx-auto w-full max-w-[1700px]"
+        >
           {POST_STATUSES.map(({ value, label }) => (
             <Column
               key={value}

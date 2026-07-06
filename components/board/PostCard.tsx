@@ -1,4 +1,5 @@
 import { Draggable } from "@hello-pangea/dnd";
+import { format } from "date-fns";
 import { Play } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -40,7 +41,7 @@ export function PostCard({ post, index }: { post: Post; index: number }) {
           {post.images.length > 0 ? (
             post.images[0].mediaType === "video" ? (
               <div className="relative mb-2 h-20 w-full overflow-hidden rounded-md bg-muted">
-                <video src={post.images[0].imageUrl} muted className="h-full w-full object-cover" />
+                <video src={post.images[0].imageUrl} autoPlay loop muted playsInline className="h-full w-full object-cover" />
                 <span className="absolute inset-0 flex items-center justify-center bg-black/20">
                   <Play className="size-5 fill-white text-white" />
                 </span>
@@ -73,8 +74,8 @@ export function PostCard({ post, index }: { post: Post; index: number }) {
             ) : (
               <span />
             )}
-            <span className="font-mono text-[10.5px] text-muted-foreground">
-              {post.targetDate ?? "no date"}
+            <span className="text-[10.5px] font-medium text-muted-foreground">
+              {post.targetDate ? format(new Date(`${post.targetDate}T00:00:00`), "MMM d") : "No date"}
             </span>
           </div>
         </div>

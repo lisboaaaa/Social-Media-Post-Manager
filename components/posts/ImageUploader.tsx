@@ -69,7 +69,7 @@ export function ImageUploader({
         {images.map((img) => (
           <div key={img.id} className="group relative h-32 w-32 shrink-0 overflow-hidden rounded-md border bg-muted">
             {img.mediaType === "video" ? (
-              <video src={img.imageUrl} muted className="h-full w-full object-cover" />
+              <video src={img.imageUrl} autoPlay loop muted playsInline className="h-full w-full object-cover" />
             ) : (
               // eslint-disable-next-line @next/next/no-img-element
               <img src={img.imageUrl} alt="" className="h-full w-full object-cover" />

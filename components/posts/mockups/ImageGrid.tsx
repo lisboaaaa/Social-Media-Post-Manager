@@ -5,7 +5,7 @@ function Tile({ image, onClick, overflow }: { image: PostImage; onClick: () => v
   return (
     <button type="button" onClick={onClick} className="relative block h-full w-full overflow-hidden bg-muted">
       {image.mediaType === "video" ? (
-        <video src={image.imageUrl} muted className="h-full w-full object-cover" />
+        <video src={image.imageUrl} autoPlay loop muted playsInline className="h-full w-full object-cover" />
       ) : (
         // eslint-disable-next-line @next/next/no-img-element
         <img src={image.imageUrl} alt="" draggable={false} className="h-full w-full object-cover" />

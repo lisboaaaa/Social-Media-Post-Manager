@@ -1,9 +1,13 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { format } from "date-fns";
+import { toast } from "sonner";
+import { Copy } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { buttonVariants } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
 import { useStore } from "@/lib/store";
@@ -13,7 +17,8 @@ import { PlatformBadgeGroup } from "./PlatformBadge";
 import { PlatformMockup } from "./mockups/PlatformMockup";
 
 export function PostPreviewModal() {
-  const { previewPostId, closePreview, getPostById, profiles, categories } = useStore();
+  const router = useRouter();
+  const { previewPostId, closePreview, getPostById, addPost, profiles, categories } = useStore();
   const post = previewPostId ? getPostById(previewPostId) : undefined;
 
   const open = Boolean(post);
@@ -21,13 +26,33 @@ export function PostPreviewModal() {
   const statusLabel = post ? POST_STATUSES.find((s) => s.value === post.status)?.label : undefined;
   const postCategories = post ? categories.filter((c) => post.categoryIds.includes(c.id)) : [];
 
+  const handleDuplicate = () => {
+    if (!post) return;
+    const duplicate = addPost({
+      platforms: post.platforms,
+      title: post.title ? `${post.title} (copy)` : "",
+      descriptions: post.descriptions,
+      status: "backlog",
+      targetDate: null,
+      needsChanges: false,
+      publishedUrl: null,
+      assigneeId: null,
+      requestedById: null,
+      categoryIds: post.categoryIds,
+      images: post.images.map((img) => ({ ...img, id: crypto.randomUUID(), postId: "" })),
+    });
+    closePreview();
+    toast.success("Post duplicated — tweak it and save when ready");
+    router.push(`/posts/${duplicate.id}`);
+  };
+
   return (
     <Dialog open={open} onOpenChange={(next) => !next && closePreview()}>
       <DialogContent className="sm:max-w-xl max-h-[85vh] overflow-y-auto">
         {post && (
           <>
             <DialogHeader>
-              <div className="mb-1 flex items-center justify-between gap-2 pr-8">
+              <div className="mb-1 flex flex-wrap items-center justify-between gap-2 pr-8">
                 <div className="flex items-center gap-2">
                   <PlatformBadgeGroup platforms={post.platforms} />
                   {post.needsChanges && (
@@ -39,9 +64,15 @@ export function PostPreviewModal() {
                     {statusLabel}
                   </Badge>
                 </div>
-                <Link href={`/posts/${post.id}`} onClick={closePreview} className={buttonVariants({ size: "default" })}>
-                  Edit post
-                </Link>
+                <div className="flex items-center gap-2">
+                  <Button type="button" variant="outline" onClick={handleDuplicate}>
+                    <Copy className="size-3.5" />
+                    Duplicate
+                  </Button>
+                  <Link href={`/posts/${post.id}`} onClick={closePreview} className={buttonVariants({ size: "default" })}>
+                    Edit post
+                  </Link>
+                </div>
               </div>
               <DialogTitle>{post.title || "Untitled post"}</DialogTitle>
             </DialogHeader>
@@ -74,7 +105,13 @@ export function PostPreviewModal() {
               </div>
               <div>
                 <div className="text-xs text-muted-foreground">Target date</div>
-                <div className="font-mono mt-1">{post.targetDate ?? <span className="font-sans text-muted-foreground">no date</span>}</div>
+                <div className="mt-1 font-medium">
+                  {post.targetDate ? (
+                    format(new Date(`${post.targetDate}T00:00:00`), "MMM d, yyyy")
+                  ) : (
+                    <span className="font-normal text-muted-foreground">No date</span>
+                  )}
+                </div>
               </div>
               {post.publishedUrl && (
                 <div className="col-span-2">

@@ -81,7 +81,7 @@ export function ArchiveView() {
                   <div className="relative aspect-square w-full overflow-hidden bg-muted">
                     {cover ? (
                       cover.mediaType === "video" ? (
-                        <video src={cover.imageUrl} muted className="h-full w-full object-cover" />
+                        <video src={cover.imageUrl} autoPlay loop muted playsInline className="h-full w-full object-cover" />
                       ) : (
                         // eslint-disable-next-line @next/next/no-img-element
                         <img src={cover.imageUrl} alt="" className="h-full w-full object-cover transition-transform group-hover:scale-105" />

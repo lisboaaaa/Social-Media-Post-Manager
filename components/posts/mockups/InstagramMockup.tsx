@@ -43,7 +43,7 @@ export function InstagramMockup({
   if (video && !desktop) {
     return (
       <div className="relative mx-auto aspect-[9/16] w-full max-w-[280px] overflow-hidden rounded-lg bg-black">
-        <video src={video.imageUrl} controls className="h-full w-full object-cover" />
+        <video src={video.imageUrl} controls autoPlay loop muted playsInline className="h-full w-full object-cover" />
         <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-3 pb-12 text-white">
           <div className="flex items-center gap-1.5">
             {avatar}
@@ -75,7 +75,7 @@ export function InstagramMockup({
     return (
       <div className="mx-auto flex w-full max-w-2xl overflow-hidden rounded-lg border bg-white">
         <div className={cn("w-[55%] shrink-0 bg-black", video ? "aspect-[9/16]" : "aspect-square")}>
-          {video ? <video src={video.imageUrl} controls className="h-full w-full object-cover" /> : media}
+          {video ? <video src={video.imageUrl} controls autoPlay loop muted playsInline className="h-full w-full object-cover" /> : media}
         </div>
         <div className="flex min-w-0 flex-1 flex-col">
           <div className="flex items-center gap-2 border-b px-3 py-2.5">
