@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import { AlertTriangle, CalendarClock, CheckCircle2, Layers } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Layers } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useStore } from "@/lib/store";
 import { computePersonalStats } from "@/lib/stats";
@@ -55,11 +55,10 @@ export function PersonalStatsModal({ open, onOpenChange }: PersonalStatsModalPro
           </p>
         </DialogHeader>
 
-        <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
+        <div className="grid grid-cols-3 gap-2.5">
           <StatTile icon={Layers} label="Total posts" value={stats.totalPosts} accent={STAGE_COLOR} />
           <StatTile icon={CheckCircle2} label="Published" value={stats.publishedPosts} accent="#0ca30c" />
           <StatTile icon={AlertTriangle} label="Needs changes" value={stats.needsChangesPosts} accent={NEEDS_CHANGES_COLOR} />
-          <StatTile icon={CalendarClock} label="Avg / week" value={stats.avgPostsPerWeek.toFixed(1)} accent={TREND_COLOR} />
         </div>
 
         <StatsSection title="Posts by stage" color={STAGE_COLOR}>

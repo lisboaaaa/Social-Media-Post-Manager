@@ -86,8 +86,23 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         toast.error(`Couldn't load data from Supabase: ${firstError.message}`);
       }
 
-      setUserEmail(userRes.data.user?.email ?? null);
-      setProfiles((profilesRes.data ?? []).map(mapProfileRow));
+      const email = userRes.data.user?.email ?? null;
+      let loadedProfiles = (profilesRes.data ?? []).map(mapProfileRow);
+
+      // A brand-new sign-in's profile is created by a database trigger, which
+      // can lag a beat behind this fetch — retry a few times rather than
+      // ever falling back to a different, unrelated profile.
+      for (let attempt = 0; email && !loadedProfiles.some((p) => p.email === email) && attempt < 5; attempt++) {
+        await new Promise((resolve) => setTimeout(resolve, 700));
+        if (cancelled) return;
+        const retryRes = await supabase.from("profiles").select("*");
+        loadedProfiles = (retryRes.data ?? []).map(mapProfileRow);
+      }
+
+      if (cancelled) return;
+
+      setUserEmail(email);
+      setProfiles(loadedProfiles);
       setCategories((categoriesRes.data ?? []).map(mapCategoryRow));
       setPosts((postsRes.data ?? []).map(mapPostRow));
       setComments((commentsRes.data ?? []).map(mapCommentRow));
@@ -101,8 +116,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     };
   }, [supabase]);
 
+  // Never fall back to a different, unrelated profile — showing the wrong
+  // person's name and history is far worse than a brief "no profile yet".
   const currentUser = useMemo(
-    () => profiles.find((p) => p.email === userEmail) ?? profiles[0],
+    () => profiles.find((p) => p.email === userEmail),
     [profiles, userEmail],
   );
 
@@ -159,7 +176,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     const post: Post = {
       ...input,
       id: crypto.randomUUID(),
-      createdBy: input.createdBy ?? currentUser.id,
+      createdBy: input.createdBy ?? currentUser!.id,
       createdAt: timestamp,
       updatedAt: timestamp,
     };
@@ -314,7 +331,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     const comment: Comment = {
       id: crypto.randomUUID(),
       postId,
-      authorId: currentUser.id,
+      authorId: currentUser!.id,
       body,
       createdAt: new Date().toISOString(),
     };
@@ -345,7 +362,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   // with removes it again, rather than stacking duplicate reactions.
   const toggleReaction = (commentId: string, emoji: string) => {
     const existing = commentReactions.find(
-      (r) => r.commentId === commentId && r.authorId === currentUser.id && r.emoji === emoji,
+      (r) => r.commentId === commentId && r.authorId === currentUser!.id && r.emoji === emoji,
     );
 
     if (existing) {
@@ -360,7 +377,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     const reaction: CommentReaction = {
       id: crypto.randomUUID(),
       commentId,
-      authorId: currentUser.id,
+      authorId: currentUser!.id,
       emoji,
       createdAt: new Date().toISOString(),
     };
@@ -403,7 +420,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     profiles,
     comments,
     commentReactions,
-    currentUser,
+    currentUser: currentUser!,
     filters,
     setFilters,
     clearFilters,
