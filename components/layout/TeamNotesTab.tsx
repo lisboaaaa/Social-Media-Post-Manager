@@ -5,8 +5,6 @@ import { MessageSquareText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { GeneralComments } from "@/components/comments/GeneralComments";
 import { RecentPostComments } from "@/components/comments/RecentPostComments";
 import { useStore } from "@/lib/store";
 
@@ -40,32 +38,17 @@ export function TeamNotesTab() {
         <SheetHeader>
           <SheetTitle>Team notes</SheetTitle>
         </SheetHeader>
-        <Tabs defaultValue="general" className="flex flex-1 flex-col overflow-hidden px-4">
-          <TabsList className="w-full">
-            <TabsTrigger value="general">General notes</TabsTrigger>
-            <TabsTrigger value="posts">Post comments</TabsTrigger>
-          </TabsList>
-          <TabsContent value="general" className="flex-1 overflow-hidden">
-            <ScrollArea className="h-full">
-              <div className="pb-4 pt-3">
-                <GeneralComments unreadSince={unreadSince} />
-              </div>
-            </ScrollArea>
-          </TabsContent>
-          <TabsContent value="posts" className="flex-1 overflow-hidden">
-            <ScrollArea className="h-full">
-              <div className="pb-4 pt-3">
-                <RecentPostComments
-                  unreadSince={unreadSince}
-                  onOpenPost={(postId) => {
-                    setOpen(false);
-                    openPreview(postId);
-                  }}
-                />
-              </div>
-            </ScrollArea>
-          </TabsContent>
-        </Tabs>
+        <ScrollArea className="flex-1 px-4">
+          <div className="pb-4">
+            <RecentPostComments
+              unreadSince={unreadSince}
+              onOpenPost={(postId) => {
+                setOpen(false);
+                openPreview(postId);
+              }}
+            />
+          </div>
+        </ScrollArea>
       </SheetContent>
     </Sheet>
   );
