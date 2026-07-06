@@ -43,9 +43,19 @@ create trigger on_auth_user_created
   for each row execute function public.handle_new_user();
 
 -- Belt-and-braces: the app also tries to create your profile itself the
--- moment you sign in, in case the trigger above ever doesn't run. This
--- policy is what lets that succeed — a uniquely-named addition, so it's
--- safe to run even if profiles already has other policies.
+-- moment you sign in, in case the trigger above ever doesn't run.
+-- IMPORTANT: enabling row-level security only takes effect together with
+-- explicit policies for every operation the app needs — read and update,
+-- not just insert — otherwise turning it on locks everyone out of the
+-- table entirely. These are uniquely-named, so safe to run even if
+-- profiles already has other policies from elsewhere.
 alter table public.profiles enable row level security;
+
+drop policy if exists "profiles select" on public.profiles;
+create policy "profiles select" on public.profiles for select using (true);
+
 drop policy if exists "profiles self-provision insert" on public.profiles;
 create policy "profiles self-provision insert" on public.profiles for insert with check (true);
+
+drop policy if exists "profiles update" on public.profiles;
+create policy "profiles update" on public.profiles for update using (true) with check (true);
