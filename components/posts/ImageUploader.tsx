@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ImagePlus, Play, X } from "lucide-react";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
@@ -20,7 +20,9 @@ export function ImageUploader({
   const inputRef = useRef<HTMLInputElement>(null);
   const [uploadingIds, setUploadingIds] = useState<Set<string>>(new Set());
   const imagesRef = useRef(images);
-  imagesRef.current = images;
+  useEffect(() => {
+    imagesRef.current = images;
+  }, [images]);
 
   const addFiles = (files: FileList | null) => {
     if (!files || files.length === 0) return;
@@ -65,7 +67,7 @@ export function ImageUploader({
       {limitWarning && <p className="text-xs text-amber-600">{limitWarning}</p>}
       <div className="flex flex-wrap gap-2">
         {images.map((img) => (
-          <div key={img.id} className="group relative h-20 w-20 shrink-0 overflow-hidden rounded-md border bg-muted">
+          <div key={img.id} className="group relative h-32 w-32 shrink-0 overflow-hidden rounded-md border bg-muted">
             {img.mediaType === "video" ? (
               <video src={img.imageUrl} muted className="h-full w-full object-cover" />
             ) : (
@@ -74,11 +76,11 @@ export function ImageUploader({
             )}
             {img.mediaType === "video" && (
               <span className="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/20">
-                <Play className="size-5 fill-white text-white" />
+                <Play className="size-6 fill-white text-white" />
               </span>
             )}
             {uploadingIds.has(img.id) && (
-              <span className="absolute inset-0 flex items-center justify-center bg-black/50 text-[10px] text-white">
+              <span className="absolute inset-0 flex items-center justify-center bg-black/50 text-xs text-white">
                 Uploading…
               </span>
             )}
@@ -86,10 +88,10 @@ export function ImageUploader({
               <button
                 type="button"
                 onClick={() => remove(img.id)}
-                className="absolute right-0.5 top-0.5 rounded-full bg-background/90 p-0.5 opacity-0 shadow transition-opacity group-hover:opacity-100"
+                className="absolute right-1 top-1 rounded-full bg-background/90 p-1 opacity-0 shadow transition-opacity group-hover:opacity-100"
                 aria-label="Remove image"
               >
-                <X className="size-3" />
+                <X className="size-3.5" />
               </button>
             )}
           </div>
@@ -99,10 +101,10 @@ export function ImageUploader({
             <button
               type="button"
               onClick={() => inputRef.current?.click()}
-              className="flex h-20 w-20 shrink-0 flex-col items-center justify-center gap-1 rounded-md border border-dashed text-muted-foreground hover:bg-muted/50"
+              className="flex h-32 w-32 shrink-0 flex-col items-center justify-center gap-1.5 rounded-md border border-dashed text-muted-foreground hover:bg-muted/50"
             >
-              <ImagePlus className="size-4" />
-              <span className="text-[10px]">Add media</span>
+              <ImagePlus className="size-5" />
+              <span className="text-xs">Add media</span>
             </button>
             <input
               ref={inputRef}

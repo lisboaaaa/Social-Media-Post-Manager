@@ -27,7 +27,7 @@ export function GeneralComments({ unreadSince }: { unreadSince?: string | null }
   return (
     <div className="flex flex-col gap-3">
       <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">General notes</h3>
-      <CommentForm onSubmit={(body) => addComment(null, body)} placeholder="Share a note with the team…" />
+      <CommentForm onSubmit={(body) => addComment(null, body)} placeholder="Share a note with the team…" showButton={false} />
       <div className="flex flex-col gap-3">
         {generalComments.length === 0 && (
           <p className="text-sm text-muted-foreground">No general notes yet.</p>

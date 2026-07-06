@@ -7,9 +7,11 @@ import { Textarea } from "@/components/ui/textarea";
 export function CommentForm({
   onSubmit,
   placeholder = "Write a comment…",
+  showButton = true,
 }: {
   onSubmit: (body: string) => void;
   placeholder?: string;
+  showButton?: boolean;
 }) {
   const [body, setBody] = useState("");
 
@@ -46,12 +48,13 @@ export function CommentForm({
           }
         }}
       />
-      <div className="flex items-center justify-between">
-        <span className="text-xs text-muted-foreground">Enter to send, Ctrl+Enter for a new line</span>
-        <Button size="sm" onClick={submit} disabled={!body.trim()}>
-          Comment
-        </Button>
-      </div>
+      {showButton && (
+        <div className="flex items-center justify-end">
+          <Button size="sm" onClick={submit} disabled={!body.trim()}>
+            Comment
+          </Button>
+        </div>
+      )}
     </div>
   );
 }

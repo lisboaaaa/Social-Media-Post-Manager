@@ -1,22 +1,25 @@
 "use client";
 
-import { useRef, useState, type FormEvent } from "react";
+import { useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { ArrowLeft, Trash2 } from "lucide-react";
+import { format } from "date-fns";
+import { ArrowLeft, CalendarIcon, Trash2, X } from "lucide-react";
 import { Button, buttonVariants } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { CategoryPicker } from "./CategoryPicker";
 import { CharacterCounter } from "./CharacterCounter";
 import { ImageUploader } from "./ImageUploader";
 import { PlatformBadge } from "./PlatformBadge";
 import { useStore } from "@/lib/store";
+import { cn } from "@/lib/utils";
 import {
   PLATFORMS,
   PLATFORM_IMAGE_LIMITS,
@@ -41,13 +44,15 @@ export function PostForm({ post }: { post?: Post }) {
   );
   const [status, setStatus] = useState<PostStatus>(post?.status ?? "backlog");
   const [targetDate, setTargetDate] = useState(post?.targetDate ?? "");
-  const [needsChanges, setNeedsChanges] = useState(post?.needsChanges ?? false);
+  // No longer user-editable here — preserved as-is; it's set automatically
+  // when a post gets sent back from In Review (see Board's needsChangesPatch).
+  const needsChanges = post?.needsChanges ?? false;
   const [publishedUrl, setPublishedUrl] = useState(post?.publishedUrl ?? "");
   const [assigneeId, setAssigneeId] = useState(post?.assigneeId ?? NONE);
   const [requestedById, setRequestedById] = useState(post?.requestedById ?? NONE);
   const [categoryIds, setCategoryIds] = useState<string[]>(post?.categoryIds ?? []);
   const [images, setImages] = useState(post?.images ?? []);
-  const targetDateRef = useRef<HTMLInputElement>(null);
+  const [dateOpen, setDateOpen] = useState(false);
 
   const needsDateForScheduled = status === "scheduled" && !targetDate;
   const imageLimit = platforms.length > 0 ? Math.min(...platforms.map((p) => PLATFORM_IMAGE_LIMITS[p])) : undefined;
@@ -57,6 +62,9 @@ export function PostForm({ post }: { post?: Post }) {
   const hasVideo = images.some((img) => img.mediaType === "video");
   const hasMixedMedia = hasVideo && images.length > 1;
   const isArchived = post?.status === "published";
+  // Published URL only matters once a post is actually going out — hiding it
+  // earlier keeps the sidebar focused on what's relevant right now.
+  const showPublishedUrl = status === "scheduled" || status === "published";
 
   const togglePlatform = (platform: Platform, checked: boolean) => {
     setPlatforms((prev) => (checked ? [...prev, platform] : prev.filter((p) => p !== platform)));
@@ -72,7 +80,7 @@ export function PostForm({ post }: { post?: Post }) {
 
     if (needsDateForScheduled) {
       toast.error("Pick a target date before moving this post to Scheduled.");
-      targetDateRef.current?.focus();
+      setDateOpen(true);
       return;
     }
 
@@ -112,15 +120,15 @@ export function PostForm({ post }: { post?: Post }) {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="mx-auto flex w-full max-w-2xl flex-col gap-6">
+    <form onSubmit={handleSubmit} className="mx-auto flex w-full max-w-5xl flex-col gap-6">
       <div className="flex items-center justify-between">
         <Link href="/board" className={buttonVariants({ variant: "ghost", size: "sm" })}>
           <ArrowLeft className="size-3.5" />
           Back to board
         </Link>
         {post && (
-          <Button type="button" variant="destructive" size="sm" onClick={handleDelete}>
-            <Trash2 className="size-3.5" />
+          <Button type="button" variant="destructive" size="lg" onClick={handleDelete}>
+            <Trash2 className="size-4" />
             Delete post
           </Button>
         )}
@@ -130,181 +138,220 @@ export function PostForm({ post }: { post?: Post }) {
 
       {isArchived && (
         <p className="rounded-lg border bg-muted/50 p-3 text-sm text-muted-foreground">
-          This post is published — it's locked as a historical record. You can still update the published URL below.
+          {"This post is published — it's locked as a historical record. You can still update the published URL below."}
         </p>
       )}
 
-      <div className="flex flex-col gap-1.5">
-        <Label className="text-base">Platforms</Label>
-        <div className="flex flex-wrap gap-x-4 gap-y-2">
-          {PLATFORMS.map((p) => (
-            <label key={p} className="flex items-center gap-1.5">
-              <Checkbox
-                checked={platforms.includes(p)}
-                onCheckedChange={(checked) => togglePlatform(p, checked === true)}
+      <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-[1fr_340px]">
+        {/* Content — the writing and creative work */}
+        <div className="flex flex-col gap-6">
+          <div className="flex flex-col gap-2">
+            <Label className="text-lg font-semibold">Platforms</Label>
+            <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
+              {PLATFORMS.map((p) => (
+                <label key={p} className="flex items-center gap-2">
+                  <Checkbox
+                    className="size-5"
+                    checked={platforms.includes(p)}
+                    onCheckedChange={(checked) => togglePlatform(p, checked === true)}
+                    disabled={isArchived}
+                  />
+                  <PlatformBadge platform={p} className="px-2 py-1 text-xs" />
+                </label>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <div className="flex items-baseline gap-2">
+              <Label htmlFor="title" className="text-lg font-semibold">Title</Label>
+              <span className="text-xs text-muted-foreground">internal only, never published</span>
+            </div>
+            <Input
+              id="title"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="e.g. Q3 webinar announcement"
+              disabled={isArchived}
+            />
+          </div>
+
+          {PLATFORMS.filter((p) => platforms.includes(p)).map((p) => (
+            <div key={p} className="flex flex-col gap-2">
+              <div className="flex items-center justify-between">
+                <Label htmlFor={`description-${p}`} className="text-lg font-semibold">
+                  {platforms.length > 1 ? `Description — ${PLATFORM_LABELS[p]}` : "Description"}
+                </Label>
+                <CharacterCounter platform={p} length={descriptions[p].length} />
+              </div>
+              <Textarea
+                id={`description-${p}`}
+                value={descriptions[p]}
+                onChange={(e) => setDescriptions((prev) => ({ ...prev, [p]: e.target.value }))}
+                rows={6}
+                placeholder="Write the post copy — this is what actually gets published…"
                 disabled={isArchived}
               />
-              <PlatformBadge platform={p} />
-            </label>
+            </div>
           ))}
-        </div>
-      </div>
 
-      <div className="flex flex-col gap-1.5">
-        <Label htmlFor="title" className="text-base">Title</Label>
-        <p className="text-xs text-muted-foreground">
-          Short internal label, just so the team can scan the board — never published.
-        </p>
-        <Input
-          id="title"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          placeholder="e.g. Q3 webinar announcement"
-          disabled={isArchived}
-        />
-      </div>
-
-      {PLATFORMS.filter((p) => platforms.includes(p)).map((p) => (
-        <div key={p} className="flex flex-col gap-1.5">
-          <div className="flex items-center justify-between">
-            <Label htmlFor={`description-${p}`}>
-              <PlatformBadge platform={p} />
-            </Label>
-            <CharacterCounter platform={p} length={descriptions[p].length} />
+          <div className="flex flex-col gap-2">
+            <div className="flex items-baseline gap-2">
+              <Label className="text-lg font-semibold">Images / video</Label>
+              <span className="text-xs text-muted-foreground">shared across every platform above</span>
+            </div>
+            <ImageUploader
+              images={images}
+              onChange={setImages}
+              disabled={isArchived}
+              limitWarning={
+                hasMixedMedia
+                  ? "Most platforms don't support mixing photos with video — only the video will be used."
+                  : overLimitPlatform
+                    ? `${images.length} photos added — ${PLATFORM_LABELS[overLimitPlatform]} only shows the first ${imageLimit}.`
+                    : undefined
+              }
+            />
           </div>
-          <Textarea
-            id={`description-${p}`}
-            value={descriptions[p]}
-            onChange={(e) => setDescriptions((prev) => ({ ...prev, [p]: e.target.value }))}
-            rows={6}
-            placeholder="Write the post copy — this is what actually gets published…"
-            disabled={isArchived}
-          />
-        </div>
-      ))}
 
-      <div className="flex flex-col gap-1.5">
-        <Label className="text-base">Images / video</Label>
-        <p className="text-xs text-muted-foreground">Shared across every platform picked above.</p>
-        <ImageUploader
-          images={images}
-          onChange={setImages}
-          disabled={isArchived}
-          limitWarning={
-            hasMixedMedia
-              ? "Most platforms don't support mixing photos with video — only the video will be used."
-              : overLimitPlatform
-                ? `${images.length} photos added — ${PLATFORM_LABELS[overLimitPlatform]} only shows the first ${imageLimit}.`
-                : undefined
-          }
-        />
-      </div>
-
-      <div className="flex flex-col gap-1.5">
-        <Label className="text-base">Categories</Label>
-        <CategoryPicker selectedIds={categoryIds} onChange={setCategoryIds} disabled={isArchived} />
-      </div>
-
-      <div className="grid grid-cols-2 gap-4">
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="status">Status</Label>
-          <Select value={status} onValueChange={(value) => setStatus(value as PostStatus)} disabled={isArchived}>
-            <SelectTrigger id="status" className="w-full">
-              <SelectValue>
-                {(value: PostStatus) => POST_STATUSES.find((s) => s.value === value)?.label}
-              </SelectValue>
-            </SelectTrigger>
-            <SelectContent>
-              {POST_STATUSES.map((s) => (
-                <SelectItem key={s.value} value={s.value}>
-                  {s.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <div className="flex justify-end gap-2 border-t pt-4">
+            <Link href="/board" className={buttonVariants({ variant: "outline", size: "lg" })}>
+              Cancel
+            </Link>
+            <Button type="submit" size="lg">{post ? "Save changes" : "Create post"}</Button>
+          </div>
         </div>
 
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="target-date">Target date</Label>
-          <Input
-            id="target-date"
-            ref={targetDateRef}
-            type="date"
-            value={targetDate}
-            onChange={(e) => setTargetDate(e.target.value)}
-            aria-invalid={needsDateForScheduled}
-            disabled={isArchived}
-          />
-          {needsDateForScheduled && (
-            <p className="text-xs text-destructive">Required to move this post to Scheduled.</p>
+        {/* Sidebar — workflow and metadata, stays put while you scroll the content */}
+        <div className="flex flex-col gap-5 self-start rounded-xl bg-card p-4 ring-1 ring-foreground/10 lg:sticky lg:top-6">
+          {post && (
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="status" className="text-[10.5px] font-semibold uppercase tracking-wide text-muted-foreground">Status</Label>
+              <Select value={status} onValueChange={(value) => setStatus(value as PostStatus)} disabled={isArchived}>
+                <SelectTrigger id="status" className="w-full">
+                  <SelectValue>
+                    {(value: PostStatus) => POST_STATUSES.find((s) => s.value === value)?.label}
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  {POST_STATUSES.map((s) => (
+                    <SelectItem key={s.value} value={s.value}>
+                      {s.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
+          <div className="flex flex-col gap-2">
+            <Label className="text-[10.5px] font-semibold uppercase tracking-wide text-muted-foreground">Target date</Label>
+            <Popover open={dateOpen} onOpenChange={setDateOpen}>
+              <PopoverTrigger
+                render={
+                  <Button
+                    type="button"
+                    variant="outline"
+                    disabled={isArchived}
+                    className={cn(
+                      "w-full justify-start font-normal",
+                      !targetDate && "text-muted-foreground",
+                      needsDateForScheduled && "border-destructive ring-3 ring-destructive/20",
+                    )}
+                  />
+                }
+              >
+                <CalendarIcon className="size-3.5" />
+                {targetDate ? format(new Date(`${targetDate}T00:00:00`), "MMM d, yyyy") : "No date yet"}
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={targetDate ? new Date(`${targetDate}T00:00:00`) : undefined}
+                  onSelect={(date) => {
+                    setTargetDate(date ? format(date, "yyyy-MM-dd") : "");
+                    setDateOpen(false);
+                  }}
+                />
+                {targetDate && (
+                  <div className="flex justify-end border-t p-2">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        setTargetDate("");
+                        setDateOpen(false);
+                      }}
+                    >
+                      <X className="size-3.5" />
+                      Clear date
+                    </Button>
+                  </div>
+                )}
+              </PopoverContent>
+            </Popover>
+            {needsDateForScheduled && (
+              <p className="text-xs text-destructive">Required to move this post to Scheduled.</p>
+            )}
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="assignee" className="text-[10.5px] font-semibold uppercase tracking-wide text-muted-foreground">Assignee</Label>
+            <Select value={assigneeId} onValueChange={(value) => setAssigneeId(value ?? NONE)} disabled={isArchived}>
+              <SelectTrigger id="assignee" className="w-full">
+                <SelectValue>
+                  {(value: string) => (value === NONE ? "Unassigned" : profiles.find((p) => p.id === value)?.fullName)}
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={NONE}>Unassigned</SelectItem>
+                {profiles.map((p) => (
+                  <SelectItem key={p.id} value={p.id}>
+                    {p.fullName}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="requested-by" className="text-[10.5px] font-semibold uppercase tracking-wide text-muted-foreground">Requested by</Label>
+            <Select value={requestedById} onValueChange={(value) => setRequestedById(value ?? NONE)} disabled={isArchived}>
+              <SelectTrigger id="requested-by" className="w-full">
+                <SelectValue>
+                  {(value: string) => (value === NONE ? "—" : profiles.find((p) => p.id === value)?.fullName)}
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={NONE}>—</SelectItem>
+                {profiles.map((p) => (
+                  <SelectItem key={p.id} value={p.id}>
+                    {p.fullName}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <Label className="text-[10.5px] font-semibold uppercase tracking-wide text-muted-foreground">Categories</Label>
+            <CategoryPicker selectedIds={categoryIds} onChange={setCategoryIds} disabled={isArchived} />
+          </div>
+
+          {showPublishedUrl && (
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="published-url" className="text-[10.5px] font-semibold uppercase tracking-wide text-muted-foreground">Published URL</Label>
+              <Input
+                id="published-url"
+                type="url"
+                value={publishedUrl}
+                onChange={(e) => setPublishedUrl(e.target.value)}
+                placeholder="Paste the link once it's live…"
+              />
+            </div>
           )}
         </div>
-
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="assignee">Assignee</Label>
-          <Select value={assigneeId} onValueChange={(value) => setAssigneeId(value ?? NONE)} disabled={isArchived}>
-            <SelectTrigger id="assignee" className="w-full">
-              <SelectValue>
-                {(value: string) => (value === NONE ? "Unassigned" : profiles.find((p) => p.id === value)?.fullName)}
-              </SelectValue>
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value={NONE}>Unassigned</SelectItem>
-              {profiles.map((p) => (
-                <SelectItem key={p.id} value={p.id}>
-                  {p.fullName}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="requested-by">Requested by</Label>
-          <Select value={requestedById} onValueChange={(value) => setRequestedById(value ?? NONE)} disabled={isArchived}>
-            <SelectTrigger id="requested-by" className="w-full">
-              <SelectValue>
-                {(value: string) => (value === NONE ? "—" : profiles.find((p) => p.id === value)?.fullName)}
-              </SelectValue>
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value={NONE}>—</SelectItem>
-              {profiles.map((p) => (
-                <SelectItem key={p.id} value={p.id}>
-                  {p.fullName}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-
-      {post && (
-        <div className="flex items-center justify-between rounded-lg border p-3">
-          <div>
-            <Label htmlFor="needs-changes" className="text-base">Needs changes</Label>
-            <p className="text-xs text-muted-foreground">Flag this post for the assignee, independent of its column.</p>
-          </div>
-          <Switch id="needs-changes" checked={needsChanges} onCheckedChange={setNeedsChanges} disabled={isArchived} />
-        </div>
-      )}
-
-      <div className="flex flex-col gap-1.5">
-        <Label htmlFor="published-url" className="text-base">Published URL</Label>
-        <Input
-          id="published-url"
-          type="url"
-          value={publishedUrl}
-          onChange={(e) => setPublishedUrl(e.target.value)}
-          placeholder="Paste the link once it's live…"
-        />
-      </div>
-
-      <div className="flex justify-end gap-2">
-        <Link href="/board" className={buttonVariants({ variant: "outline" })}>
-          Cancel
-        </Link>
-        <Button type="submit">{post ? "Save changes" : "Create post"}</Button>
       </div>
     </form>
   );
