@@ -144,7 +144,7 @@ export function PostForm({ post }: { post?: Post }) {
 
       <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-[1fr_340px]">
         {/* Content — the writing and creative work */}
-        <div className="flex flex-col gap-6">
+        <div className="flex min-w-0 flex-col gap-6">
           <div className="flex flex-col gap-2">
             <Label className="text-lg font-semibold">Platforms</Label>
             <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
