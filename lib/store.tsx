@@ -155,6 +155,95 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     };
   }, [supabase]);
 
+  // Live updates across the board — posts, categories, profiles, comments,
+  // reactions — instead of only seeing someone else's change after a manual
+  // refresh. Requires each table to be added to the supabase_realtime
+  // publication (see enable-realtime-comments.sql) — otherwise these
+  // subscriptions just sit idle and the app behaves as before.
+  useEffect(() => {
+    // Posts are assembled from three joined child tables (platforms, images,
+    // categories), which a raw table-change payload doesn't include — so a
+    // change to the post or any of its children just re-fetches that one
+    // post fully assembled, rather than trying to patch it in piecemeal.
+    const refetchPost = async (postId: string) => {
+      const { data } = await supabase.from("posts").select(POST_SELECT).eq("id", postId).single();
+      if (!data) return;
+      const updated = mapPostRow(data);
+      setPosts((prev) => (prev.some((p) => p.id === updated.id) ? prev.map((p) => (p.id === updated.id ? updated : p)) : [...prev, updated]));
+    };
+
+    const postIdFromChildRow = (payload: { new: object; old: object }) =>
+      (payload.new as { post_id?: string }).post_id ?? (payload.old as { post_id?: string }).post_id;
+
+    const channel = supabase
+      .channel("app-realtime")
+      .on("postgres_changes", { event: "*", schema: "public", table: "posts" }, (payload) => {
+        if (payload.eventType === "DELETE") {
+          const deletedId = (payload.old as { id: string }).id;
+          setPosts((prev) => prev.filter((p) => p.id !== deletedId));
+        } else {
+          refetchPost((payload.new as { id: string }).id);
+        }
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "post_platforms" }, (payload) => {
+        const postId = postIdFromChildRow(payload);
+        if (postId) refetchPost(postId);
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "post_images" }, (payload) => {
+        const postId = postIdFromChildRow(payload);
+        if (postId) refetchPost(postId);
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "post_categories" }, (payload) => {
+        const postId = postIdFromChildRow(payload);
+        if (postId) refetchPost(postId);
+      })
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "categories" }, (payload) => {
+        const incoming = mapCategoryRow(payload.new as Parameters<typeof mapCategoryRow>[0]);
+        setCategories((prev) => (prev.some((c) => c.id === incoming.id) ? prev : [...prev, incoming]));
+      })
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "categories" }, (payload) => {
+        const incoming = mapCategoryRow(payload.new as Parameters<typeof mapCategoryRow>[0]);
+        setCategories((prev) => prev.map((c) => (c.id === incoming.id ? incoming : c)));
+      })
+      .on("postgres_changes", { event: "DELETE", schema: "public", table: "categories" }, (payload) => {
+        const deletedId = (payload.old as { id: string }).id;
+        setCategories((prev) => prev.filter((c) => c.id !== deletedId));
+      })
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "profiles" }, (payload) => {
+        const incoming = mapProfileRow(payload.new as Parameters<typeof mapProfileRow>[0]);
+        setProfiles((prev) => (prev.some((p) => p.id === incoming.id) ? prev : [...prev, incoming]));
+      })
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "profiles" }, (payload) => {
+        const incoming = mapProfileRow(payload.new as Parameters<typeof mapProfileRow>[0]);
+        setProfiles((prev) => prev.map((p) => (p.id === incoming.id ? incoming : p)));
+      })
+      .on("postgres_changes", { event: "DELETE", schema: "public", table: "profiles" }, (payload) => {
+        const deletedId = (payload.old as { id: string }).id;
+        setProfiles((prev) => prev.filter((p) => p.id !== deletedId));
+      })
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "comments" }, (payload) => {
+        const incoming = mapCommentRow(payload.new as Parameters<typeof mapCommentRow>[0]);
+        setComments((prev) => (prev.some((c) => c.id === incoming.id) ? prev : [...prev, incoming]));
+      })
+      .on("postgres_changes", { event: "DELETE", schema: "public", table: "comments" }, (payload) => {
+        const deletedId = (payload.old as { id: string }).id;
+        setComments((prev) => prev.filter((c) => c.id !== deletedId));
+      })
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "comment_reactions" }, (payload) => {
+        const incoming = mapCommentReactionRow(payload.new as Parameters<typeof mapCommentReactionRow>[0]);
+        setCommentReactions((prev) => (prev.some((r) => r.id === incoming.id) ? prev : [...prev, incoming]));
+      })
+      .on("postgres_changes", { event: "DELETE", schema: "public", table: "comment_reactions" }, (payload) => {
+        const deletedId = (payload.old as { id: string }).id;
+        setCommentReactions((prev) => prev.filter((r) => r.id !== deletedId));
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [supabase]);
+
   // Never fall back to a different, unrelated profile — showing the wrong
   // person's name and history is far worse than a brief "no profile yet".
   const currentUser = useMemo(
