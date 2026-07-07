@@ -167,10 +167,7 @@ export function PostForm({ post }: { post?: Post }) {
         )}
       </div>
 
-      <h1 className="text-2xl font-bold tracking-tight">
-        {post && <span className="font-mono text-muted-foreground">#{post.postNumber} · </span>}
-        {post ? "Edit post" : "New post"}
-      </h1>
+      <h1 className="text-2xl font-bold tracking-tight">{post ? "Edit post" : "New post"}</h1>
 
       {isArchived && (
         <p className="rounded-lg border bg-muted/50 p-3 text-sm text-muted-foreground">

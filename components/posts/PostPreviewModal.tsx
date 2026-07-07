@@ -74,9 +74,7 @@ export function PostPreviewModal() {
                   </Link>
                 </div>
               </div>
-              <DialogTitle>
-                <span className="font-mono text-muted-foreground">#{post.postNumber}</span> {post.title || "Untitled post"}
-              </DialogTitle>
+              <DialogTitle>{post.title || "Untitled post"}</DialogTitle>
             </DialogHeader>
 
             <PlatformMockup post={post} />

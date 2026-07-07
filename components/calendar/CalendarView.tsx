@@ -91,7 +91,7 @@ export function CalendarView() {
                     key={post.id}
                     onClick={() => openPreview(post.id)}
                     className="flex items-center gap-1 truncate rounded px-1 py-0.5 text-left text-[10.5px] hover:bg-muted"
-                    title={`#${post.postNumber} ${post.title}`}
+                    title={post.title}
                   >
                     <PlatformBadge platform={post.platforms[0]} className="px-1 py-0 gap-1 shrink-0" />
                     {post.platforms.length > 1 && (
@@ -102,7 +102,6 @@ export function CalendarView() {
                     {post.needsChanges && (
                       <span className="size-1.5 shrink-0 rounded-full bg-amber-500" title="Needs changes" />
                     )}
-                    <span className="shrink-0 font-mono text-[9px] text-muted-foreground">#{post.postNumber}</span>
                     <span className="truncate">{post.title}</span>
                   </button>
                 ))}
