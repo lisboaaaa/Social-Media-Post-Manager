@@ -50,7 +50,7 @@ export function TeamNotesTab() {
           <SheetTitle>Team notes</SheetTitle>
         </SheetHeader>
         <Tabs defaultValue="recent" className="flex flex-1 flex-col overflow-hidden px-4">
-          <TabsList className="self-start">
+          <TabsList className="self-center">
             <TabsTrigger value="recent">Recent</TabsTrigger>
             <TabsTrigger value="for-you" className="relative">
               For you
