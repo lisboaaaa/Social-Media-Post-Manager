@@ -60,27 +60,28 @@ export function PostCard({ post, index }: { post: Post; index: number }) {
 
           <p className="mb-2 line-clamp-2 text-sm font-medium leading-snug">{post.title}</p>
 
-          {postCategories.length > 0 && (
-            <div className="mb-2 flex flex-wrap gap-1">
-              {postCategories.map((c) => (
-                <span key={c.id} className="rounded bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
-                  {c.name}
-                </span>
-              ))}
-            </div>
-          )}
-
-          <div className="flex items-center justify-between">
-            {assignee ? (
-              <Avatar size="sm" title={assignee.fullName}>
-                <AvatarFallback className="text-[9px]">{assignee.initials}</AvatarFallback>
-              </Avatar>
+          <div className="flex items-center justify-between gap-2">
+            {postCategories.length > 0 ? (
+              <div className="flex flex-wrap gap-1">
+                {postCategories.map((c) => (
+                  <span key={c.id} className="rounded bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
+                    {c.name}
+                  </span>
+                ))}
+              </div>
             ) : (
               <span />
             )}
-            <span className="text-[10.5px] font-medium text-muted-foreground">
-              {post.targetDate ? format(new Date(`${post.targetDate}T00:00:00`), "MMM d") : "No date"}
-            </span>
+            <div className="flex shrink-0 items-center gap-1.5">
+              {assignee && (
+                <Avatar size="sm" title={assignee.fullName}>
+                  <AvatarFallback className="text-[9px]">{assignee.initials}</AvatarFallback>
+                </Avatar>
+              )}
+              <span className="text-[10.5px] font-medium text-muted-foreground">
+                {post.targetDate ? format(new Date(`${post.targetDate}T00:00:00`), "MMM d") : "No date"}
+              </span>
+            </div>
           </div>
         </div>
       )}
