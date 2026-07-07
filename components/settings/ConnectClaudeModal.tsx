@@ -29,7 +29,6 @@ export function ConnectClaudeModal({ open, onOpenChange }: ConnectClaudeModalPro
   const [freshToken, setFreshToken] = useState<string | null>(null);
 
   const loadTokens = async () => {
-    setFreshToken(null);
     const res = await fetch("/api/tokens");
     if (!res.ok) return;
     const data = await res.json();
@@ -37,10 +36,13 @@ export function ConnectClaudeModal({ open, onOpenChange }: ConnectClaudeModalPro
   };
 
   useEffect(() => {
-    // Fetching the token list when the dialog opens — a legitimate
-    // synchronize-with-server case, not a derived-state anti-pattern.
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    if (open) loadTokens();
+    // Resetting on open (not fetch-then-set) and fetching the token list —
+    // legitimate synchronize-with-server/prop cases, not derived-state.
+    if (open) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setFreshToken(null);
+      loadTokens();
+    }
   }, [open]);
 
   const handleGenerate = async () => {
