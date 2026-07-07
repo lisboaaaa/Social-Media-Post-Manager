@@ -1,7 +1,8 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
-const PUBLIC_PATHS = ["/login", "/auth/callback"];
+// /api/mcp authenticates itself via a bearer token (api_tokens table), not a cookie session
+const PUBLIC_PATHS = ["/login", "/auth/callback", "/api/mcp"];
 
 export async function proxy(request: NextRequest) {
   let response = NextResponse.next({ request });

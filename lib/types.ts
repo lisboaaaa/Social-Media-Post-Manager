@@ -82,6 +82,7 @@ export interface CommentReaction {
 
 export interface Post {
   id: string;
+  postNumber: number;
   platforms: Platform[];
   title: string; // short internal label, just for scanning the tracker — never posted, no character limit
   descriptions: Record<Platform, string>; // the actual post copy per platform — character-limited per platform

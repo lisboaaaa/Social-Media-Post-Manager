@@ -52,6 +52,7 @@ interface PostCategoryRow {
 
 interface PostRow {
   id: string;
+  post_number: number;
   title: string;
   status: Post["status"];
   target_date: string | null;
@@ -118,6 +119,7 @@ export function mapPostRow(row: PostRow): Post {
 
   return {
     id: row.id,
+    postNumber: row.post_number,
     platforms,
     title: row.title,
     descriptions,

@@ -27,7 +27,10 @@ export function PostCard({ post, index }: { post: Post; index: number }) {
           )}
         >
           <div className="mb-2 flex items-center justify-between gap-1.5">
-            <PlatformBadgeGroup platforms={post.platforms} />
+            <div className="flex items-center gap-1.5">
+              <span className="font-mono text-[10px] text-muted-foreground">#{post.postNumber}</span>
+              <PlatformBadgeGroup platforms={post.platforms} />
+            </div>
             {post.needsChanges && (
               <Badge
                 variant="outline"

@@ -32,7 +32,7 @@ export interface Filters {
 
 const EMPTY_FILTERS: Filters = { platform: "all", categoryId: "all", assigneeId: "all", dateFrom: null, dateTo: null };
 
-type NewPostInput = Omit<Post, "id" | "createdAt" | "updatedAt" | "createdBy"> & {
+type NewPostInput = Omit<Post, "id" | "postNumber" | "createdAt" | "updatedAt" | "createdBy"> & {
   createdBy?: string;
 };
 
@@ -329,6 +329,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     const post: Post = {
       ...input,
       id: crypto.randomUUID(),
+      postNumber: 0, // placeholder — the database assigns the real number on insert; the realtime subscription refetches and fills it in moments later
       createdBy: input.createdBy ?? currentUser!.id,
       createdAt: timestamp,
       updatedAt: timestamp,
