@@ -23,18 +23,18 @@ export function PostCard({ post, index }: { post: Post; index: number }) {
           {...provided.dragHandleProps}
           onClick={() => openPreview(post.id)}
           className={cn(
-            "cursor-pointer rounded-lg border bg-background p-2.5 shadow-sm transition-shadow hover:shadow-md",
+            "cursor-pointer rounded-lg border bg-background p-3 shadow-sm transition-shadow hover:shadow-md",
             snapshot.isDragging && "ring-2 ring-primary/40",
           )}
         >
-          <div className="mb-2 flex items-center justify-between gap-1.5">
+          <div className="mb-2.5 flex items-center justify-between gap-1.5">
             <div className="flex items-center gap-1.5">
               <PlatformBadgeGroup platforms={post.platforms} />
             </div>
             {post.needsChanges && (
               <Badge
                 variant="outline"
-                className="border-amber-300 bg-amber-50 text-amber-700 font-mono text-[9px] font-semibold uppercase tracking-wide"
+                className="border-amber-300 bg-amber-50 text-amber-700 font-mono text-[10px] font-semibold uppercase tracking-wide"
               >
                 Changes
               </Badge>
@@ -44,7 +44,7 @@ export function PostCard({ post, index }: { post: Post; index: number }) {
           {showImageArea &&
             (post.images.length > 0 ? (
               post.images[0].mediaType === "video" ? (
-                <div className="relative mb-2 h-20 w-full overflow-hidden rounded-md bg-muted">
+                <div className="relative mb-2.5 h-24 w-full overflow-hidden rounded-md bg-muted">
                   <video src={post.images[0].imageUrl} autoPlay loop muted playsInline className="h-full w-full object-cover" />
                   <span className="absolute inset-0 flex items-center justify-center bg-black/20">
                     <Play className="size-5 fill-white text-white" />
@@ -52,19 +52,19 @@ export function PostCard({ post, index }: { post: Post; index: number }) {
                 </div>
               ) : (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={post.images[0].imageUrl} alt="" className="mb-2 h-20 w-full rounded-md object-cover" />
+                <img src={post.images[0].imageUrl} alt="" className="mb-2.5 h-24 w-full rounded-md object-cover" />
               )
             ) : (
-              <div className="mb-2 h-20 rounded-md border border-dashed bg-muted/40" />
+              <div className="mb-2.5 h-24 rounded-md border border-dashed bg-muted/40" />
             ))}
 
-          <p className="mb-2 line-clamp-2 text-sm font-medium leading-snug">{post.title}</p>
+          <p className="mb-2.5 line-clamp-2 text-sm font-medium leading-snug">{post.title}</p>
 
           <div className="flex items-center justify-between gap-2">
             {postCategories.length > 0 ? (
               <div className="flex flex-wrap gap-1">
                 {postCategories.map((c) => (
-                  <span key={c.id} className="rounded bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
+                  <span key={c.id} className="rounded bg-muted px-2 py-1 text-[11px] text-muted-foreground">
                     {c.name}
                   </span>
                 ))}
@@ -75,10 +75,10 @@ export function PostCard({ post, index }: { post: Post; index: number }) {
             <div className="flex shrink-0 items-center gap-1.5">
               {assignee && (
                 <Avatar size="sm" title={assignee.fullName}>
-                  <AvatarFallback className="text-[9px]">{assignee.initials}</AvatarFallback>
+                  <AvatarFallback className="text-[10px]">{assignee.initials}</AvatarFallback>
                 </Avatar>
               )}
-              <span className="text-[10.5px] font-medium text-muted-foreground">
+              <span className="text-xs font-medium text-muted-foreground">
                 {post.targetDate ? format(new Date(`${post.targetDate}T00:00:00`), "MMM d") : "No date"}
               </span>
             </div>

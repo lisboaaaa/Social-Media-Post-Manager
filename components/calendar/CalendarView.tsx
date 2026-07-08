@@ -56,7 +56,7 @@ export function CalendarView() {
 
       <div className="grid grid-cols-7 border-b">
         {WEEKDAYS.map((day) => (
-          <div key={day} className="px-2.5 py-2 font-mono text-[10.5px] uppercase tracking-wide text-muted-foreground">
+          <div key={day} className="px-2.5 py-2 font-mono text-[11px] uppercase tracking-wide text-muted-foreground">
             {day}
           </div>
         ))}
@@ -71,16 +71,16 @@ export function CalendarView() {
             <div
               key={day.toISOString()}
               className={cn(
-                "flex min-h-[108px] flex-col gap-1 border-b border-r p-1.5 last:border-r-0",
+                "flex min-h-[118px] flex-col gap-1.5 border-b border-r p-2 last:border-r-0",
                 !inMonth && "bg-muted/20",
               )}
             >
               <span
                 className={cn(
-                  "font-mono text-[11.5px] text-muted-foreground",
+                  "font-mono text-xs text-muted-foreground",
                   !inMonth && "text-muted-foreground/50",
                   isToday(day) &&
-                    "flex h-5 w-5 items-center justify-center rounded-full bg-primary text-primary-foreground",
+                    "flex h-6 w-6 items-center justify-center rounded-full bg-primary font-semibold text-primary-foreground",
                 )}
               >
                 {format(day, "d")}
@@ -90,12 +90,12 @@ export function CalendarView() {
                   <button
                     key={post.id}
                     onClick={() => openPreview(post.id)}
-                    className="flex items-center gap-1 truncate rounded px-1 py-0.5 text-left text-[10.5px] hover:bg-muted"
+                    className="flex items-center gap-1 truncate rounded px-1 py-0.5 text-left text-[11px] hover:bg-muted"
                     title={post.title}
                   >
                     <PlatformBadge platform={post.platforms[0]} className="px-1 py-0 gap-1 shrink-0" />
                     {post.platforms.length > 1 && (
-                      <span className="shrink-0 font-mono text-[9px] text-muted-foreground" title={`Also on ${post.platforms.length - 1} more platform${post.platforms.length > 2 ? "s" : ""}`}>
+                      <span className="shrink-0 font-mono text-[10px] text-muted-foreground" title={`Also on ${post.platforms.length - 1} more platform${post.platforms.length > 2 ? "s" : ""}`}>
                         +{post.platforms.length - 1}
                       </span>
                     )}

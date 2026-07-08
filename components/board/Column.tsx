@@ -16,20 +16,20 @@ export function Column({
 }) {
   return (
     <div className="flex min-w-0 flex-col">
-      <div className="mb-1 flex items-center justify-between px-0.5">
+      <div className="mb-2 flex items-center justify-between px-0.5">
         <h2 className="text-base font-semibold tracking-wide">{label}</h2>
-        <span className="rounded-full border bg-background px-1.5 py-0.5 font-mono text-[10.5px] text-muted-foreground">
+        <span className="rounded-full border bg-muted px-2 py-0.5 font-mono text-[11px] font-medium text-muted-foreground">
           {posts.length}
         </span>
       </div>
-      {hint && <p className="mb-2 px-0.5 text-[10.5px] text-muted-foreground">{hint}</p>}
+      {hint && <p className="mb-2 px-0.5 text-[11px] text-muted-foreground">{hint}</p>}
       <Droppable droppableId={status}>
         {(provided, snapshot) => (
           <div
             ref={provided.innerRef}
             {...provided.droppableProps}
             className={cn(
-              "flex min-h-[60px] flex-1 flex-col gap-2.5 rounded-lg p-1 transition-colors",
+              "flex min-h-[60px] flex-1 flex-col gap-3 rounded-lg p-1 transition-colors",
               snapshot.isDraggingOver && "bg-primary/5",
             )}
           >

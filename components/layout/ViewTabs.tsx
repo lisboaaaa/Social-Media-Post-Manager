@@ -30,7 +30,7 @@ export function ViewTabs() {
             aria-selected={active}
             className={cn(
               "inline-flex items-center rounded-md px-3.5 py-1.5 text-sm font-medium transition-colors",
-              active ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground",
+              active ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground",
             )}
           >
             {tab.label}
