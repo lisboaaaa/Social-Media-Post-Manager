@@ -159,8 +159,9 @@ export function DevToolsPanel() {
 
           <Section title="View as">
             <p className="text-sm text-muted-foreground">
-              Non-marketing employees land on <code className="font-mono text-xs">/suggest</code> instead of the
-              board — this is exactly what they see (you can visit it too, marketing isn&apos;t blocked from it).
+              Non-marketing employees land on <code className="font-mono text-xs">/suggest</code>{" "}
+              instead of the board — this is exactly what they see (you can visit it too, marketing isn&apos;t
+              blocked from it).
             </p>
             <Link href="/suggest" onClick={() => setOpen(false)} className="text-sm text-primary underline underline-offset-2">
               Open /suggest
