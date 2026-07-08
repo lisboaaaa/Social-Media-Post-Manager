@@ -46,24 +46,27 @@ export async function GET(request: Request) {
   const eligiblePosts = [...(published ?? []), ...(trashed ?? [])];
   let purgedImages = 0;
   const errors: string[] = [];
-  const debug: unknown[] = [];
 
   for (const post of eligiblePosts) {
     const images = (post.post_images ?? []) as PostImageRow[];
     for (const image of images) {
       const path = storagePathFromPublicUrl(image.image_url);
-      let storageResult: unknown = null;
       if (path) {
-        const { data: removeData, error: storageError } = await supabase.storage.from("post-media").remove([path]);
-        storageResult = { removeData, storageError };
-        if (storageError) errors.push(`storage ${path}: ${storageError.message}`);
+        const { data: removed, error: storageError } = await supabase.storage.from("post-media").remove([path]);
+        if (storageError) {
+          errors.push(`storage ${path}: ${storageError.message}`);
+          continue; // don't drop the DB row if the file removal didn't actually happen
+        }
+        if (!removed || removed.length === 0) {
+          errors.push(`storage ${path}: remove() reported success but removed 0 files`);
+          continue;
+        }
       }
-      debug.push({ imageId: image.id, url: image.image_url, extractedPath: path, storageResult });
       const { error: dbError } = await supabase.from("post_images").delete().eq("id", image.id);
       if (dbError) errors.push(`row ${image.id}: ${dbError.message}`);
       else purgedImages++;
     }
   }
 
-  return Response.json({ postsChecked: eligiblePosts.length, purgedImages, errors, debug });
+  return Response.json({ postsChecked: eligiblePosts.length, purgedImages, errors });
 }
