@@ -3,6 +3,18 @@ import { PostCard } from "./PostCard";
 import type { Post, PostStatus } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
+// One color per workflow stage, so the board reads at a glance without
+// having to check each card's status individually.
+const STATUS_COLORS: Record<PostStatus, { bar: string; badge: string }> = {
+  backlog: { bar: "bg-slate-300", badge: "bg-slate-100 text-slate-600" },
+  writing: { bar: "bg-blue-400", badge: "bg-blue-50 text-blue-700" },
+  designing: { bar: "bg-cyan-400", badge: "bg-cyan-50 text-cyan-700" },
+  in_review: { bar: "bg-amber-400", badge: "bg-amber-50 text-amber-700" },
+  approved: { bar: "bg-emerald-400", badge: "bg-emerald-50 text-emerald-700" },
+  scheduled: { bar: "bg-violet-400", badge: "bg-violet-50 text-violet-700" },
+  published: { bar: "bg-primary", badge: "bg-primary/10 text-primary" },
+};
+
 export function Column({
   status,
   label,
@@ -14,11 +26,14 @@ export function Column({
   posts: Post[];
   hint?: string;
 }) {
+  const colors = STATUS_COLORS[status];
+
   return (
     <div className="flex min-w-0 flex-col">
+      <div className={cn("mb-2 h-1 rounded-full", colors.bar)} />
       <div className="mb-2 flex items-center justify-between px-0.5">
         <h2 className="text-base font-semibold tracking-wide">{label}</h2>
-        <span className="rounded-full border bg-muted px-2 py-0.5 font-mono text-[11px] font-medium text-muted-foreground">
+        <span className={cn("rounded-full px-2 py-0.5 font-mono text-[11px] font-medium", colors.badge)}>
           {posts.length}
         </span>
       </div>

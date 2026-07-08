@@ -13,6 +13,13 @@ export function PostCard({ post, index }: { post: Post; index: number }) {
   const assignee = profiles.find((p) => p.id === post.assigneeId);
   const postCategories = categories.filter((c) => post.categoryIds.includes(c.id));
   const showImageArea = post.status !== "backlog" && post.status !== "writing";
+  // A past target date only means something's late if it hasn't shipped yet —
+  // Scheduled/Published posts are supposed to have a date in the past by then.
+  const isOverdue =
+    post.targetDate !== null &&
+    post.targetDate < format(new Date(), "yyyy-MM-dd") &&
+    post.status !== "scheduled" &&
+    post.status !== "published";
 
   return (
     <Draggable draggableId={post.id} index={index}>
@@ -79,7 +86,7 @@ export function PostCard({ post, index }: { post: Post; index: number }) {
                   <AvatarFallback className="text-[10px]">{assignee.initials}</AvatarFallback>
                 </Avatar>
               )}
-              <span className="text-xs font-medium text-muted-foreground">
+              <span className={cn("text-xs font-medium", isOverdue ? "font-semibold text-red-600" : "text-muted-foreground")}>
                 {post.targetDate ? format(new Date(`${post.targetDate}T00:00:00`), "MMM d") : "No date"}
               </span>
             </div>
