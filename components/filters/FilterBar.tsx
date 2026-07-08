@@ -6,8 +6,11 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useStore } from "@/lib/store";
 import { PLATFORMS, PLATFORM_LABELS, type Platform } from "@/lib/types";
+import { cn } from "@/lib/utils";
 import { DateRangeFilter } from "./DateRangeFilter";
 import { ManageCategoriesModal } from "./ManageCategoriesModal";
+
+const ACTIVE_TRIGGER_CLASS = "border-primary/40 bg-primary/5 text-primary";
 
 function FilterGroup({
   label,
@@ -21,7 +24,7 @@ function FilterGroup({
   return (
     <div className="flex flex-col gap-1">
       <div className="flex items-center justify-between gap-2">
-        <span className="text-[10.5px] font-medium uppercase tracking-wide text-muted-foreground">{label}</span>
+        <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{label}</span>
         {action}
       </div>
       {children}
@@ -46,7 +49,7 @@ export function FilterBar() {
           value={filters.platform}
           onValueChange={(value) => setFilters({ platform: value as Platform | "all" })}
         >
-          <SelectTrigger size="sm" className="w-36">
+          <SelectTrigger size="sm" className={cn("min-w-36", filters.platform !== "all" && ACTIVE_TRIGGER_CLASS)}>
             <SelectValue placeholder="Platform">
               {(value: Platform | "all") => (value === "all" ? "All platforms" : PLATFORM_LABELS[value])}
             </SelectValue>
@@ -77,7 +80,7 @@ export function FilterBar() {
         }
       >
         <Select value={filters.categoryId} onValueChange={(value) => setFilters({ categoryId: value ?? "all" })}>
-          <SelectTrigger size="sm" className="w-40">
+          <SelectTrigger size="sm" className={cn("min-w-40", filters.categoryId !== "all" && ACTIVE_TRIGGER_CLASS)}>
             <SelectValue placeholder="Category">
               {(value: string) =>
                 value === "all" ? "All categories" : categories.find((c) => c.id === value)?.name
@@ -97,7 +100,7 @@ export function FilterBar() {
 
       <FilterGroup label="Assignee">
         <Select value={filters.assigneeId} onValueChange={(value) => setFilters({ assigneeId: value ?? "all" })}>
-          <SelectTrigger size="sm" className="w-40">
+          <SelectTrigger size="sm" className={cn("min-w-40", filters.assigneeId !== "all" && ACTIVE_TRIGGER_CLASS)}>
             <SelectValue placeholder="Assignee">
               {(value: string) =>
                 value === "all" ? "Everyone" : profiles.find((p) => p.id === value)?.fullName

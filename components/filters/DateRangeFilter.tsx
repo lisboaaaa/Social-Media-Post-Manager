@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useStore } from "@/lib/store";
+import { cn } from "@/lib/utils";
 
 function parseIsoDate(value: string | null): Date | undefined {
   return value ? new Date(`${value}T00:00:00`) : undefined;
@@ -38,10 +39,19 @@ export function DateRangeFilter() {
       ? `${format(pendingRange.from, "MMM d")} – ${format(pendingRange.to, "MMM d")}`
       : format(pendingRange.from, "MMM d, yyyy")
     : "Any date";
+  const isActive = Boolean(filters.dateFrom || filters.dateTo);
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger render={<Button variant="outline" size="sm" />}>
+      <PopoverTrigger
+        render={
+          <Button
+            variant="outline"
+            size="sm"
+            className={cn(isActive && "border-primary/40 bg-primary/5 text-primary")}
+          />
+        }
+      >
         <CalendarIcon className="size-3.5" />
         {label}
       </PopoverTrigger>
