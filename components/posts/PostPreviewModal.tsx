@@ -77,13 +77,18 @@ export function PostPreviewModal() {
                   </Badge>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Button type="button" variant="outline" onClick={handleDuplicate}>
+                  <Button type="button" variant="outline" size="icon" onClick={handleDuplicate} aria-label="Duplicate" title="Duplicate">
                     <Copy className="size-3.5" />
-                    Duplicate
                   </Button>
-                  <Button type="button" variant="destructive" onClick={() => setDeleteDialogOpen(true)}>
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    size="icon"
+                    onClick={() => setDeleteDialogOpen(true)}
+                    aria-label="Delete"
+                    title="Delete"
+                  >
                     <Trash2 className="size-3.5" />
-                    Delete
                   </Button>
                   <Link href={`/posts/${post.id}`} onClick={closePreview} className={buttonVariants({ size: "default" })}>
                     Edit post
