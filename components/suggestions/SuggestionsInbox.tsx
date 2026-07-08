@@ -3,16 +3,17 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
+import { Inbox } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useStore } from "@/lib/store";
 import type { Suggestion, SuggestionStatus } from "@/lib/types";
 
-const TABS: { value: SuggestionStatus; label: string }[] = [
-  { value: "new", label: "New" },
-  { value: "accepted", label: "Accepted" },
-  { value: "dismissed", label: "Dismissed" },
+const TABS: { value: SuggestionStatus; label: string; empty: string }[] = [
+  { value: "new", label: "New", empty: "No new ideas yet." },
+  { value: "accepted", label: "Accepted", empty: "Nothing accepted yet." },
+  { value: "dismissed", label: "Dismissed", empty: "Nothing dismissed yet." },
 ];
 
 function SuggestionCard({ suggestion }: { suggestion: Suggestion }) {
@@ -59,7 +60,12 @@ export function SuggestionsInbox() {
 
   return (
     <div className="flex flex-col gap-4">
-      <h1 className="text-xl font-semibold tracking-tight">Suggestions</h1>
+      <div className="flex items-center gap-2.5">
+        <span className="flex size-9 items-center justify-center rounded-full bg-primary/10 text-primary">
+          <Inbox className="size-4.5" />
+        </span>
+        <h1 className="text-2xl font-semibold tracking-tight">Suggestions</h1>
+      </div>
 
       <Tabs value={tab} onValueChange={(value) => setTab(value as SuggestionStatus)}>
         <TabsList>
@@ -77,10 +83,13 @@ export function SuggestionsInbox() {
           const filtered = suggestions.filter((s) => s.status === t.value);
           return (
             <TabsContent key={t.value} value={t.value} className="mt-4 flex flex-col gap-3">
-              {filtered.length === 0 && <p className="text-sm text-muted-foreground">Nothing here.</p>}
-              {filtered.map((s) => (
-                <SuggestionCard key={s.id} suggestion={s} />
-              ))}
+              {filtered.length === 0 ? (
+                <div className="flex h-40 items-center justify-center rounded-lg border border-dashed text-sm text-muted-foreground">
+                  {t.empty}
+                </div>
+              ) : (
+                filtered.map((s) => <SuggestionCard key={s.id} suggestion={s} />)
+              )}
             </TabsContent>
           );
         })}
