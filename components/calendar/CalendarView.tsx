@@ -60,7 +60,7 @@ export function CalendarView() {
             key={day}
             className={cn(
               "px-2.5 py-2 font-mono text-[11px] uppercase tracking-wide text-muted-foreground",
-              (i === 0 || i === 6) && "bg-muted/10",
+              (i === 0 || i === 6) && "bg-muted/60",
             )}
           >
             {day}
@@ -79,7 +79,7 @@ export function CalendarView() {
               key={day.toISOString()}
               className={cn(
                 "flex min-h-[118px] flex-col gap-1.5 border-b border-r p-2 last:border-r-0",
-                !inMonth ? "bg-muted/20" : isWeekend && "bg-muted/10",
+                !inMonth ? "bg-muted/20" : isWeekend && "bg-muted/40",
               )}
             >
               <span
