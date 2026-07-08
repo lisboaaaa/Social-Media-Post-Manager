@@ -32,7 +32,10 @@ export interface Filters {
 
 const EMPTY_FILTERS: Filters = { platform: "all", categoryId: "all", assigneeId: "all", dateFrom: null, dateTo: null };
 
-type NewPostInput = Omit<Post, "id" | "postNumber" | "createdAt" | "updatedAt" | "createdBy"> & {
+type NewPostInput = Omit<
+  Post,
+  "id" | "postNumber" | "createdAt" | "updatedAt" | "createdBy" | "deletedAt" | "deletedBy" | "deleteReason"
+> & {
   createdBy?: string;
 };
 
@@ -53,7 +56,8 @@ interface StoreValue {
   addPost: (input: NewPostInput) => Post;
   updatePost: (id: string, patch: Partial<Post>) => void;
   movePost: (id: string, destStatus: PostStatus, destIndex: number, extraPatch?: Partial<Post>) => void;
-  deletePost: (id: string) => void;
+  deletePost: (id: string, reason: string) => void;
+  restorePost: (id: string) => void;
   addCategory: (name: string) => Category;
   updateCategory: (id: string, name: string) => void;
   deleteCategory: (id: string) => void;
@@ -302,6 +306,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   const filteredPosts = useMemo(() => {
     return posts.filter((post) => {
+      if (post.deletedAt) return false;
       if (filters.platform !== "all" && !post.platforms.includes(filters.platform)) return false;
       if (filters.categoryId !== "all" && !post.categoryIds.includes(filters.categoryId)) return false;
       if (filters.assigneeId !== "all" && post.assigneeId !== filters.assigneeId) return false;
@@ -347,6 +352,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       createdBy: input.createdBy ?? currentUser!.id,
       createdAt: timestamp,
       updatedAt: timestamp,
+      deletedAt: null,
+      deletedBy: null,
+      deleteReason: null,
     };
     setPosts((prev) => [...prev, post]);
 
@@ -437,20 +445,33 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     if (current) writePostPatch(id, current, { status: destStatus, ...extraPatch }, new Date().toISOString());
   };
 
-  const deletePost = (id: string) => {
-    const current = posts.find((p) => p.id === id);
-    setPosts((prev) => prev.filter((p) => p.id !== id));
-    setComments((prev) => prev.filter((c) => c.postId !== id));
+  // Soft delete: the post stays in the database (and its comments stay
+  // attached) so it can show up in Trash with a reason and be restored —
+  // never a hard `.delete()`, regardless of status.
+  const deletePost = (id: string, reason: string) => {
+    const now = new Date().toISOString();
+    setPosts((prev) =>
+      prev.map((p) => (p.id === id ? { ...p, deletedAt: now, deletedBy: currentUser!.id, deleteReason: reason } : p)),
+    );
 
     (async () => {
-      // Published posts can't be deleted directly (database rule) — stepping
-      // it off "published" first is how the explicit "Delete forever" action
-      // in the Archive gets around that safety net on purpose.
-      if (current?.status === "published") {
-        await supabase.from("posts").update({ status: "backlog" }).eq("id", id);
-      }
-      const { error } = await supabase.from("posts").delete().eq("id", id);
+      const { error } = await supabase
+        .from("posts")
+        .update({ deleted_at: now, deleted_by: currentUser!.id, delete_reason: reason })
+        .eq("id", id);
       if (error) toast.error(`Couldn't delete the post: ${error.message}`);
+    })();
+  };
+
+  const restorePost = (id: string) => {
+    setPosts((prev) => prev.map((p) => (p.id === id ? { ...p, deletedAt: null, deletedBy: null, deleteReason: null } : p)));
+
+    (async () => {
+      const { error } = await supabase
+        .from("posts")
+        .update({ deleted_at: null, deleted_by: null, delete_reason: null })
+        .eq("id", id);
+      if (error) toast.error(`Couldn't restore the post: ${error.message}`);
     })();
   };
 
@@ -647,6 +668,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     updatePost,
     movePost,
     deletePost,
+    restorePost,
     addCategory,
     updateCategory,
     deleteCategory,

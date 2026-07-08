@@ -17,7 +17,12 @@ export const listPostsSchema = z.object({
 export type ListPostsInput = z.infer<typeof listPostsSchema>;
 
 export async function listPostsTool(input: ListPostsInput, supabase: SupabaseClient) {
-  let query = supabase.from("posts").select(POST_SELECT).order("post_number", { ascending: true }).limit(input.limit);
+  let query = supabase
+    .from("posts")
+    .select(POST_SELECT)
+    .is("deleted_at", null)
+    .order("post_number", { ascending: true })
+    .limit(input.limit);
   if (input.status) query = query.eq("status", input.status);
   if (input.dateFrom) query = query.gte("target_date", input.dateFrom);
   if (input.dateTo) query = query.lte("target_date", input.dateTo);

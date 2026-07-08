@@ -76,6 +76,9 @@ interface PostRow {
   created_by: string;
   created_at: string;
   updated_at: string;
+  deleted_at: string | null;
+  deleted_by: string | null;
+  delete_reason: string | null;
   post_platforms?: PostPlatformRow[];
   post_images?: PostImageRow[];
   post_categories?: PostCategoryRow[];
@@ -162,6 +165,9 @@ export function mapPostRow(row: PostRow): Post {
     images,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
+    deletedAt: row.deleted_at,
+    deletedBy: row.deleted_by,
+    deleteReason: row.delete_reason,
   };
 }
 

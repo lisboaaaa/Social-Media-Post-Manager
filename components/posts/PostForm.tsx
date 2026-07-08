@@ -16,6 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { CategoryPicker } from "./CategoryPicker";
 import { CharacterCounter } from "./CharacterCounter";
+import { DeleteReasonDialog } from "./DeleteReasonDialog";
 import { ImageUploader } from "./ImageUploader";
 import { PlatformBadge } from "./PlatformBadge";
 import { useStore } from "@/lib/store";
@@ -53,6 +54,7 @@ export function PostForm({ post }: { post?: Post }) {
   const [categoryIds, setCategoryIds] = useState<string[]>(post?.categoryIds ?? []);
   const [images, setImages] = useState(post?.images ?? []);
   const [dateOpen, setDateOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
   const snapshot = JSON.stringify({
     platforms,
@@ -141,14 +143,11 @@ export function PostForm({ post }: { post?: Post }) {
     router.push("/board");
   };
 
-  const handleDelete = () => {
+  const handleDeleteConfirm = (reason: string) => {
     if (!post) return;
-    const message = isArchived
-      ? "Delete this published post forever? This can't be undone — it will disappear from the Archive too."
-      : "Delete this post? This can't be undone.";
-    if (!confirm(message)) return;
-    deletePost(post.id);
-    toast.success("Post deleted");
+    deletePost(post.id, reason);
+    setDeleteDialogOpen(false);
+    toast.success("Post moved to Trash");
     router.push("/board");
   };
 
@@ -160,12 +159,14 @@ export function PostForm({ post }: { post?: Post }) {
           Back to board
         </Link>
         {post && (
-          <Button type="button" variant="destructive" size="lg" onClick={handleDelete}>
+          <Button type="button" variant="destructive" size="lg" onClick={() => setDeleteDialogOpen(true)}>
             <Trash2 className="size-4" />
             Delete post
           </Button>
         )}
       </div>
+
+      <DeleteReasonDialog open={deleteDialogOpen} onCancel={() => setDeleteDialogOpen(false)} onConfirm={handleDeleteConfirm} />
 
       <h1 className="text-2xl font-bold tracking-tight">{post ? "Edit post" : "New post"}</h1>
 

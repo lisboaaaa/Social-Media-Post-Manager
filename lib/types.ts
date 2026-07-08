@@ -112,4 +112,7 @@ export interface Post {
   images: PostImage[];
   createdAt: string;
   updatedAt: string;
+  deletedAt: string | null;
+  deletedBy: string | null;
+  deleteReason: string | null;
 }

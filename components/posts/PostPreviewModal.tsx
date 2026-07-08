@@ -1,10 +1,11 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
 import { toast } from "sonner";
-import { Copy } from "lucide-react";
+import { Copy, Trash2 } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -13,13 +14,15 @@ import { Separator } from "@/components/ui/separator";
 import { useStore } from "@/lib/store";
 import { POST_STATUSES } from "@/lib/types";
 import { CommentThread } from "@/components/comments/CommentThread";
+import { DeleteReasonDialog } from "./DeleteReasonDialog";
 import { PlatformBadgeGroup } from "./PlatformBadge";
 import { PlatformMockup } from "./mockups/PlatformMockup";
 
 export function PostPreviewModal() {
   const router = useRouter();
-  const { previewPostId, closePreview, getPostById, addPost, profiles, categories } = useStore();
+  const { previewPostId, closePreview, getPostById, addPost, deletePost, profiles, categories } = useStore();
   const post = previewPostId ? getPostById(previewPostId) : undefined;
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
   const open = Boolean(post);
   const assignee = post ? profiles.find((p) => p.id === post.assigneeId) : undefined;
@@ -46,9 +49,18 @@ export function PostPreviewModal() {
     router.push(`/posts/${duplicate.id}`);
   };
 
+  const handleDeleteConfirm = (reason: string) => {
+    if (!post) return;
+    deletePost(post.id, reason);
+    setDeleteDialogOpen(false);
+    closePreview();
+    toast.success("Post moved to Trash");
+  };
+
   return (
-    <Dialog open={open} onOpenChange={(next) => !next && closePreview()}>
-      <DialogContent className="sm:max-w-xl max-h-[85vh] overflow-y-auto">
+    <>
+      <Dialog open={open} onOpenChange={(next) => !next && closePreview()}>
+        <DialogContent className="sm:max-w-xl max-h-[85vh] overflow-y-auto">
         {post && (
           <>
             <DialogHeader>
@@ -68,6 +80,10 @@ export function PostPreviewModal() {
                   <Button type="button" variant="outline" onClick={handleDuplicate}>
                     <Copy className="size-3.5" />
                     Duplicate
+                  </Button>
+                  <Button type="button" variant="destructive" onClick={() => setDeleteDialogOpen(true)}>
+                    <Trash2 className="size-3.5" />
+                    Delete
                   </Button>
                   <Link href={`/posts/${post.id}`} onClick={closePreview} className={buttonVariants({ size: "default" })}>
                     Edit post
@@ -132,5 +148,7 @@ export function PostPreviewModal() {
         )}
       </DialogContent>
     </Dialog>
+    <DeleteReasonDialog open={deleteDialogOpen} onCancel={() => setDeleteDialogOpen(false)} onConfirm={handleDeleteConfirm} />
+    </>
   );
 }
