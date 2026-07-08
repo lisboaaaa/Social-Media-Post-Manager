@@ -1,4 +1,5 @@
 import { createServiceClient } from "@/lib/supabase/service";
+import { storagePathFromPublicUrl } from "@/lib/supabase/storagePath";
 
 // Storage (not the database) is what's actually tight on the free Supabase
 // plan, and it's almost entirely photos/videos — so once a post is done
@@ -10,13 +11,6 @@ const RETENTION_DAYS = 90;
 interface PostImageRow {
   id: string;
   image_url: string;
-}
-
-function storagePathFromPublicUrl(url: string): string | null {
-  const marker = "/post-media/";
-  const index = url.indexOf(marker);
-  if (index === -1) return null;
-  return decodeURIComponent(url.slice(index + marker.length));
 }
 
 export async function GET(request: Request) {
@@ -52,14 +46,22 @@ export async function GET(request: Request) {
     for (const image of images) {
       const path = storagePathFromPublicUrl(image.image_url);
       if (path) {
-        const { data: removed, error: storageError } = await supabase.storage.from("post-media").remove([path]);
-        if (storageError) {
-          errors.push(`storage ${path}: ${storageError.message}`);
-          continue; // don't drop the DB row if the file removal didn't actually happen
-        }
-        if (!removed || removed.length === 0) {
-          errors.push(`storage ${path}: remove() reported success but removed 0 files`);
-          continue;
+        // Duplicated posts and promoted suggestions can share the exact same
+        // URL as this row — only remove the file once nothing else uses it.
+        const [{ count: otherPostRefs }, { count: suggestionRefs }] = await Promise.all([
+          supabase.from("post_images").select("id", { count: "exact", head: true }).eq("image_url", image.image_url).neq("id", image.id),
+          supabase.from("suggestions").select("id", { count: "exact", head: true }).eq("image_url", image.image_url),
+        ]);
+        if ((otherPostRefs ?? 0) === 0 && (suggestionRefs ?? 0) === 0) {
+          const { data: removed, error: storageError } = await supabase.storage.from("post-media").remove([path]);
+          if (storageError) {
+            errors.push(`storage ${path}: ${storageError.message}`);
+            continue; // don't drop the DB row if the file removal didn't actually happen
+          }
+          if (!removed || removed.length === 0) {
+            errors.push(`storage ${path}: remove() reported success but removed 0 files`);
+            continue;
+          }
         }
       }
       const { error: dbError } = await supabase.from("post_images").delete().eq("id", image.id);

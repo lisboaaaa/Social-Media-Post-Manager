@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { createClient } from "./supabase/client";
 import { mentionsProfile } from "./mentions";
 import { mapCategoryRow, mapCommentReactionRow, mapCommentRow, mapPostRow, mapProfileRow, mapSuggestionRow, POST_SELECT } from "./supabase/mappers";
+import { storagePathFromPublicUrl } from "./supabase/storagePath";
 import type { Category, Comment, CommentReaction, Platform, Post, PostStatus, Profile, Suggestion } from "./types";
 
 // Mirrors the SQL side (handle_new_user() in auth-setup.sql) — company
@@ -332,7 +333,24 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       if (rows.length) await supabase.from("post_platforms").insert(rows);
     }
     if ("images" in patch) {
+      const { data: oldImages } = await supabase.from("post_images").select("image_url").eq("post_id", postId);
       await supabase.from("post_images").delete().eq("post_id", postId);
+
+      // A removed image's file only gets deleted from storage once nothing
+      // else references it — duplicated posts and promoted suggestions can
+      // share the exact same URL as another row.
+      const keptUrls = new Set(merged.images.map((img) => img.imageUrl));
+      const removedUrls = (oldImages ?? []).map((row) => row.image_url).filter((url) => !keptUrls.has(url));
+      for (const url of removedUrls) {
+        const [{ count: postRefs }, { count: suggestionRefs }] = await Promise.all([
+          supabase.from("post_images").select("id", { count: "exact", head: true }).eq("image_url", url),
+          supabase.from("suggestions").select("id", { count: "exact", head: true }).eq("image_url", url),
+        ]);
+        if ((postRefs ?? 0) > 0 || (suggestionRefs ?? 0) > 0) continue;
+        const path = storagePathFromPublicUrl(url);
+        if (path) await supabase.storage.from("post-media").remove([path]);
+      }
+
       const rows = merged.images.map((img, i) => ({ post_id: postId, image_url: img.imageUrl, position: i, media_type: img.mediaType }));
       if (rows.length) await supabase.from("post_images").insert(rows);
     }
