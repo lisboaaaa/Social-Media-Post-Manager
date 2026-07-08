@@ -1,8 +1,10 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
-// /api/mcp authenticates itself via a bearer token (api_tokens table), not a cookie session
-const PUBLIC_PATHS = ["/login", "/auth/callback", "/api/mcp"];
+// /api/mcp authenticates itself via a bearer token (api_tokens table), not a
+// cookie session; /api/cron is invoked by Vercel's scheduler (no session at
+// all) and checks its own CRON_SECRET bearer token instead.
+const PUBLIC_PATHS = ["/login", "/auth/callback", "/api/mcp", "/api/cron"];
 // Open to every signed-in employee regardless of role — everything else is
 // marketing-only by default, so a future new page is safe unless explicitly
 // added here.
