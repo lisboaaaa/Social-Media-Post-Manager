@@ -2,6 +2,7 @@
 
 import { useState, type FormEvent } from "react";
 import { toast } from "sonner";
+import { AppBackground } from "@/components/layout/AppBackground";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -40,10 +41,11 @@ export default function LoginPage() {
 
   return (
     <div className="flex min-h-screen items-center justify-center px-4">
-      <div className="w-full max-w-sm rounded-lg border p-6">
+      <AppBackground />
+      <div className="w-full max-w-sm rounded-lg border bg-background p-6">
         <h1 className="text-lg font-semibold tracking-tight">Social Media Post Manager</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Sign in with your {COMPANY_DOMAIN} email — we'll send you a link, no password needed.
+          Sign in with your {COMPANY_DOMAIN} email — we&apos;ll send you a link, no password needed.
         </p>
 
         {sent ? (

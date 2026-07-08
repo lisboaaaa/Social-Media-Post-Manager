@@ -89,16 +89,18 @@ export default function SuggestPage() {
       </div>
 
       <div className="flex flex-col gap-4 rounded-2xl border bg-background p-8 shadow-lg">
-        <p className="text-sm text-muted-foreground">
-          Tell the marketing team what you&apos;d like to see posted on social media. No need to write a caption or
-          pick a platform — just the idea, and a photo if you have one.
+        <p className="text-base text-muted-foreground">
+          Got something worth posting? Just describe it below — we&apos;ll take it from there.
         </p>
 
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="idea">Your idea</Label>
+          <Label htmlFor="idea" className="text-base">
+            Your idea
+          </Label>
           <Textarea
             id="idea"
             rows={5}
+            className="text-base"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             placeholder="e.g. We just hit 100 customers, could be a nice shoutout post"
@@ -106,7 +108,7 @@ export default function SuggestPage() {
         </div>
 
         <div className="flex flex-col gap-1.5">
-          <Label>Photo (optional)</Label>
+          <Label className="text-base">Photo (optional)</Label>
           <ImageUploader images={images} onChange={(next) => setImages(next.slice(-1))} />
         </div>
 
@@ -120,9 +122,9 @@ export default function SuggestPage() {
           <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Your submitted ideas</h2>
           <div className="flex flex-col gap-2">
             {mine.map((s) => (
-              <div key={s.id} className="rounded-xl border bg-background p-4 text-sm shadow-sm">
+              <div key={s.id} className="rounded-xl border bg-background p-4 text-base shadow-sm">
                 <p className="text-foreground/90">{s.description}</p>
-                <p className="mt-1 text-xs text-muted-foreground">{STATUS_LABEL[s.status]}</p>
+                <p className="mt-1 text-sm text-muted-foreground">{STATUS_LABEL[s.status]}</p>
               </div>
             ))}
           </div>
