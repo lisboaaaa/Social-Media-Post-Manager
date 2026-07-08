@@ -55,8 +55,14 @@ export function CalendarView() {
       </div>
 
       <div className="grid grid-cols-7 border-b">
-        {WEEKDAYS.map((day) => (
-          <div key={day} className="px-2.5 py-2 font-mono text-[11px] uppercase tracking-wide text-muted-foreground">
+        {WEEKDAYS.map((day, i) => (
+          <div
+            key={day}
+            className={cn(
+              "px-2.5 py-2 font-mono text-[11px] uppercase tracking-wide text-muted-foreground",
+              (i === 0 || i === 6) && "bg-muted/10",
+            )}
+          >
             {day}
           </div>
         ))}
@@ -66,13 +72,14 @@ export function CalendarView() {
         {days.map((day) => {
           const dayPosts = postsForDay(day);
           const inMonth = isSameMonth(day, cursor);
+          const isWeekend = day.getDay() === 0 || day.getDay() === 6;
 
           return (
             <div
               key={day.toISOString()}
               className={cn(
                 "flex min-h-[118px] flex-col gap-1.5 border-b border-r p-2 last:border-r-0",
-                !inMonth && "bg-muted/20",
+                !inMonth ? "bg-muted/20" : isWeekend && "bg-muted/10",
               )}
             >
               <span
