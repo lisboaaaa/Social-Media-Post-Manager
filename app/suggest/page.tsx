@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { LogOut } from "lucide-react";
+import { Lightbulb, LogOut } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -69,9 +69,14 @@ export default function SuggestPage() {
   };
 
   return (
-    <div className="mx-auto flex w-full max-w-lg flex-col gap-8">
+    <div className="mx-auto flex w-full max-w-2xl flex-col gap-8">
       <div className="flex items-center justify-between">
-        <h1 className="text-lg font-semibold tracking-tight">Got a post idea?</h1>
+        <div className="flex items-center gap-2.5">
+          <span className="flex size-9 items-center justify-center rounded-full bg-primary/10 text-primary">
+            <Lightbulb className="size-4.5" />
+          </span>
+          <h1 className="text-2xl font-semibold tracking-tight">Got a post idea?</h1>
+        </div>
         <button
           type="button"
           onClick={handleSignOut}
@@ -83,7 +88,7 @@ export default function SuggestPage() {
         </button>
       </div>
 
-      <div className="flex flex-col gap-4 rounded-lg border bg-background p-5">
+      <div className="flex flex-col gap-4 rounded-2xl border bg-background p-8 shadow-lg">
         <p className="text-sm text-muted-foreground">
           Tell the marketing team what you&apos;d like to see posted on social media. No need to write a caption or
           pick a platform — just the idea, and a photo if you have one.
@@ -113,9 +118,9 @@ export default function SuggestPage() {
       {mine.length > 0 && (
         <div className="flex flex-col gap-2">
           <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Your submitted ideas</h2>
-          <div className="flex flex-col gap-1.5">
+          <div className="flex flex-col gap-2">
             {mine.map((s) => (
-              <div key={s.id} className="rounded-md border bg-background p-3 text-sm">
+              <div key={s.id} className="rounded-xl border bg-background p-4 text-sm shadow-sm">
                 <p className="text-foreground/90">{s.description}</p>
                 <p className="mt-1 text-xs text-muted-foreground">{STATUS_LABEL[s.status]}</p>
               </div>
