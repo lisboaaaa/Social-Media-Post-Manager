@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { useStore } from "@/lib/store";
 
 const TABS = [
   { href: "/board", label: "Board" },
@@ -13,6 +14,8 @@ const TABS = [
 
 export function ViewTabs() {
   const pathname = usePathname();
+  const { suggestions } = useStore();
+  const hasNewSuggestions = suggestions.some((s) => s.status === "new");
 
   return (
     <div role="tablist" aria-label="View" className="inline-flex items-center gap-0.5 rounded-lg border bg-background p-1">
@@ -25,11 +28,14 @@ export function ViewTabs() {
             role="tab"
             aria-selected={active}
             className={cn(
-              "rounded-md px-3.5 py-1.5 text-sm font-medium transition-colors",
+              "inline-flex items-center rounded-md px-3.5 py-1.5 text-sm font-medium transition-colors",
               active ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground",
             )}
           >
             {tab.label}
+            {tab.href === "/inbox" && hasNewSuggestions && (
+              <span className="ml-1.5 size-1.5 shrink-0 rounded-full bg-destructive" aria-label="New suggestions" />
+            )}
           </Link>
         );
       })}
