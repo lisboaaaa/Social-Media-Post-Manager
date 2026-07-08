@@ -1,7 +1,6 @@
 import type { ReactNode } from "react";
 import { redirect } from "next/navigation";
 import { AppBackground } from "@/components/layout/AppBackground";
-import { DevToolsPanel } from "@/components/devtools/DevToolsPanel";
 import { Header } from "@/components/layout/Header";
 import { PostPreviewModal } from "@/components/posts/PostPreviewModal";
 import { StoreProvider } from "@/lib/store";
@@ -36,7 +35,6 @@ export default async function DashboardLayout({ children }: { children: ReactNod
         <main className="flex flex-1 flex-col px-6 py-6">{children}</main>
         <PostPreviewModal />
       </div>
-      <DevToolsPanel />
     </StoreProvider>
   );
 }

@@ -1,7 +1,6 @@
 import type { ReactNode } from "react";
 import { redirect } from "next/navigation";
 import { AppBackground } from "@/components/layout/AppBackground";
-import { DevToolsPanel } from "@/components/devtools/DevToolsPanel";
 import { StoreProvider } from "@/lib/store";
 import { createClient } from "@/lib/supabase/server";
 
@@ -21,7 +20,6 @@ export default async function PostsLayout({ children }: { children: ReactNode })
     <StoreProvider>
       <AppBackground />
       <div className="min-h-screen px-6 py-10">{children}</div>
-      <DevToolsPanel />
     </StoreProvider>
   );
 }

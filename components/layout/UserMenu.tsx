@@ -5,6 +5,7 @@ import { LogOut, Sparkles } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { PersonalStatsModal } from "@/components/stats/PersonalStatsModal";
 import { ConnectClaudeModal } from "@/components/settings/ConnectClaudeModal";
+import { DevToolsPanel } from "@/components/devtools/DevToolsPanel";
 import { useStore } from "@/lib/store";
 
 export function UserMenu() {
@@ -23,6 +24,7 @@ export function UserMenu() {
       >
         <Sparkles className="size-4" />
       </button>
+      <DevToolsPanel />
       <button
         type="button"
         onClick={() => setStatsOpen(true)}

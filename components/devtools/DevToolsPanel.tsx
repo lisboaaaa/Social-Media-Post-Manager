@@ -3,9 +3,11 @@
 import { useState } from "react";
 import Link from "next/link";
 import { toast } from "sonner";
-import { Wrench, ExternalLink, RefreshCw } from "lucide-react";
+import { Wrench, ChevronDown, AlertTriangle } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Separator } from "@/components/ui/separator";
 import { createClient } from "@/lib/supabase/client";
 import { useStore } from "@/lib/store";
@@ -20,6 +22,10 @@ const NAV_LINKS = [
   { href: "/suggest", label: "Suggest (everyone)" },
   { href: "/login", label: "Login" },
 ];
+
+// Supabase's free tier storage quota — what "Storage & media" below is
+// measuring usage against.
+const STORAGE_QUOTA_BYTES = 1024 * 1024 * 1024;
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -37,10 +43,12 @@ export function DevToolsPanel() {
   const [loadingStats, setLoadingStats] = useState(false);
   const [purging, setPurging] = useState(false);
   const [purgeResult, setPurgeResult] = useState<string | null>(null);
-  const [buildInfo, setBuildInfo] = useState<{ commit: string; branch: string; env: string } | null>(null);
 
   const loadStats = async () => {
     setLoadingStats(true);
+    // A real Supabase Storage API call — this lists the actual objects in
+    // the post-media bucket and sums their real stored file sizes, it's not
+    // an estimate or mocked number.
     const supabase = createClient();
     const { data: files } = await supabase.storage.from("post-media").list("", { limit: 1000 });
     const totalBytes = (files ?? []).reduce((sum, f) => sum + (f.metadata?.size ?? 0), 0);
@@ -48,17 +56,9 @@ export function DevToolsPanel() {
     setLoadingStats(false);
   };
 
-  const loadBuildInfo = async () => {
-    const res = await fetch("/api/dev-tools/build-info");
-    if (res.ok) setBuildInfo(await res.json());
-  };
-
   const handleOpenChange = (next: boolean) => {
     setOpen(next);
-    if (next) {
-      loadStats();
-      loadBuildInfo();
-    }
+    if (next) loadStats();
   };
 
   const handleRunPurge = async () => {
@@ -106,6 +106,8 @@ export function DevToolsPanel() {
     toast.success("Test team note added");
   };
 
+  const storagePercent = stats ? Math.min(100, (stats.totalBytes / STORAGE_QUOTA_BYTES) * 100) : 0;
+
   return (
     <Sheet open={open} onOpenChange={handleOpenChange}>
       <SheetTrigger
@@ -114,11 +116,11 @@ export function DevToolsPanel() {
             type="button"
             aria-label="Development tools"
             title="Development tools"
-            className="fixed bottom-4 right-4 z-40 flex size-11 items-center justify-center rounded-full border bg-background text-muted-foreground shadow-lg hover:text-foreground"
+            className="flex size-8 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"
           />
         }
       >
-        <Wrench className="size-4.5" />
+        <Wrench className="size-4" />
       </SheetTrigger>
 
       <SheetContent side="right" className="w-full overflow-y-auto sm:max-w-md">
@@ -128,30 +130,30 @@ export function DevToolsPanel() {
 
         <div className="flex flex-col gap-5 px-4 pb-6">
           <Section title="Pages">
-            <div className="flex flex-col gap-1">
-              {NAV_LINKS.map((link) => (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  onClick={() => setOpen(false)}
-                  className="flex items-center justify-between rounded-md px-2 py-1.5 text-sm hover:bg-muted"
-                >
-                  {link.label}
-                  <ExternalLink className="size-3.5 text-muted-foreground" />
-                </Link>
-              ))}
-            </div>
+            <DropdownMenu>
+              <DropdownMenuTrigger render={<Button type="button" variant="outline" className="w-full justify-between" />}>
+                Open a page
+                <ChevronDown className="size-3.5" />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="min-w-[var(--anchor-width)]">
+                {NAV_LINKS.map((link) => (
+                  <DropdownMenuItem key={link.href} render={<Link href={link.href} onClick={() => setOpen(false)} />}>
+                    {link.label}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
           </Section>
 
           <Separator />
 
           <Section title="Who am I">
-            <div className="rounded-md border bg-muted/30 p-2.5 text-sm">
-              <p className="font-medium">{currentUser.fullName}</p>
-              <p className="text-muted-foreground">{currentUser.email}</p>
-              <p className="mt-1 font-mono text-xs text-muted-foreground">
-                is_marketing: {String(currentUser.isMarketing)}
-              </p>
+            <div className="flex items-center justify-between rounded-md border bg-muted/30 p-2.5 text-sm">
+              <div>
+                <p className="font-medium">{currentUser.fullName}</p>
+                <p className="text-muted-foreground">{currentUser.email}</p>
+              </div>
+              <Badge variant="secondary">Marketing team</Badge>
             </div>
           </Section>
 
@@ -189,33 +191,36 @@ export function DevToolsPanel() {
           <Section title="Storage & media">
             <div className="rounded-md border bg-muted/30 p-2.5 text-sm">
               <p>{posts.length} posts · {comments.length} comments · {suggestions.length} suggestions</p>
-              <p className="mt-1">
-                {loadingStats
-                  ? "Loading storage stats…"
-                  : stats
-                    ? `${stats.fileCount} file(s) in post-media, ~${(stats.totalBytes / 1024).toFixed(1)} KB`
-                    : "—"}
-              </p>
+              {loadingStats ? (
+                <p className="mt-2 text-muted-foreground">Loading real usage from Supabase Storage…</p>
+              ) : stats ? (
+                <div className="mt-2 flex flex-col gap-1">
+                  <div className="flex items-center justify-between text-xs text-muted-foreground">
+                    <span>{stats.fileCount} file(s) in post-media, ~{(stats.totalBytes / 1024).toFixed(1)} KB used</span>
+                    <span className="font-medium text-foreground">{storagePercent.toFixed(3)}% of 1 GB</span>
+                  </div>
+                  <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
+                    <div
+                      className="h-full rounded-full bg-primary"
+                      style={{ width: `${Math.max(storagePercent, storagePercent > 0 ? 1 : 0)}%` }}
+                    />
+                  </div>
+                </div>
+              ) : null}
             </div>
-            <div className="flex items-center gap-2">
-              <Button type="button" size="sm" variant="outline" onClick={handleRunPurge} disabled={purging}>
-                <RefreshCw className="size-3.5" />
+
+            <div className="rounded-md border border-destructive/30 bg-destructive/5 p-2.5">
+              <p className="mb-2 flex items-start gap-1.5 text-xs text-muted-foreground">
+                <AlertTriangle className="mt-0.5 size-3.5 shrink-0 text-destructive" />
+                Permanently deletes photos/videos (not the posts themselves) from anything Published or in Trash for
+                more than 90 days. Runs automatically every night — this button just lets you run it on demand
+                instead of waiting. Can&apos;t be undone.
+              </p>
+              <Button type="button" size="sm" variant="destructive" onClick={handleRunPurge} disabled={purging}>
                 {purging ? "Running…" : "Run 90-day purge now"}
               </Button>
+              {purgeResult && <p className="mt-2 text-xs text-muted-foreground">{purgeResult}</p>}
             </div>
-            {purgeResult && <p className="text-xs text-muted-foreground">{purgeResult}</p>}
-          </Section>
-
-          <Separator />
-
-          <Section title="Build">
-            {buildInfo ? (
-              <p className="font-mono text-xs text-muted-foreground">
-                {buildInfo.env} · {buildInfo.branch}@{buildInfo.commit}
-              </p>
-            ) : (
-              <p className="text-xs text-muted-foreground">Loading…</p>
-            )}
           </Section>
         </div>
       </SheetContent>

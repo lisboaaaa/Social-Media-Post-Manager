@@ -15,6 +15,7 @@ import { useStore } from "@/lib/store";
 import { POST_STATUSES } from "@/lib/types";
 import { CommentThread } from "@/components/comments/CommentThread";
 import { DeleteReasonDialog } from "./DeleteReasonDialog";
+import { ShareDialog } from "./ShareDialog";
 import { PlatformBadgeGroup } from "./PlatformBadge";
 import { PlatformMockup } from "./mockups/PlatformMockup";
 
@@ -23,6 +24,7 @@ export function PostPreviewModal() {
   const { previewPostId, openPreview, closePreview, getPostById, addPost, deletePost, profiles, categories } = useStore();
   const post = previewPostId ? getPostById(previewPostId) : undefined;
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [shareDialogOpen, setShareDialogOpen] = useState(false);
 
   // Lets a shared link (?post=<id>) open straight into this post's preview,
   // instead of only being able to link to the full edit page.
@@ -61,11 +63,16 @@ export function PostPreviewModal() {
     router.push(`/posts/${duplicate.id}`);
   };
 
-  const handleShare = () => {
-    if (!post) return;
-    const link = `${window.location.origin}/board?post=${post.id}`;
+  const shareMessage = (() => {
+    if (!post) return "";
+    const link = `${typeof window !== "undefined" ? window.location.origin : ""}/board?post=${post.id}`;
     const label = post.title ? `the "${post.title}" post` : "this post";
-    navigator.clipboard.writeText(`I need your feedback on ${label} — here's the link: ${link}`);
+    return `I need your feedback on ${label} — here's the link: ${link}`;
+  })();
+
+  const handleShareCopy = (message: string) => {
+    navigator.clipboard.writeText(message);
+    setShareDialogOpen(false);
     toast.success("Copied! Paste it wherever you want (Slack, email…)");
   };
 
@@ -97,7 +104,14 @@ export function PostPreviewModal() {
                   </Badge>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Button type="button" variant="outline" size="icon" onClick={handleShare} aria-label="Share" title="Copy a shareable message with a link to this post">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    onClick={() => setShareDialogOpen(true)}
+                    aria-label="Share"
+                    title="Copy a shareable message with a link to this post"
+                  >
                     <Share2 className="size-3.5" />
                   </Button>
                   <Button type="button" variant="outline" size="icon" onClick={handleDuplicate} aria-label="Duplicate" title="Duplicate">
@@ -177,6 +191,12 @@ export function PostPreviewModal() {
       </DialogContent>
     </Dialog>
     <DeleteReasonDialog open={deleteDialogOpen} onCancel={() => setDeleteDialogOpen(false)} onConfirm={handleDeleteConfirm} />
+    <ShareDialog
+      open={shareDialogOpen}
+      defaultMessage={shareMessage}
+      onCancel={() => setShareDialogOpen(false)}
+      onCopy={handleShareCopy}
+    />
     </>
   );
 }
