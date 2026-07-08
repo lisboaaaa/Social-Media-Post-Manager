@@ -1,11 +1,21 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { mapPostRow, POST_SELECT } from "@/lib/supabase/mappers";
-import type { Platform, Post, PostStatus } from "@/lib/types";
+import type { Platform, Post, PostStatus, Profile } from "@/lib/types";
 import { POST_STATUSES } from "@/lib/types";
 
 export const STATUS_ORDER: PostStatus[] = POST_STATUSES.map((s) => s.value);
 
 export class McpToolError extends Error {}
+
+// Board-touching tools are limited to the marketing team — everyone else's
+// token can still reach submit_idea, which stays ungated.
+export function assertMarketing(profile: Profile): void {
+  if (!profile.isMarketing) {
+    throw new McpToolError(
+      "This action is limited to the marketing team. Everyone else can use submit_idea to send a post idea to marketing for review.",
+    );
+  }
+}
 
 export async function fetchPostByNumberOrId(
   supabase: SupabaseClient,

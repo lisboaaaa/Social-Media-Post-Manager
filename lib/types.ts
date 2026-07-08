@@ -48,6 +48,7 @@ export interface Profile {
   email: string;
   initials: string;
   lastReadTeamNotesAt: string | null;
+  isMarketing: boolean;
 }
 
 export interface Category {
@@ -78,6 +79,20 @@ export interface CommentReaction {
   authorId: string;
   emoji: string;
   createdAt: string; // ISO datetime
+}
+
+export type SuggestionStatus = "new" | "accepted" | "dismissed";
+
+export interface Suggestion {
+  id: string;
+  submittedBy: string;
+  description: string;
+  imageUrl: string | null;
+  status: SuggestionStatus;
+  reviewedBy: string | null;
+  reviewedAt: string | null;
+  resultingPostId: string | null;
+  createdAt: string;
 }
 
 export interface Post {

@@ -1,4 +1,4 @@
-import type { Category, Comment, CommentReaction, Platform, Post, PostImage, Profile } from "@/lib/types";
+import type { Category, Comment, CommentReaction, Platform, Post, PostImage, Profile, Suggestion } from "@/lib/types";
 
 // Shapes coming back from Supabase are snake_case and (for posts) nest their
 // related rows via PostgREST's embedded-resource syntax — these turn that
@@ -10,6 +10,19 @@ interface ProfileRow {
   email: string;
   initials: string;
   last_read_team_notes_at: string | null;
+  is_marketing: boolean;
+}
+
+interface SuggestionRow {
+  id: string;
+  submitted_by: string;
+  description: string;
+  image_url: string | null;
+  status: Suggestion["status"];
+  reviewed_by: string | null;
+  reviewed_at: string | null;
+  resulting_post_id: string | null;
+  created_at: string;
 }
 
 interface CategoryRow {
@@ -75,6 +88,21 @@ export function mapProfileRow(row: ProfileRow): Profile {
     email: row.email,
     initials: row.initials,
     lastReadTeamNotesAt: row.last_read_team_notes_at,
+    isMarketing: row.is_marketing,
+  };
+}
+
+export function mapSuggestionRow(row: SuggestionRow): Suggestion {
+  return {
+    id: row.id,
+    submittedBy: row.submitted_by,
+    description: row.description,
+    imageUrl: row.image_url,
+    status: row.status,
+    reviewedBy: row.reviewed_by,
+    reviewedAt: row.reviewed_at,
+    resultingPostId: row.resulting_post_id,
+    createdAt: row.created_at,
   };
 }
 

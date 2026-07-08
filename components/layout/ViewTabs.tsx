@@ -8,6 +8,7 @@ const TABS = [
   { href: "/board", label: "Board" },
   { href: "/calendar", label: "Calendar" },
   { href: "/archive", label: "Archive" },
+  { href: "/inbox", label: "Suggestions" },
 ];
 
 export function ViewTabs() {

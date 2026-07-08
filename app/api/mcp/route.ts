@@ -8,7 +8,8 @@ import { getPostSchema, getPostTool } from "@/lib/mcp/tools/get-post";
 import { updatePostSchema, updatePostTool } from "@/lib/mcp/tools/update-post";
 import { movePostSchema, movePostTool } from "@/lib/mcp/tools/move-post";
 import { addCommentSchema, addCommentTool } from "@/lib/mcp/tools/add-comment";
-import { McpToolError } from "@/lib/mcp/tools/shared";
+import { submitIdeaSchema, submitIdeaTool } from "@/lib/mcp/tools/submit-idea";
+import { assertMarketing, McpToolError } from "@/lib/mcp/tools/shared";
 
 function textResult(value: unknown) {
   return { content: [{ type: "text" as const, text: JSON.stringify(value) }] };
@@ -33,6 +34,7 @@ const handler = createMcpHandler(
         const profile = extra.authInfo!.extra!.profile as Profile;
         const supabase = createServiceClient();
         try {
+          assertMarketing(profile);
           return textResult(await createPostTool(input, profile, supabase));
         } catch (error) {
           return errorResult(error);
@@ -43,9 +45,11 @@ const handler = createMcpHandler(
     server.registerTool(
       "list_posts",
       { title: "List posts", description: "List posts, optionally filtered by status, platform, category, or target date range.", inputSchema: listPostsSchema },
-      async (input) => {
+      async (input, extra) => {
+        const profile = extra.authInfo!.extra!.profile as Profile;
         const supabase = createServiceClient();
         try {
+          assertMarketing(profile);
           return textResult(await listPostsTool(input, supabase));
         } catch (error) {
           return errorResult(error);
@@ -56,9 +60,11 @@ const handler = createMcpHandler(
     server.registerTool(
       "get_post",
       { title: "Get post", description: "Get full detail for a post by its number (e.g. 123 for #123) or uuid.", inputSchema: getPostSchema },
-      async (input) => {
+      async (input, extra) => {
+        const profile = extra.authInfo!.extra!.profile as Profile;
         const supabase = createServiceClient();
         try {
+          assertMarketing(profile);
           return textResult(await getPostTool(input, supabase));
         } catch (error) {
           return errorResult(error);
@@ -73,9 +79,11 @@ const handler = createMcpHandler(
         description: "Partially update a post's content (title, copy, platforms, categories, date, assignee). Does not change status — use move_post for that.",
         inputSchema: updatePostSchema,
       },
-      async (input) => {
+      async (input, extra) => {
+        const profile = extra.authInfo!.extra!.profile as Profile;
         const supabase = createServiceClient();
         try {
+          assertMarketing(profile);
           return textResult(await updatePostTool(input, supabase));
         } catch (error) {
           return errorResult(error);
@@ -90,9 +98,11 @@ const handler = createMcpHandler(
         description: "Change a post's workflow status (e.g. to 'scheduled' or 'published'). Scheduled requires a target date, Published requires a link.",
         inputSchema: movePostSchema,
       },
-      async (input) => {
+      async (input, extra) => {
+        const profile = extra.authInfo!.extra!.profile as Profile;
         const supabase = createServiceClient();
         try {
+          assertMarketing(profile);
           return textResult(await movePostTool(input, supabase));
         } catch (error) {
           return errorResult(error);
@@ -107,7 +117,26 @@ const handler = createMcpHandler(
         const profile = extra.authInfo!.extra!.profile as Profile;
         const supabase = createServiceClient();
         try {
+          assertMarketing(profile);
           return textResult(await addCommentTool(input, profile, supabase));
+        } catch (error) {
+          return errorResult(error);
+        }
+      },
+    );
+
+    server.registerTool(
+      "submit_idea",
+      {
+        title: "Submit idea",
+        description: "Send a post idea to the marketing team for review. Available to everyone, not just marketing.",
+        inputSchema: submitIdeaSchema,
+      },
+      async (input, extra) => {
+        const profile = extra.authInfo!.extra!.profile as Profile;
+        const supabase = createServiceClient();
+        try {
+          return textResult(await submitIdeaTool(input, profile, supabase));
         } catch (error) {
           return errorResult(error);
         }

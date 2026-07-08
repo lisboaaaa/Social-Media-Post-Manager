@@ -3,6 +3,10 @@ import { NextResponse, type NextRequest } from "next/server";
 
 // /api/mcp authenticates itself via a bearer token (api_tokens table), not a cookie session
 const PUBLIC_PATHS = ["/login", "/auth/callback", "/api/mcp"];
+// Open to every signed-in employee regardless of role — everything else is
+// marketing-only by default, so a future new page is safe unless explicitly
+// added here.
+const EVERYONE_PATHS = ["/suggest"];
 
 export async function proxy(request: NextRequest) {
   let response = NextResponse.next({ request });
@@ -35,8 +39,24 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
-  if (user && request.nextUrl.pathname === "/login") {
-    return NextResponse.redirect(new URL("/board", request.url));
+  if (user && request.nextUrl.pathname !== "/auth/callback" && request.nextUrl.pathname !== "/api/mcp") {
+    const isEveryonePath = EVERYONE_PATHS.some((path) => request.nextUrl.pathname.startsWith(path));
+
+    if (request.nextUrl.pathname === "/login") {
+      const { data: profile } = await supabase.from("profiles").select("is_marketing").eq("email", user.email).maybeSingle();
+      return NextResponse.redirect(new URL(profile?.is_marketing ? "/board" : "/suggest", request.url));
+    }
+
+    if (!isEveryonePath) {
+      const { data: profile } = await supabase.from("profiles").select("is_marketing").eq("email", user.email).maybeSingle();
+      // A missing profile row (brand-new sign-in, trigger hasn't run yet) is
+      // treated as not-marketing — fail closed rather than briefly exposing the board.
+      // "/" falls in here too: a marketing match falls through to app/page.tsx's
+      // own redirect("/board"), so it needs no special case of its own.
+      if (!profile?.is_marketing) {
+        return NextResponse.redirect(new URL("/suggest", request.url));
+      }
+    }
   }
 
   return response;

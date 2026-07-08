@@ -4,8 +4,8 @@ import { createContext, useContext, useEffect, useMemo, useState, type ReactNode
 import { toast } from "sonner";
 import { createClient } from "./supabase/client";
 import { mentionsProfile } from "./mentions";
-import { mapCategoryRow, mapCommentReactionRow, mapCommentRow, mapPostRow, mapProfileRow, POST_SELECT } from "./supabase/mappers";
-import type { Category, Comment, CommentReaction, Platform, Post, PostStatus, Profile } from "./types";
+import { mapCategoryRow, mapCommentReactionRow, mapCommentRow, mapPostRow, mapProfileRow, mapSuggestionRow, POST_SELECT } from "./supabase/mappers";
+import type { Category, Comment, CommentReaction, Platform, Post, PostStatus, Profile, Suggestion } from "./types";
 
 // Mirrors the SQL side (handle_new_user() in auth-setup.sql) — company
 // emails are firstname.lastname@daredata.engineering. Used as a client-side
@@ -43,6 +43,7 @@ interface StoreValue {
   profiles: Profile[];
   comments: Comment[];
   commentReactions: CommentReaction[];
+  suggestions: Suggestion[];
   currentUser: Profile;
   filters: Filters;
   setFilters: (filters: Partial<Filters>) => void;
@@ -59,6 +60,8 @@ interface StoreValue {
   addComment: (postId: string | null, body: string, parentId?: string | null) => void;
   deleteComment: (id: string) => void;
   toggleReaction: (commentId: string, emoji: string) => void;
+  promoteSuggestion: (suggestion: Suggestion) => Post;
+  dismissSuggestion: (id: string) => void;
   hasUnreadTeamNotes: boolean;
   lastReadTeamNotesAt: string | null;
   markTeamNotesRead: () => void;
@@ -79,6 +82,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [comments, setComments] = useState<Comment[]>([]);
   const [commentReactions, setCommentReactions] = useState<CommentReaction[]>([]);
+  const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [filters, setFiltersState] = useState<Filters>(EMPTY_FILTERS);
   const [previewPostId, setPreviewPostId] = useState<string | null>(null);
   const [profileError, setProfileError] = useState<string | null>(null);
@@ -87,13 +91,14 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     let cancelled = false;
 
     async function load() {
-      const [userRes, profilesRes, categoriesRes, postsRes, commentsRes, reactionsRes] = await Promise.all([
+      const [userRes, profilesRes, categoriesRes, postsRes, commentsRes, reactionsRes, suggestionsRes] = await Promise.all([
         supabase.auth.getUser(),
         supabase.from("profiles").select("*"),
         supabase.from("categories").select("*"),
         supabase.from("posts").select(POST_SELECT).order("created_at", { ascending: true }),
         supabase.from("comments").select("*").order("created_at", { ascending: true }),
         supabase.from("comment_reactions").select("*"),
+        supabase.from("suggestions").select("*").order("created_at", { ascending: false }),
       ]);
 
       if (cancelled) return;
@@ -122,7 +127,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       // security), surface a clear error instead of a silent, endless spinner.
       if (email && !loadedProfiles.some((p) => p.email === email)) {
         const { fullName, initials } = deriveNameFromEmail(email);
-        const selfProvisioned: Profile = { id: crypto.randomUUID(), fullName, email, initials, lastReadTeamNotesAt: null };
+        const selfProvisioned: Profile = { id: crypto.randomUUID(), fullName, email, initials, lastReadTeamNotesAt: null, isMarketing: false };
         const { error: insertError } = await supabase.from("profiles").insert({
           id: selfProvisioned.id,
           full_name: selfProvisioned.fullName,
@@ -147,6 +152,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       setPosts((postsRes.data ?? []).map(mapPostRow));
       setComments((commentsRes.data ?? []).map(mapCommentRow));
       setCommentReactions((reactionsRes.data ?? []).map(mapCommentReactionRow));
+      setSuggestions((suggestionsRes.data ?? []).map(mapSuggestionRow));
       setLoading(false);
     }
 
@@ -237,6 +243,14 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       .on("postgres_changes", { event: "DELETE", schema: "public", table: "comment_reactions" }, (payload) => {
         const deletedId = (payload.old as { id: string }).id;
         setCommentReactions((prev) => prev.filter((r) => r.id !== deletedId));
+      })
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "suggestions" }, (payload) => {
+        const incoming = mapSuggestionRow(payload.new as Parameters<typeof mapSuggestionRow>[0]);
+        setSuggestions((prev) => (prev.some((s) => s.id === incoming.id) ? prev : [incoming, ...prev]));
+      })
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "suggestions" }, (payload) => {
+        const incoming = mapSuggestionRow(payload.new as Parameters<typeof mapSuggestionRow>[0]);
+        setSuggestions((prev) => prev.map((s) => (s.id === incoming.id ? incoming : s)));
       })
       .subscribe();
 
@@ -551,6 +565,52 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     })();
   };
 
+  const promoteSuggestion = (suggestion: Suggestion): Post => {
+    const post = addPost({
+      platforms: ["linkedin"],
+      title: suggestion.description.slice(0, 60),
+      descriptions: { linkedin: suggestion.description, instagram: "", x: "" },
+      status: "backlog",
+      targetDate: null,
+      needsChanges: false,
+      publishedUrl: null,
+      assigneeId: null,
+      requestedById: suggestion.submittedBy,
+      categoryIds: [],
+      images: suggestion.imageUrl
+        ? [{ id: crypto.randomUUID(), postId: "", imageUrl: suggestion.imageUrl, position: 0, mediaType: "image" }]
+        : [],
+    });
+
+    const now = new Date().toISOString();
+    setSuggestions((prev) =>
+      prev.map((s) => (s.id === suggestion.id ? { ...s, status: "accepted", reviewedBy: currentUser!.id, reviewedAt: now, resultingPostId: post.id } : s)),
+    );
+
+    (async () => {
+      const { error } = await supabase
+        .from("suggestions")
+        .update({ status: "accepted", reviewed_by: currentUser!.id, reviewed_at: now, resulting_post_id: post.id })
+        .eq("id", suggestion.id);
+      if (error) toast.error(`Couldn't update the suggestion: ${error.message}`);
+    })();
+
+    return post;
+  };
+
+  const dismissSuggestion = (id: string) => {
+    const now = new Date().toISOString();
+    setSuggestions((prev) => prev.map((s) => (s.id === id ? { ...s, status: "dismissed", reviewedBy: currentUser!.id, reviewedAt: now } : s)));
+
+    (async () => {
+      const { error } = await supabase
+        .from("suggestions")
+        .update({ status: "dismissed", reviewed_by: currentUser!.id, reviewed_at: now })
+        .eq("id", id);
+      if (error) toast.error(`Couldn't dismiss the suggestion: ${error.message}`);
+    })();
+  };
+
   const lastReadTeamNotesAt = currentUser?.lastReadTeamNotesAt ?? null;
 
   const hasUnreadTeamNotes = useMemo(
@@ -576,6 +636,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     profiles,
     comments,
     commentReactions,
+    suggestions,
     currentUser: currentUser!,
     filters,
     setFilters,
@@ -592,6 +653,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     addComment,
     deleteComment,
     toggleReaction,
+    promoteSuggestion,
+    dismissSuggestion,
     hasUnreadTeamNotes,
     lastReadTeamNotesAt,
     markTeamNotesRead,
