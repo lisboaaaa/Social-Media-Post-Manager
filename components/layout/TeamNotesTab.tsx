@@ -50,14 +50,16 @@ export function TeamNotesTab() {
           <SheetTitle>Team notes</SheetTitle>
         </SheetHeader>
         <Tabs defaultValue="recent" className="flex flex-1 flex-col overflow-hidden px-4">
-          <TabsList className="self-center">
-            <TabsTrigger value="recent">Recent</TabsTrigger>
-            <TabsTrigger value="for-you" className="relative">
+          <TabsList className="mb-4 h-10 self-center">
+            <TabsTrigger value="recent" className="px-5 text-sm">
+              Recent
+            </TabsTrigger>
+            <TabsTrigger value="for-you" className="relative px-5 text-sm">
               For you
               {hasNewForYou && <span className="ml-1 size-1.5 shrink-0 rounded-full bg-destructive" aria-label="Unread" />}
             </TabsTrigger>
           </TabsList>
-          <ScrollArea className="flex-1">
+          <ScrollArea className="flex-1 border-t pt-4">
             <TabsContent value="recent" className="pb-4">
               <RecentPostComments
                 unreadSince={unreadSince}

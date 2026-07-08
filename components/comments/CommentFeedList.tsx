@@ -32,7 +32,7 @@ export function CommentFeedList({
   }
 
   return (
-    <div className="flex flex-col gap-1">
+    <div className="flex flex-col gap-2.5">
       {comments.map((comment) => {
         const post = posts.find((p) => p.id === comment.postId);
         const author = profiles.find((p) => p.id === comment.authorId);
@@ -43,7 +43,7 @@ export function CommentFeedList({
           <button
             key={comment.id}
             onClick={() => onOpenPost(post.id)}
-            className="flex flex-col gap-1.5 rounded-md p-2 text-left hover:bg-muted"
+            className="flex flex-col gap-2 rounded-lg border bg-background p-3 text-left shadow-sm transition-shadow hover:shadow-md"
           >
             <div className="flex items-center gap-1.5">
               <PlatformBadgeGroup platforms={post.platforms} />
@@ -54,10 +54,14 @@ export function CommentFeedList({
                 <AvatarFallback className="text-[9px]">{author?.initials ?? "?"}</AvatarFallback>
               </Avatar>
               <div className="min-w-0 flex-1">
-                <div className="flex items-baseline gap-1.5">
-                  {isUnread && <span className="size-1.5 shrink-0 rounded-full bg-destructive" aria-label="Unread" />}
-                  <span className="text-sm font-medium">{author?.fullName ?? "Unknown"}</span>
-                  <span className="font-mono text-[10.5px] text-muted-foreground">{formatWhen(comment.createdAt)}</span>
+                <div className="flex items-center justify-between gap-1.5">
+                  <span className="flex min-w-0 items-center gap-1.5">
+                    {isUnread && <span className="size-1.5 shrink-0 rounded-full bg-destructive" aria-label="Unread" />}
+                    <span className="truncate text-sm font-medium">{author?.fullName ?? "Unknown"}</span>
+                  </span>
+                  <span className="shrink-0 font-mono text-xs font-medium text-muted-foreground">
+                    {formatWhen(comment.createdAt)}
+                  </span>
                 </div>
                 <p className="line-clamp-2 text-sm text-foreground/90">{comment.body}</p>
               </div>
