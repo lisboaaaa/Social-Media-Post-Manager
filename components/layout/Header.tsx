@@ -10,7 +10,7 @@ export function Header() {
   return (
     <div className="sticky top-0 z-40 border-b bg-background">
       <div className="flex flex-wrap items-center justify-between gap-3 px-6 py-4">
-        <h1 className="text-2xl font-bold tracking-tight">Social Media Post Manager</h1>
+        <h1 className="text-3xl font-bold tracking-tight">Social Media Post Manager</h1>
         <div className="flex items-center gap-2">
           <TeamNotesTab />
           <Link href="/posts/new" className={buttonVariants({ size: "lg", className: "px-4 text-[0.95rem]" })}>
