@@ -78,36 +78,34 @@ export function ArchiveView() {
                   }}
                   className="group flex cursor-pointer flex-col overflow-hidden rounded-lg border bg-background text-left transition-shadow hover:shadow-md"
                 >
-                  <div className="relative aspect-square w-full overflow-hidden bg-muted">
-                    {cover ? (
-                      cover.mediaType === "video" ? (
+                  {cover && (
+                    <div className="relative aspect-square w-full overflow-hidden bg-muted">
+                      {cover.mediaType === "video" ? (
                         <video src={cover.imageUrl} autoPlay loop muted playsInline className="h-full w-full object-cover" />
                       ) : (
                         // eslint-disable-next-line @next/next/no-img-element
                         <img src={cover.imageUrl} alt="" className="h-full w-full object-cover transition-transform group-hover:scale-105" />
-                      )
-                    ) : (
-                      <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-teal-500 via-sky-600 to-fuchsia-500" />
-                    )}
-                    {cover?.mediaType === "video" && (
-                      <span className="absolute inset-0 flex items-center justify-center bg-black/10">
-                        <Play className="size-6 fill-white text-white" />
-                      </span>
-                    )}
-                    {post.publishedUrl && (
-                      <a
-                        href={post.publishedUrl}
-                        target="_blank"
-                        rel="noreferrer"
-                        onClick={(e) => e.stopPropagation()}
-                        aria-label="Open the published post"
-                        title="Open the published post"
-                        className="absolute right-1.5 top-1.5 flex size-7 items-center justify-center rounded-full bg-background/90 text-foreground opacity-0 shadow transition-opacity group-hover:opacity-100"
-                      >
-                        <ExternalLink className="size-3.5" />
-                      </a>
-                    )}
-                  </div>
+                      )}
+                      {cover.mediaType === "video" && (
+                        <span className="absolute inset-0 flex items-center justify-center bg-black/10">
+                          <Play className="size-6 fill-white text-white" />
+                        </span>
+                      )}
+                      {post.publishedUrl && (
+                        <a
+                          href={post.publishedUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          onClick={(e) => e.stopPropagation()}
+                          aria-label="Open the published post"
+                          title="Open the published post"
+                          className="absolute right-1.5 top-1.5 flex size-7 items-center justify-center rounded-full bg-background/90 text-foreground opacity-0 shadow transition-opacity group-hover:opacity-100"
+                        >
+                          <ExternalLink className="size-3.5" />
+                        </a>
+                      )}
+                    </div>
+                  )}
                   <div className="flex flex-col gap-1.5 p-2.5">
                     <PlatformBadgeGroup platforms={post.platforms} />
                     <p className="line-clamp-2 text-sm font-medium leading-snug">{post.title}</p>
