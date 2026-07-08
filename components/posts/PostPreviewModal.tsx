@@ -1,11 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
 import { toast } from "sonner";
-import { Copy, Trash2 } from "lucide-react";
+import { Copy, Share2, Trash2 } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -20,9 +20,21 @@ import { PlatformMockup } from "./mockups/PlatformMockup";
 
 export function PostPreviewModal() {
   const router = useRouter();
-  const { previewPostId, closePreview, getPostById, addPost, deletePost, profiles, categories } = useStore();
+  const { previewPostId, openPreview, closePreview, getPostById, addPost, deletePost, profiles, categories } = useStore();
   const post = previewPostId ? getPostById(previewPostId) : undefined;
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+
+  // Lets a shared link (?post=<id>) open straight into this post's preview,
+  // instead of only being able to link to the full edit page.
+  useEffect(() => {
+    const sharedPostId = new URLSearchParams(window.location.search).get("post");
+    if (!sharedPostId) return;
+    openPreview(sharedPostId);
+    const url = new URL(window.location.href);
+    url.searchParams.delete("post");
+    window.history.replaceState({}, "", url);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const open = Boolean(post);
   const assignee = post ? profiles.find((p) => p.id === post.assigneeId) : undefined;
@@ -47,6 +59,14 @@ export function PostPreviewModal() {
     closePreview();
     toast.success("Post duplicated — tweak it and save when ready");
     router.push(`/posts/${duplicate.id}`);
+  };
+
+  const handleShare = () => {
+    if (!post) return;
+    const link = `${window.location.origin}/board?post=${post.id}`;
+    const label = post.title ? `the "${post.title}" post` : "this post";
+    navigator.clipboard.writeText(`I need your feedback on ${label} — here's the link: ${link}`);
+    toast.success("Copied! Paste it wherever you want (Slack, email…)");
   };
 
   const handleDeleteConfirm = (reason: string) => {
@@ -77,6 +97,9 @@ export function PostPreviewModal() {
                   </Badge>
                 </div>
                 <div className="flex items-center gap-2">
+                  <Button type="button" variant="outline" size="icon" onClick={handleShare} aria-label="Share" title="Copy a shareable message with a link to this post">
+                    <Share2 className="size-3.5" />
+                  </Button>
                   <Button type="button" variant="outline" size="icon" onClick={handleDuplicate} aria-label="Duplicate" title="Duplicate">
                     <Copy className="size-3.5" />
                   </Button>
