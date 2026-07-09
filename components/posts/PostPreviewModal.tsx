@@ -12,6 +12,7 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
 import { useStore } from "@/lib/store";
+import { getShareTemplate, renderShareTemplate } from "@/lib/shareTemplate";
 import { POST_STATUSES } from "@/lib/types";
 import { CommentThread } from "@/components/comments/CommentThread";
 import { DeleteReasonDialog } from "./DeleteReasonDialog";
@@ -66,8 +67,7 @@ export function PostPreviewModal() {
   const shareMessage = (() => {
     if (!post) return "";
     const link = `${typeof window !== "undefined" ? window.location.origin : ""}/board?post=${post.id}`;
-    const label = post.title ? `the "${post.title}" post` : "this post";
-    return `I need your feedback on ${label} — here's the link: ${link}`;
+    return renderShareTemplate(getShareTemplate(), { title: post.title || "Untitled post", link });
   })();
 
   const handleShareCopy = (message: string) => {

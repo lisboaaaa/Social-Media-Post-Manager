@@ -1,16 +1,17 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { toast } from "sonner";
-import { Wrench, ChevronDown, AlertTriangle } from "lucide-react";
+import { Wrench, ChevronDown, AlertTriangle, ExternalLink } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Separator } from "@/components/ui/separator";
+import { Textarea } from "@/components/ui/textarea";
 import { createClient } from "@/lib/supabase/client";
 import { useStore } from "@/lib/store";
+import { DEFAULT_SHARE_TEMPLATE, SHARE_TEMPLATE_STORAGE_KEY, getShareTemplate } from "@/lib/shareTemplate";
 
 const NAV_LINKS = [
   { href: "/board", label: "Board" },
@@ -39,10 +40,18 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 export function DevToolsPanel() {
   const { currentUser, posts, comments, suggestions, addPost, addComment } = useStore();
   const [open, setOpen] = useState(false);
+  const [pagesExpanded, setPagesExpanded] = useState(false);
   const [stats, setStats] = useState<{ fileCount: number; totalBytes: number } | null>(null);
   const [loadingStats, setLoadingStats] = useState(false);
   const [purging, setPurging] = useState(false);
   const [purgeResult, setPurgeResult] = useState<string | null>(null);
+  const [shareTemplate, setShareTemplate] = useState(DEFAULT_SHARE_TEMPLATE);
+
+  useEffect(() => {
+    // Reading a saved preference on mount — legitimate sync-with-storage case.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setShareTemplate(getShareTemplate());
+  }, []);
 
   const loadStats = async () => {
     setLoadingStats(true);
@@ -106,6 +115,11 @@ export function DevToolsPanel() {
     toast.success("Test team note added");
   };
 
+  const handleSaveShareTemplate = () => {
+    window.localStorage.setItem(SHARE_TEMPLATE_STORAGE_KEY, shareTemplate);
+    toast.success("Share message template saved");
+  };
+
   const storagePercent = stats ? Math.min(100, (stats.totalBytes / STORAGE_QUOTA_BYTES) * 100) : 0;
 
   return (
@@ -130,19 +144,30 @@ export function DevToolsPanel() {
 
         <div className="flex flex-col gap-5 px-4 pb-6">
           <Section title="Pages">
-            <DropdownMenu>
-              <DropdownMenuTrigger render={<Button type="button" variant="outline" className="w-full justify-between" />}>
-                Open a page
-                <ChevronDown className="size-3.5" />
-              </DropdownMenuTrigger>
-              <DropdownMenuContent className="min-w-[var(--anchor-width)]">
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full justify-between"
+              onClick={() => setPagesExpanded((v) => !v)}
+            >
+              {pagesExpanded ? "Hide pages" : "Show pages"}
+              <ChevronDown className={`size-3.5 transition-transform ${pagesExpanded ? "rotate-180" : ""}`} />
+            </Button>
+            {pagesExpanded && (
+              <div className="flex flex-col gap-1 rounded-md border p-1.5">
                 {NAV_LINKS.map((link) => (
-                  <DropdownMenuItem key={link.href} render={<Link href={link.href} onClick={() => setOpen(false)} />}>
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    onClick={() => setOpen(false)}
+                    className="flex items-center justify-between rounded-md px-2 py-1.5 text-sm hover:bg-muted"
+                  >
                     {link.label}
-                  </DropdownMenuItem>
+                    <ExternalLink className="size-3.5 text-muted-foreground" />
+                  </Link>
                 ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
+              </div>
+            )}
           </Section>
 
           <Separator />
@@ -159,28 +184,35 @@ export function DevToolsPanel() {
 
           <Separator />
 
-          <Section title="View as">
+          <Section title="Non-marketing preview">
             <p className="text-sm text-muted-foreground">
-              Non-marketing employees land on <code className="font-mono text-xs">/suggest</code>{" "}
-              instead of the board — this is exactly what they see (you can visit it too, marketing isn&apos;t
-              blocked from it).
+              This is what everyone outside marketing sees when they sign in.
             </p>
-            <Link href="/suggest" onClick={() => setOpen(false)} className="text-sm text-primary underline underline-offset-2">
-              Open /suggest
+            <Link
+              href="/suggest"
+              target="_blank"
+              rel="noreferrer"
+              className={buttonVariants({ variant: "outline", className: "gap-1.5 self-start" })}
+            >
+              Open /suggest in a new tab
+              <ExternalLink className="size-3.5" />
             </Link>
           </Section>
 
           <Separator />
 
           <Section title="Create test data">
+            <p className="text-sm text-muted-foreground">
+              Adds real sample content so you have something to click around with.
+            </p>
             <div className="flex flex-wrap gap-2">
-              <Button type="button" size="sm" variant="outline" onClick={handleCreateTestPost}>
+              <Button type="button" variant="outline" onClick={handleCreateTestPost}>
                 Test post
               </Button>
-              <Button type="button" size="sm" variant="outline" onClick={handleCreateTestSuggestion}>
+              <Button type="button" variant="outline" onClick={handleCreateTestSuggestion}>
                 Test suggestion
               </Button>
-              <Button type="button" size="sm" variant="outline" onClick={handleCreateTestComment}>
+              <Button type="button" variant="outline" onClick={handleCreateTestComment}>
                 Test team note
               </Button>
             </div>
@@ -188,18 +220,31 @@ export function DevToolsPanel() {
 
           <Separator />
 
+          <Section title="Share message template">
+            <p className="text-sm text-muted-foreground">
+              What the Share button on a post pre-fills. Use <code className="font-mono text-xs">{"{title}"}</code>{" "}
+              and <code className="font-mono text-xs">{"{link}"}</code> as placeholders.
+            </p>
+            <Textarea rows={3} value={shareTemplate} onChange={(e) => setShareTemplate(e.target.value)} />
+            <Button type="button" size="sm" onClick={handleSaveShareTemplate} className="self-start">
+              Save template
+            </Button>
+          </Section>
+
+          <Separator />
+
           <Section title="Storage & media">
-            <div className="rounded-md border bg-muted/30 p-2.5 text-sm">
+            <div className="rounded-md border bg-muted/30 p-3 text-base">
               <p>{posts.length} posts · {comments.length} comments · {suggestions.length} suggestions</p>
               {loadingStats ? (
                 <p className="mt-2 text-muted-foreground">Loading real usage from Supabase Storage…</p>
               ) : stats ? (
-                <div className="mt-2 flex flex-col gap-1">
-                  <div className="flex items-center justify-between text-xs text-muted-foreground">
-                    <span>{stats.fileCount} file(s) in post-media, ~{(stats.totalBytes / 1024).toFixed(1)} KB used</span>
+                <div className="mt-2 flex flex-col gap-1.5">
+                  <div className="flex items-center justify-between text-sm text-muted-foreground">
+                    <span>{stats.fileCount} file(s), ~{(stats.totalBytes / 1024).toFixed(1)} KB used</span>
                     <span className="font-medium text-foreground">{storagePercent.toFixed(3)}% of 1 GB</span>
                   </div>
-                  <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
+                  <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
                     <div
                       className="h-full rounded-full bg-primary"
                       style={{ width: `${Math.max(storagePercent, storagePercent > 0 ? 1 : 0)}%` }}
