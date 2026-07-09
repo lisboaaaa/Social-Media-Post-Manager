@@ -3,15 +3,26 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { toast } from "sonner";
-import { Wrench, ChevronDown, AlertTriangle, ExternalLink } from "lucide-react";
+import {
+  Wrench,
+  ChevronDown,
+  AlertTriangle,
+  ExternalLink,
+  Compass,
+  UserRound,
+  FlaskConical,
+  Share2,
+  HardDrive,
+  Save,
+} from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 import { createClient } from "@/lib/supabase/client";
 import { useStore } from "@/lib/store";
 import { DEFAULT_SHARE_TEMPLATE, SHARE_TEMPLATE_STORAGE_KEY, getShareTemplate } from "@/lib/shareTemplate";
+import { cn } from "@/lib/utils";
 
 const NAV_LINKS = [
   { href: "/board", label: "Board" },
@@ -28,10 +39,21 @@ const NAV_LINKS = [
 // measuring usage against.
 const STORAGE_QUOTA_BYTES = 1024 * 1024 * 1024;
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+function Section({
+  title,
+  icon: Icon,
+  children,
+}: {
+  title: string;
+  icon: React.ComponentType<{ className?: string }>;
+  children: React.ReactNode;
+}) {
   return (
-    <div className="flex flex-col gap-2">
-      <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{title}</h3>
+    <div className="flex flex-col gap-3 rounded-xl border bg-background p-4 shadow-sm">
+      <h3 className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+        <Icon className="size-3.5" />
+        {title}
+      </h3>
       {children}
     </div>
   );
@@ -137,13 +159,13 @@ export function DevToolsPanel() {
         <Wrench className="size-4" />
       </SheetTrigger>
 
-      <SheetContent side="right" className="w-full overflow-y-auto sm:max-w-md">
+      <SheetContent side="right" className="w-full overflow-y-auto bg-muted/20 sm:max-w-md">
         <SheetHeader>
           <SheetTitle>Development tools</SheetTitle>
         </SheetHeader>
 
-        <div className="flex flex-col gap-5 px-4 pb-6">
-          <Section title="Pages">
+        <div className="flex flex-col gap-3 px-4 pb-6">
+          <Section title="Pages" icon={Compass}>
             <Button
               type="button"
               variant="outline"
@@ -151,16 +173,17 @@ export function DevToolsPanel() {
               onClick={() => setPagesExpanded((v) => !v)}
             >
               {pagesExpanded ? "Hide pages" : "Show pages"}
-              <ChevronDown className={`size-3.5 transition-transform ${pagesExpanded ? "rotate-180" : ""}`} />
+              <ChevronDown className={cn("size-3.5 transition-transform", pagesExpanded && "rotate-180")} />
             </Button>
             {pagesExpanded && (
-              <div className="flex flex-col gap-1 rounded-md border p-1.5">
+              <div className="flex flex-col gap-1 rounded-md border bg-muted/30 p-1.5">
                 {NAV_LINKS.map((link) => (
                   <Link
                     key={link.href}
                     href={link.href}
-                    onClick={() => setOpen(false)}
-                    className="flex items-center justify-between rounded-md px-2 py-1.5 text-sm hover:bg-muted"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="flex items-center justify-between rounded-md px-2 py-1.5 text-sm hover:bg-background"
                   >
                     {link.label}
                     <ExternalLink className="size-3.5 text-muted-foreground" />
@@ -170,10 +193,8 @@ export function DevToolsPanel() {
             )}
           </Section>
 
-          <Separator />
-
-          <Section title="Who am I">
-            <div className="flex items-center justify-between rounded-md border bg-muted/30 p-2.5 text-sm">
+          <Section title="Who am I" icon={UserRound}>
+            <div className="flex items-center justify-between text-sm">
               <div>
                 <p className="font-medium">{currentUser.fullName}</p>
                 <p className="text-muted-foreground">{currentUser.email}</p>
@@ -182,26 +203,7 @@ export function DevToolsPanel() {
             </div>
           </Section>
 
-          <Separator />
-
-          <Section title="Non-marketing preview">
-            <p className="text-sm text-muted-foreground">
-              This is what everyone outside marketing sees when they sign in.
-            </p>
-            <Link
-              href="/suggest"
-              target="_blank"
-              rel="noreferrer"
-              className={buttonVariants({ variant: "outline", className: "gap-1.5 self-start" })}
-            >
-              Open /suggest in a new tab
-              <ExternalLink className="size-3.5" />
-            </Link>
-          </Section>
-
-          <Separator />
-
-          <Section title="Create test data">
+          <Section title="Create test data" icon={FlaskConical}>
             <p className="text-sm text-muted-foreground">
               Adds real sample content so you have something to click around with.
             </p>
@@ -218,43 +220,40 @@ export function DevToolsPanel() {
             </div>
           </Section>
 
-          <Separator />
-
-          <Section title="Share message template">
+          <Section title="Share message template" icon={Share2}>
             <p className="text-sm text-muted-foreground">
               What the Share button on a post pre-fills. Use <code className="font-mono text-xs">{"{title}"}</code>{" "}
               and <code className="font-mono text-xs">{"{link}"}</code> as placeholders.
             </p>
             <Textarea rows={3} value={shareTemplate} onChange={(e) => setShareTemplate(e.target.value)} />
             <Button type="button" size="sm" onClick={handleSaveShareTemplate} className="self-start">
+              <Save className="size-3.5" />
               Save template
             </Button>
           </Section>
 
-          <Separator />
-
-          <Section title="Storage & media">
-            <div className="rounded-md border bg-muted/30 p-3 text-base">
-              <p>{posts.length} posts · {comments.length} comments · {suggestions.length} suggestions</p>
-              {loadingStats ? (
-                <p className="mt-2 text-muted-foreground">Loading real usage from Supabase Storage…</p>
-              ) : stats ? (
-                <div className="mt-2 flex flex-col gap-1.5">
-                  <div className="flex items-center justify-between text-sm text-muted-foreground">
-                    <span>{stats.fileCount} file(s), ~{(stats.totalBytes / 1024).toFixed(1)} KB used</span>
-                    <span className="font-medium text-foreground">{storagePercent.toFixed(3)}% of 1 GB</span>
-                  </div>
-                  <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
-                    <div
-                      className="h-full rounded-full bg-primary"
-                      style={{ width: `${Math.max(storagePercent, storagePercent > 0 ? 1 : 0)}%` }}
-                    />
-                  </div>
+          <Section title="Storage & media" icon={HardDrive}>
+            <p className="text-sm">
+              {posts.length} posts · {comments.length} comments · {suggestions.length} suggestions
+            </p>
+            {loadingStats ? (
+              <p className="text-sm text-muted-foreground">Loading real usage from Supabase Storage…</p>
+            ) : stats ? (
+              <div className="flex flex-col gap-1.5">
+                <div className="flex items-center justify-between text-sm text-muted-foreground">
+                  <span>{stats.fileCount} file(s), ~{(stats.totalBytes / 1024).toFixed(1)} KB used</span>
+                  <span className="font-medium text-foreground">{storagePercent.toFixed(3)}% of 1 GB</span>
                 </div>
-              ) : null}
-            </div>
+                <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
+                  <div
+                    className="h-full rounded-full bg-primary"
+                    style={{ width: `${Math.max(storagePercent, storagePercent > 0 ? 1 : 0)}%` }}
+                  />
+                </div>
+              </div>
+            ) : null}
 
-            <div className="rounded-md border border-destructive/30 bg-destructive/5 p-2.5">
+            <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-3">
               <p className="mb-2 flex items-start gap-1.5 text-xs text-muted-foreground">
                 <AlertTriangle className="mt-0.5 size-3.5 shrink-0 text-destructive" />
                 Permanently deletes photos/videos (not the posts themselves) from anything Published or in Trash for
