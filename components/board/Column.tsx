@@ -1,5 +1,5 @@
 import { Droppable } from "@hello-pangea/dnd";
-import { PackageOpen } from "lucide-react";
+import { CalendarClock, CheckCheck, Inbox, PackageOpen, Palette, PenLine, Rocket, Search, type LucideIcon } from "lucide-react";
 import { PostCard } from "./PostCard";
 import type { Post, PostStatus } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 // Column headers stay plain now — Laura didn't like a colored background,
 // tried unified or per-status. The count badge keeps a small per-status
 // tint since that's a contained chip, not a wash across the whole header.
+// An icon per stage tells columns apart instead, now that color doesn't.
 const STATUS_COLORS: Record<PostStatus, { badge: string }> = {
   backlog: { badge: "bg-slate-100 text-slate-500" },
   writing: { badge: "bg-blue-50 text-blue-600/80" },
@@ -15,6 +16,15 @@ const STATUS_COLORS: Record<PostStatus, { badge: string }> = {
   approved: { badge: "bg-emerald-50 text-emerald-600/80" },
   scheduled: { badge: "bg-violet-50 text-violet-600/80" },
   published: { badge: "bg-primary/10 text-primary/80" },
+};
+const STATUS_ICONS: Record<PostStatus, LucideIcon> = {
+  backlog: Inbox,
+  writing: PenLine,
+  designing: Palette,
+  in_review: Search,
+  approved: CheckCheck,
+  scheduled: CalendarClock,
+  published: Rocket,
 };
 
 export function Column({
@@ -29,11 +39,15 @@ export function Column({
   hint?: string;
 }) {
   const colors = STATUS_COLORS[status];
+  const Icon = STATUS_ICONS[status];
 
   return (
-    <div className="flex min-w-0 flex-col">
+    <div className="flex min-w-0 flex-col border-r border-border/70 px-3.5 first:pl-0 last:border-r-0 last:pr-0">
       <div className="mb-2 flex items-center justify-between px-0.5 py-1">
-        <h2 className="text-lg font-semibold tracking-wide">{label}</h2>
+        <h2 className="flex items-center gap-1.5 text-lg font-semibold tracking-wide">
+          <Icon className="size-4 text-muted-foreground" />
+          {label}
+        </h2>
         <span className={cn("rounded-full px-2 py-0.5 font-mono text-[11px] font-medium", colors.badge)}>
           {posts.length}
         </span>
