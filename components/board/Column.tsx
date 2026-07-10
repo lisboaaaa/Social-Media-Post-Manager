@@ -4,19 +4,11 @@ import { PostCard } from "./PostCard";
 import type { Post, PostStatus } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
-// Column headers stay plain now — Laura didn't like a colored background and
-// didn't like per-stage icons either (read as unprofessional). The name
-// itself sits in a small solid-colored box instead, plus a vertical divider
-// between columns (which she did like) for separation.
-const STATUS_COLORS: Record<PostStatus, { badge: string }> = {
-  backlog: { badge: "bg-slate-100 text-slate-500" },
-  writing: { badge: "bg-blue-50 text-blue-600/80" },
-  designing: { badge: "bg-cyan-50 text-cyan-600/80" },
-  in_review: { badge: "bg-teal-50 text-teal-600/80" },
-  approved: { badge: "bg-emerald-50 text-emerald-600/80" },
-  scheduled: { badge: "bg-violet-50 text-violet-600/80" },
-  published: { badge: "bg-primary/10 text-primary/80" },
-};
+// Every column shares one tint now (Laura preferred the plain Backlog look
+// over per-status colors, colored backgrounds, and icons — all tried and
+// rejected). The vertical divider between columns is what's carrying
+// separation now.
+const BADGE_CLASS = "bg-slate-100 text-slate-500";
 
 export function Column({
   status,
@@ -29,15 +21,13 @@ export function Column({
   posts: Post[];
   hint?: string;
 }) {
-  const colors = STATUS_COLORS[status];
-
   return (
     <div className="flex min-w-0 flex-col border-r border-border/70 px-3.5 first:pl-0 last:border-r-0 last:pr-0">
       <div className="mb-2 flex items-center justify-between px-0.5 py-1">
-        <h2 className={cn("rounded-md px-2 py-1 text-base font-semibold tracking-wide", colors.badge)}>
+        <h2 className={cn("rounded-md px-2 py-1 text-base font-semibold tracking-wide", BADGE_CLASS)}>
           {label}
         </h2>
-        <span className={cn("rounded-full px-2 py-0.5 font-mono text-[11px] font-medium", colors.badge)}>
+        <span className={cn("rounded-full px-2 py-0.5 font-mono text-[11px] font-medium", BADGE_CLASS)}>
           {posts.length}
         </span>
       </div>
