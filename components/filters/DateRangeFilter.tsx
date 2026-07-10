@@ -31,6 +31,9 @@ export function DateRangeFilter() {
   });
 
   useEffect(() => {
+    // Resetting local pending state when the filter was cleared elsewhere
+    // (e.g. the "Clear" button) — a legitimate sync-with-props case.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (!filters.dateFrom && !filters.dateTo) setPendingRange(undefined);
   }, [filters.dateFrom, filters.dateTo]);
 
@@ -48,7 +51,10 @@ export function DateRangeFilter() {
           <Button
             variant="outline"
             size="sm"
-            className={cn(isActive && "border-primary/40 bg-primary/5 text-primary")}
+            className={cn(
+              "gap-1.5 rounded-lg border-0 bg-background shadow-sm",
+              isActive && "bg-primary/10 text-primary",
+            )}
           />
         }
       >
