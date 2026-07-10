@@ -79,7 +79,7 @@ export function CalendarView() {
               key={day.toISOString()}
               className={cn(
                 "flex min-h-[118px] flex-col gap-1.5 border-b border-r p-2 last:border-r-0",
-                !inMonth ? "bg-muted/20" : isWeekend && "bg-slate-50",
+                !inMonth ? "bg-slate-100" : isWeekend && "bg-slate-50",
               )}
             >
               <span
