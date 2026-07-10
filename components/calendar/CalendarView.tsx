@@ -42,8 +42,8 @@ export function CalendarView() {
 
   return (
     <div className="overflow-hidden rounded-lg border bg-background">
-      <div className="flex items-center justify-between border-b px-4 py-3">
-        <h2 className="text-[15px] font-semibold">{format(cursor, "MMMM yyyy")}</h2>
+      <div className="flex items-center justify-between border-b px-5 py-4">
+        <h2 className="text-3xl font-bold tracking-tight">{format(cursor, "MMMM yyyy")}</h2>
         <div className="flex gap-1.5">
           <Button variant="outline" size="icon-sm" aria-label="Previous month" onClick={() => setCursor((d) => subMonths(d, 1))}>
             <ChevronLeft className="size-4" />
