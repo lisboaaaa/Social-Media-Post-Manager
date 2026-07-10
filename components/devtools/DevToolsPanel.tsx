@@ -157,7 +157,7 @@ export function DevToolsPanel() {
         <Wrench className="size-4" />
       </SheetTrigger>
 
-      <SheetContent side="right" className="w-full overflow-y-auto bg-muted/20 sm:max-w-md">
+      <SheetContent side="right" className="w-full overflow-y-auto bg-muted sm:max-w-md">
         <SheetHeader>
           <SheetTitle>Development tools</SheetTitle>
         </SheetHeader>
@@ -192,9 +192,6 @@ export function DevToolsPanel() {
           </Section>
 
           <Section title="Create test data" icon={FlaskConical}>
-            <p className="text-sm text-muted-foreground">
-              Adds real sample content so you have something to click around with.
-            </p>
             <div className="flex flex-wrap gap-2">
               <Button type="button" variant="outline" onClick={handleCreateTestPost}>
                 Test post
@@ -242,11 +239,9 @@ export function DevToolsPanel() {
             ) : null}
 
             <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-3">
-              <p className="mb-2 flex items-start gap-1.5 text-xs text-muted-foreground">
-                <AlertTriangle className="mt-0.5 size-3.5 shrink-0 text-destructive" />
-                Permanently deletes photos/videos (not the posts themselves) from anything Published or in Trash for
-                more than 90 days. Runs automatically every night — this button just lets you run it on demand
-                instead of waiting. Can&apos;t be undone.
+              <p className="mb-2 flex items-center gap-1.5 text-xs text-muted-foreground">
+                <AlertTriangle className="size-3.5 shrink-0 text-destructive" />
+                Deletes media over 90 days old. Can&apos;t be undone.
               </p>
               <Button type="button" size="sm" variant="destructive" onClick={handleRunPurge} disabled={purging}>
                 {purging ? "Running…" : "Run 90-day purge now"}
