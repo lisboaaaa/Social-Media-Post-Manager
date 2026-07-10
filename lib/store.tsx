@@ -383,6 +383,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         status: post.status,
         target_date: post.targetDate,
         needs_changes: post.needsChanges,
+        keep_media: post.keepMedia,
         published_url: post.publishedUrl,
         assignee_id: post.assigneeId,
         requested_by_id: post.requestedById,
@@ -404,6 +405,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     if ("status" in patch) columns.status = patch.status;
     if ("targetDate" in patch) columns.target_date = patch.targetDate;
     if ("needsChanges" in patch) columns.needs_changes = patch.needsChanges;
+    if ("keepMedia" in patch) columns.keep_media = patch.keepMedia;
     if ("publishedUrl" in patch) columns.published_url = patch.publishedUrl;
     if ("assigneeId" in patch) columns.assignee_id = patch.assigneeId;
     if ("requestedById" in patch) columns.requested_by_id = patch.requestedById;
@@ -612,6 +614,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       status: "backlog",
       targetDate: null,
       needsChanges: false,
+      keepMedia: false,
       publishedUrl: null,
       assigneeId: null,
       requestedById: suggestion.submittedBy,

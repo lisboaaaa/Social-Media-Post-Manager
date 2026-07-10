@@ -30,11 +30,13 @@ export async function purgeOldMedia(supabase: SupabaseClient): Promise<PurgeResu
       .from("posts")
       .select("id, post_images(id, image_url)")
       .eq("status", "published")
+      .eq("keep_media", false)
       .lt("target_date", cutoffDate),
     supabase
       .from("posts")
       .select("id, post_images(id, image_url)")
       .not("deleted_at", "is", null)
+      .eq("keep_media", false)
       .lt("deleted_at", cutoffTimestamp),
   ]);
 

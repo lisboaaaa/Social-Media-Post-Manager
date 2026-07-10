@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { format } from "date-fns";
-import { ArrowLeft, CalendarIcon, Trash2, X } from "lucide-react";
+import { ArrowLeft, CalendarIcon, ChevronLeft, ShieldCheck, Trash2, X } from "lucide-react";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -54,8 +54,10 @@ export function PostForm({ post }: { post?: Post }) {
   const [requestedById, setRequestedById] = useState(post?.requestedById ?? NONE);
   const [categoryIds, setCategoryIds] = useState<string[]>(post?.categoryIds ?? []);
   const [images, setImages] = useState(post?.images ?? []);
+  const [keepMedia, setKeepMedia] = useState(post?.keepMedia ?? false);
   const [dateOpen, setDateOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
 
   const snapshot = JSON.stringify({
     platforms,
@@ -68,6 +70,7 @@ export function PostForm({ post }: { post?: Post }) {
     requestedById,
     categoryIds,
     images,
+    keepMedia,
   });
   const [initialSnapshot] = useState(snapshot);
   const isDirty = snapshot !== initialSnapshot;
@@ -115,6 +118,7 @@ export function PostForm({ post }: { post?: Post }) {
     createdBy: post?.createdBy ?? currentUser.id,
     categoryIds,
     images,
+    keepMedia,
     createdAt: post?.createdAt ?? new Date().toISOString(),
     updatedAt: post?.updatedAt ?? new Date().toISOString(),
     deletedAt: post?.deletedAt ?? null,
@@ -155,6 +159,7 @@ export function PostForm({ post }: { post?: Post }) {
       requestedById: requestedById === NONE ? null : requestedById,
       categoryIds,
       images,
+      keepMedia,
     };
 
     if (post) {
@@ -271,13 +276,6 @@ export function PostForm({ post }: { post?: Post }) {
               }
             />
           </div>
-
-          {platforms.length > 0 && (
-            <div className="flex flex-col gap-2 border-t pt-6">
-              <Label className="text-lg font-semibold">Preview</Label>
-              <PlatformMockup post={draftPost} />
-            </div>
-          )}
 
           <div className="flex justify-end gap-2 border-t pt-4">
             <Link href="/board" onClick={confirmDiscard} className={buttonVariants({ variant: "outline", size: "lg" })}>
@@ -404,6 +402,24 @@ export function PostForm({ post }: { post?: Post }) {
             <CategoryPicker selectedIds={categoryIds} onChange={setCategoryIds} disabled={isArchived} />
           </div>
 
+          <div className="flex flex-col gap-2 border-t pt-4">
+            <Label className="text-[10.5px] font-semibold uppercase tracking-wide text-muted-foreground">Media retention</Label>
+            <label className="flex items-start gap-2">
+              <Checkbox
+                className="mt-0.5"
+                checked={keepMedia}
+                onCheckedChange={(checked) => setKeepMedia(checked === true)}
+              />
+              <span className="flex flex-col gap-0.5">
+                <span className="flex items-center gap-1.5 text-sm font-medium">
+                  <ShieldCheck className="size-3.5 text-muted-foreground" />
+                  Keep this photo forever
+                </span>
+                <span className="text-xs text-muted-foreground">Skips the automatic 90-day media cleanup.</span>
+              </span>
+            </label>
+          </div>
+
           {showPublishedUrl && (
             <div className="flex flex-col gap-2">
               <Label htmlFor="published-url" className="text-[10.5px] font-semibold uppercase tracking-wide text-muted-foreground">Published URL</Label>
@@ -418,6 +434,38 @@ export function PostForm({ post }: { post?: Post }) {
           )}
         </div>
       </div>
+
+      {platforms.length > 0 && (
+        <>
+          {/* Not a modal on purpose — Laura wants to keep writing the
+              description with this open, so no backdrop/focus-trap that
+              would block the rest of the form. */}
+          <button
+            type="button"
+            onClick={() => setPreviewOpen((v) => !v)}
+            aria-label={previewOpen ? "Hide preview" : "Show preview"}
+            title={previewOpen ? "Hide preview" : "Show preview"}
+            className="fixed right-0 top-1/2 z-40 flex -translate-y-1/2 flex-col items-center gap-2 rounded-l-xl bg-primary px-2 py-5 text-primary-foreground shadow-lg transition-colors hover:bg-primary/90"
+          >
+            <ChevronLeft className={cn("size-5 transition-transform", previewOpen && "rotate-180")} />
+            <span className="text-xs font-semibold tracking-wide [writing-mode:vertical-rl]">Preview</span>
+          </button>
+          <div
+            className={cn(
+              "fixed right-0 top-0 z-30 flex h-screen w-full flex-col overflow-y-auto border-l bg-background shadow-2xl transition-transform duration-300 ease-out sm:w-[420px]",
+              previewOpen ? "translate-x-0" : "translate-x-full",
+            )}
+          >
+            <div className="border-b px-5 py-4">
+              <h3 className="text-lg font-semibold">Preview</h3>
+              <p className="text-xs text-muted-foreground">Updates live as you type — leave it open while you write.</p>
+            </div>
+            <div className="flex-1 p-4">
+              <PlatformMockup post={draftPost} />
+            </div>
+          </div>
+        </>
+      )}
     </form>
   );
 }

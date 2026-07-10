@@ -112,6 +112,7 @@ export function DevToolsPanel() {
       status: "backlog",
       targetDate: null,
       needsChanges: false,
+      keepMedia: false,
       publishedUrl: null,
       assigneeId: null,
       requestedById: null,

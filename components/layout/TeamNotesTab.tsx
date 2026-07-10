@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { MessageSquareText } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
@@ -9,20 +10,21 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { RecentPostComments } from "@/components/comments/RecentPostComments";
 import { MyCommentsFeed } from "@/components/comments/MyCommentsFeed";
 import { mentionsProfile } from "@/lib/mentions";
-import { useStore } from "@/lib/store";
+import { isCommentUnread, useStore } from "@/lib/store";
 
 export function TeamNotesTab() {
   const [open, setOpen] = useState(false);
   const [unreadSince, setUnreadSince] = useState<string | null>(null);
-  const { comments, posts, openPreview, hasUnreadTeamNotes, lastReadTeamNotesAt, markTeamNotesRead, currentUser } =
-    useStore();
+  const { comments, posts, openPreview, lastReadTeamNotesAt, markTeamNotesRead, currentUser } = useStore();
 
-  const hasNewForYou = comments.some((c) => {
+  const unreadCount = comments.filter((c) => isCommentUnread(c, currentUser?.id, lastReadTeamNotesAt)).length;
+
+  const forYouCount = comments.filter((c) => {
     if (c.postId === null || c.authorId === currentUser.id) return false;
     if (lastReadTeamNotesAt !== null && c.createdAt <= lastReadTeamNotesAt) return false;
     const post = posts.find((p) => p.id === c.postId);
     return mentionsProfile(c.body, currentUser.fullName) || post?.assigneeId === currentUser.id;
-  });
+  }).length;
 
   const handleOpenChange = (next: boolean) => {
     setOpen(next);
@@ -37,11 +39,13 @@ export function TeamNotesTab() {
       <SheetTrigger render={<Button variant="outline" size="lg" className="relative px-4 text-[0.95rem]" />}>
         <MessageSquareText className="size-4" />
         Team notes
-        {hasUnreadTeamNotes && (
-          <span className="absolute -right-1 -top-1 flex size-2.5">
-            <span className="absolute inline-flex size-full animate-ping rounded-full bg-destructive/60" />
-            <span className="relative inline-flex size-2.5 rounded-full bg-destructive" />
-          </span>
+        {unreadCount > 0 && (
+          <Badge
+            variant="destructive"
+            className="absolute -right-2 -top-2 min-w-4.5 justify-center rounded-full px-1 py-0 text-[10px] leading-4"
+          >
+            {unreadCount > 99 ? "99+" : unreadCount}
+          </Badge>
         )}
       </SheetTrigger>
 
@@ -56,7 +60,11 @@ export function TeamNotesTab() {
             </TabsTrigger>
             <TabsTrigger value="for-you" className="relative px-5 text-sm">
               For you
-              {hasNewForYou && <span className="ml-1 size-1.5 shrink-0 rounded-full bg-destructive" aria-label="Unread" />}
+              {forYouCount > 0 && (
+                <Badge variant="destructive" className="min-w-4 justify-center rounded-full px-1 py-0 text-[10px] leading-4">
+                  {forYouCount > 99 ? "99+" : forYouCount}
+                </Badge>
+              )}
             </TabsTrigger>
           </TabsList>
           <ScrollArea className="flex-1 border-t pt-4">

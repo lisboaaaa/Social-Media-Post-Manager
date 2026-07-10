@@ -53,6 +53,7 @@ export function PostPreviewModal() {
       status: "backlog",
       targetDate: null,
       needsChanges: false,
+      keepMedia: post.keepMedia,
       publishedUrl: null,
       assigneeId: null,
       requestedById: null,

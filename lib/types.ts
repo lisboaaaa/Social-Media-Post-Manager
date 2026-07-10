@@ -110,6 +110,7 @@ export interface Post {
   createdBy: string;
   categoryIds: string[];
   images: PostImage[];
+  keepMedia: boolean; // opts this post's photos/videos out of the 90-day auto-purge
   createdAt: string;
   updatedAt: string;
   deletedAt: string | null;
