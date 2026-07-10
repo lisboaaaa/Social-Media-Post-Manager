@@ -157,9 +157,9 @@ export function DevToolsPanel() {
         <Wrench className="size-4" />
       </SheetTrigger>
 
-      <SheetContent side="right" className="w-full overflow-y-auto bg-muted sm:max-w-md">
-        <SheetHeader>
-          <SheetTitle>Development tools</SheetTitle>
+      <SheetContent side="right" className="w-full gap-2 overflow-y-auto bg-muted sm:max-w-md">
+        <SheetHeader className="pb-0">
+          <SheetTitle className="text-xl">Development tools</SheetTitle>
         </SheetHeader>
 
         <div className="flex flex-col gap-3 px-4 pb-6">
@@ -206,10 +206,7 @@ export function DevToolsPanel() {
           </Section>
 
           <Section title="Share message template" icon={Share2}>
-            <p className="text-sm text-muted-foreground">
-              What the Share button on a post pre-fills. Use <code className="font-mono text-xs">{"{title}"}</code>{" "}
-              and <code className="font-mono text-xs">{"{link}"}</code> as placeholders.
-            </p>
+            <p className="text-sm text-muted-foreground">What the Share button on a post pre-fills.</p>
             <Textarea rows={3} value={shareTemplate} onChange={(e) => setShareTemplate(e.target.value)} />
             <Button type="button" size="sm" onClick={handleSaveShareTemplate} className="self-start">
               <Save className="size-3.5" />

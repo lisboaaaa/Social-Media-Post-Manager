@@ -33,7 +33,7 @@ export function Column({
   return (
     <div className="flex min-w-0 flex-col">
       <div className="mb-2 flex items-center justify-between px-0.5 py-1">
-        <h2 className="text-base font-semibold tracking-wide">{label}</h2>
+        <h2 className="text-lg font-semibold tracking-wide">{label}</h2>
         <span className={cn("rounded-full px-2 py-0.5 font-mono text-[11px] font-medium", colors.badge)}>
           {posts.length}
         </span>
