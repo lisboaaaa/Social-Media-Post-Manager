@@ -68,9 +68,9 @@ export function SuggestionsInbox() {
       </div>
 
       <Tabs value={tab} onValueChange={(value) => setTab(value as SuggestionStatus)}>
-        <TabsList>
+        <TabsList className="h-10">
           {TABS.map((t) => (
-            <TabsTrigger key={t.value} value={t.value}>
+            <TabsTrigger key={t.value} value={t.value} className="text-base">
               {t.label}
               {t.value === "new" && suggestions.some((s) => s.status === "new") && (
                 <span className="ml-1 size-1.5 shrink-0 rounded-full bg-destructive" aria-label="New" />

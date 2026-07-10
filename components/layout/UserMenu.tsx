@@ -13,6 +13,10 @@ export function UserMenu() {
   const [statsOpen, setStatsOpen] = useState(false);
   const [connectOpen, setConnectOpen] = useState(false);
 
+  const handleSignOut = () => {
+    if (confirm("Sign out?")) signOut();
+  };
+
   return (
     <div className="flex items-center gap-2">
       <button
@@ -38,7 +42,7 @@ export function UserMenu() {
       </button>
       <button
         type="button"
-        onClick={signOut}
+        onClick={handleSignOut}
         aria-label="Sign out"
         title="Sign out"
         className="flex size-8 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"

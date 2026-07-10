@@ -84,9 +84,7 @@ export function ConnectClaudeModal({ open, onOpenChange }: ConnectClaudeModalPro
         <DialogHeader>
           <DialogTitle>Connect to Claude</DialogTitle>
           <p className="text-sm text-muted-foreground">
-            Generate a personal token, then add this app as an MCP connector in Claude Desktop, claude.ai, or Claude
-            Code, so you can create and manage posts by chatting with Claude — they&apos;ll show up here as if you
-            created them yourself.
+            Generate a token to manage posts by chatting with Claude Desktop, claude.ai, or Claude Code.
           </p>
         </DialogHeader>
 
@@ -136,9 +134,8 @@ export function ConnectClaudeModal({ open, onOpenChange }: ConnectClaudeModalPro
         </div>
 
         <p className="text-xs text-muted-foreground">
-          Point your MCP client at <code>{typeof window !== "undefined" ? window.location.origin : ""}/api/mcp</code> with
-          this token as an <code>Authorization: Bearer</code> header. Note: pasting a photo directly into a Claude.ai
-          chat won&apos;t attach automatically — give Claude a URL to the image, or use Claude Code with a local file.
+          MCP endpoint: <code>{typeof window !== "undefined" ? window.location.origin : ""}/api/mcp</code>, token as{" "}
+          <code>Authorization: Bearer</code>. Give Claude an image URL — pasted photos don&apos;t attach.
         </p>
       </DialogContent>
     </Dialog>

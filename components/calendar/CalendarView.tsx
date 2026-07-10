@@ -51,15 +51,15 @@ export function CalendarView() {
     <div className="overflow-hidden rounded-lg bg-background shadow-md">
       <div className="flex items-center justify-between border-b px-5 py-4">
         <h2 className="text-2xl font-bold tracking-tight">{format(cursor, "MMMM yyyy")}</h2>
-        <div className="flex gap-1.5">
-          <Button variant="outline" size="sm" onClick={() => setCursor(new Date())}>
+        <div className="flex items-center gap-2">
+          <Button size="default" onClick={() => setCursor(new Date())}>
             Today
           </Button>
-          <Button variant="outline" size="icon-sm" aria-label="Previous month" onClick={() => setCursor((d) => subMonths(d, 1))}>
-            <ChevronLeft className="size-4" />
+          <Button variant="outline" size="icon" aria-label="Previous month" onClick={() => setCursor((d) => subMonths(d, 1))}>
+            <ChevronLeft className="size-5" />
           </Button>
-          <Button variant="outline" size="icon-sm" aria-label="Next month" onClick={() => setCursor((d) => addMonths(d, 1))}>
-            <ChevronRight className="size-4" />
+          <Button variant="outline" size="icon" aria-label="Next month" onClick={() => setCursor((d) => addMonths(d, 1))}>
+            <ChevronRight className="size-5" />
           </Button>
         </div>
       </div>

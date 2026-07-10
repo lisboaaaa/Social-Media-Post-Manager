@@ -77,6 +77,7 @@ export default function SuggestPage() {
   };
 
   const handleSignOut = () => {
+    if (!confirm("Sign out?")) return;
     const supabase = createClient();
     supabase.auth.signOut().then(() => {
       window.location.href = "/login";

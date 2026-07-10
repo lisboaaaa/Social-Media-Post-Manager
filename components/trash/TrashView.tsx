@@ -40,7 +40,7 @@ export function TrashView() {
                   {post.deletedAt && ` · ${format(new Date(post.deletedAt), "MMM d, yyyy 'at' HH:mm")}`}
                 </p>
               </button>
-              <Button type="button" variant="outline" size="sm" onClick={() => restorePost(post.id)}>
+              <Button type="button" variant="outline" size="lg" onClick={() => restorePost(post.id)}>
                 Restore
               </Button>
             </div>
