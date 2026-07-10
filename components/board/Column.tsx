@@ -24,7 +24,7 @@ export function Column({
   return (
     <div className="flex min-w-0 flex-col border-r border-border/70 px-3.5 first:pl-0 last:border-r-0 last:pr-0">
       <div className="mb-2 flex items-center justify-between px-0.5 py-1">
-        <h2 className={cn("rounded-md px-2 py-1 text-base font-semibold tracking-wide", BADGE_CLASS)}>
+        <h2 className="rounded-md bg-slate-100 px-2 py-1 text-base font-semibold tracking-wide text-foreground">
           {label}
         </h2>
         <span className={cn("rounded-full px-2 py-0.5 font-mono text-[11px] font-medium", BADGE_CLASS)}>
