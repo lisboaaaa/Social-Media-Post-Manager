@@ -4,14 +4,9 @@ import { PostCard } from "./PostCard";
 import type { Post, PostStatus } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
-// One color per workflow stage, so the board reads at a glance without
-// having to check each card's status individually.
-// Every column shares the same subtle wash now — Laura found per-status
-// colors too busy — but keeps its own badge tint so the count still reads
-// as belonging to that column. A solid pre-mixed color (not bg-primary/5)
-// so it doesn't pick up AppBackground's decorative blobs differently
-// depending on where the column sits on screen.
-const COLUMN_WASH = "bg-[color-mix(in_oklch,var(--primary)_6%,var(--background))]";
+// Column headers stay plain now — Laura didn't like a colored background,
+// tried unified or per-status. The count badge keeps a small per-status
+// tint since that's a contained chip, not a wash across the whole header.
 const STATUS_COLORS: Record<PostStatus, { badge: string }> = {
   backlog: { badge: "bg-slate-100 text-slate-500" },
   writing: { badge: "bg-blue-50 text-blue-600/80" },
@@ -37,7 +32,7 @@ export function Column({
 
   return (
     <div className="flex min-w-0 flex-col">
-      <div className={cn("mb-2 flex items-center justify-between rounded-lg px-2.5 py-2", COLUMN_WASH)}>
+      <div className="mb-2 flex items-center justify-between px-0.5 py-1">
         <h2 className="text-base font-semibold tracking-wide">{label}</h2>
         <span className={cn("rounded-full px-2 py-0.5 font-mono text-[11px] font-medium", colors.badge)}>
           {posts.length}
