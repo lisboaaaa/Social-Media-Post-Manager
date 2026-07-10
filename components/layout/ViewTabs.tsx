@@ -19,7 +19,7 @@ export function ViewTabs() {
   const hasNewSuggestions = suggestions.some((s) => s.status === "new");
 
   return (
-    <div role="tablist" aria-label="View" className="inline-flex items-center gap-0.5 rounded-lg border bg-background p-1">
+    <div role="tablist" aria-label="View" className="inline-flex items-center gap-0.5 rounded-lg bg-muted/50 p-1 shadow-sm">
       {TABS.map((tab) => {
         const active = pathname === tab.href;
         return (
