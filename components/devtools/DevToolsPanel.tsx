@@ -9,13 +9,11 @@ import {
   AlertTriangle,
   ExternalLink,
   Compass,
-  UserRound,
   FlaskConical,
   Share2,
   HardDrive,
   Save,
 } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Textarea } from "@/components/ui/textarea";
@@ -60,7 +58,7 @@ function Section({
 }
 
 export function DevToolsPanel() {
-  const { currentUser, posts, comments, suggestions, addPost, addComment } = useStore();
+  const { posts, comments, suggestions, addPost, addComment } = useStore();
   const [open, setOpen] = useState(false);
   const [pagesExpanded, setPagesExpanded] = useState(false);
   const [stats, setStats] = useState<{ fileCount: number; totalBytes: number } | null>(null);
@@ -191,16 +189,6 @@ export function DevToolsPanel() {
                 ))}
               </div>
             )}
-          </Section>
-
-          <Section title="Who am I" icon={UserRound}>
-            <div className="flex items-center justify-between text-sm">
-              <div>
-                <p className="font-medium">{currentUser.fullName}</p>
-                <p className="text-muted-foreground">{currentUser.email}</p>
-              </div>
-              <Badge variant="secondary">Marketing team</Badge>
-            </div>
           </Section>
 
           <Section title="Create test data" icon={FlaskConical}>
