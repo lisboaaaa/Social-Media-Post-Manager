@@ -50,7 +50,7 @@ export function CalendarView() {
   return (
     <div className="overflow-hidden rounded-lg bg-background shadow-md">
       <div className="flex items-center justify-between border-b px-5 py-4">
-        <h2 className="text-3xl font-bold tracking-tight">{format(cursor, "MMMM yyyy")}</h2>
+        <h2 className="text-2xl font-bold tracking-tight">{format(cursor, "MMMM yyyy")}</h2>
         <div className="flex gap-1.5">
           <Button variant="outline" size="sm" onClick={() => setCursor(new Date())}>
             Today
@@ -69,8 +69,8 @@ export function CalendarView() {
           <div
             key={day}
             className={cn(
-              "px-2.5 py-2 font-mono text-[11px] uppercase tracking-wide text-muted-foreground",
-              (i === 0 || i === 6) && "bg-slate-100",
+              "px-2.5 py-2 font-mono text-[11px] font-semibold uppercase tracking-wide text-foreground/70",
+              (i === 0 || i === 6) && "bg-slate-50",
             )}
           >
             {day}
@@ -98,12 +98,12 @@ export function CalendarView() {
               }}
               className={cn(
                 "flex min-h-[124px] cursor-pointer flex-col gap-1.5 border-b border-r p-2 last:border-r-0 hover:bg-muted/40",
-                !inMonth ? "bg-slate-100" : isWeekend && "bg-slate-50",
+                (!inMonth || isWeekend) && "bg-slate-50",
               )}
             >
               <span
                 className={cn(
-                  "font-mono text-xs text-muted-foreground",
+                  "font-mono text-xs font-semibold text-foreground/80",
                   !inMonth && "text-muted-foreground/50",
                   isToday(day) &&
                     "flex h-6 w-6 items-center justify-center rounded-full bg-primary font-semibold text-primary-foreground",

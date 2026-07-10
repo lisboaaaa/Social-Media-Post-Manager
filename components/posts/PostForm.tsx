@@ -19,6 +19,7 @@ import { CharacterCounter } from "./CharacterCounter";
 import { DeleteReasonDialog } from "./DeleteReasonDialog";
 import { ImageUploader } from "./ImageUploader";
 import { PlatformBadge } from "./PlatformBadge";
+import { PlatformMockup } from "./mockups/PlatformMockup";
 import { useStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
 import {
@@ -97,6 +98,29 @@ export function PostForm({ post }: { post?: Post }) {
   const hasVideo = images.some((img) => img.mediaType === "video");
   const hasMixedMedia = hasVideo && images.length > 1;
   const isArchived = post?.status === "published";
+  // A live stand-in Post built from the form's own state — lets the preview
+  // below update as you type instead of only showing what was last saved.
+  const draftPost: Post = {
+    id: post?.id ?? "draft",
+    postNumber: post?.postNumber ?? 0,
+    platforms,
+    title,
+    descriptions,
+    status,
+    targetDate: targetDate || null,
+    needsChanges,
+    publishedUrl: publishedUrl.trim() || null,
+    assigneeId: assigneeId === NONE ? null : assigneeId,
+    requestedById: requestedById === NONE ? null : requestedById,
+    createdBy: post?.createdBy ?? currentUser.id,
+    categoryIds,
+    images,
+    createdAt: post?.createdAt ?? new Date().toISOString(),
+    updatedAt: post?.updatedAt ?? new Date().toISOString(),
+    deletedAt: post?.deletedAt ?? null,
+    deletedBy: post?.deletedBy ?? null,
+    deleteReason: post?.deleteReason ?? null,
+  };
   // Published URL only matters once a post is actually going out — hiding it
   // earlier keeps the sidebar focused on what's relevant right now.
   const showPublishedUrl = status === "scheduled" || status === "published";
@@ -247,6 +271,13 @@ export function PostForm({ post }: { post?: Post }) {
               }
             />
           </div>
+
+          {platforms.length > 0 && (
+            <div className="flex flex-col gap-2 border-t pt-6">
+              <Label className="text-lg font-semibold">Preview</Label>
+              <PlatformMockup post={draftPost} />
+            </div>
+          )}
 
           <div className="flex justify-end gap-2 border-t pt-4">
             <Link href="/board" onClick={confirmDiscard} className={buttonVariants({ variant: "outline", size: "lg" })}>
