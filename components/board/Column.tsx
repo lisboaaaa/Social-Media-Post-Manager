@@ -8,8 +8,10 @@ import { cn } from "@/lib/utils";
 // having to check each card's status individually.
 // Every column shares the same subtle wash now — Laura found per-status
 // colors too busy — but keeps its own badge tint so the count still reads
-// as belonging to that column.
-const COLUMN_WASH = "bg-primary/5";
+// as belonging to that column. A solid pre-mixed color (not bg-primary/5)
+// so it doesn't pick up AppBackground's decorative blobs differently
+// depending on where the column sits on screen.
+const COLUMN_WASH = "bg-[color-mix(in_oklch,var(--primary)_6%,var(--background))]";
 const STATUS_COLORS: Record<PostStatus, { badge: string }> = {
   backlog: { badge: "bg-slate-100 text-slate-500" },
   writing: { badge: "bg-blue-50 text-blue-600/80" },
