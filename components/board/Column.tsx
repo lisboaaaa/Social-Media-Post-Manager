@@ -7,13 +7,13 @@ import { cn } from "@/lib/utils";
 // One color per workflow stage, so the board reads at a glance without
 // having to check each card's status individually.
 const STATUS_COLORS: Record<PostStatus, { badge: string; wash: string }> = {
-  backlog: { badge: "bg-slate-100 text-slate-500", wash: "bg-slate-50" },
-  writing: { badge: "bg-blue-50 text-blue-600/80", wash: "bg-blue-50/50" },
-  designing: { badge: "bg-cyan-50 text-cyan-600/80", wash: "bg-cyan-50/50" },
-  in_review: { badge: "bg-teal-50 text-teal-600/80", wash: "bg-teal-50/50" },
-  approved: { badge: "bg-emerald-50 text-emerald-600/80", wash: "bg-emerald-50/50" },
-  scheduled: { badge: "bg-violet-50 text-violet-600/80", wash: "bg-violet-50/50" },
-  published: { badge: "bg-primary/10 text-primary/80", wash: "bg-primary/5" },
+  backlog: { badge: "bg-slate-100 text-slate-500", wash: "bg-slate-500/10" },
+  writing: { badge: "bg-blue-50 text-blue-600/80", wash: "bg-blue-500/10" },
+  designing: { badge: "bg-cyan-50 text-cyan-600/80", wash: "bg-cyan-500/10" },
+  in_review: { badge: "bg-teal-50 text-teal-600/80", wash: "bg-teal-500/10" },
+  approved: { badge: "bg-emerald-50 text-emerald-600/80", wash: "bg-emerald-500/10" },
+  scheduled: { badge: "bg-violet-50 text-violet-600/80", wash: "bg-violet-500/10" },
+  published: { badge: "bg-primary/10 text-primary/80", wash: "bg-primary/10" },
 };
 
 export function Column({
