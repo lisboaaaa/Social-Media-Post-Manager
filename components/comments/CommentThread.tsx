@@ -53,9 +53,6 @@ export function CommentThread({ postId }: { postId: string }) {
       <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
         Comments {threadComments.length > 0 && `(${threadComments.length})`}
       </h3>
-      {threadComments.length === 0 && (
-        <p className="text-sm text-muted-foreground">No comments yet on this post.</p>
-      )}
       <div className="flex flex-col gap-3">
         {groups.map((group) => (
           <div key={group.label} className="flex flex-col gap-3">
