@@ -41,7 +41,7 @@ export function CalendarView() {
     );
 
   return (
-    <div className="overflow-hidden rounded-lg border bg-background">
+    <div className="overflow-hidden rounded-lg bg-background shadow-md">
       <div className="flex items-center justify-between border-b px-5 py-4">
         <h2 className="text-3xl font-bold tracking-tight">{format(cursor, "MMMM yyyy")}</h2>
         <div className="flex gap-1.5">
