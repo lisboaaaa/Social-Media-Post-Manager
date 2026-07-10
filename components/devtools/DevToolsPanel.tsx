@@ -9,18 +9,27 @@ import {
   AlertTriangle,
   ExternalLink,
   Compass,
+  Download,
   FlaskConical,
   Share2,
   HardDrive,
   Save,
+  Wifi,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Textarea } from "@/components/ui/textarea";
 import { createClient } from "@/lib/supabase/client";
-import { useStore } from "@/lib/store";
+import { useStore, type RealtimeStatus } from "@/lib/store";
 import { DEFAULT_SHARE_TEMPLATE, SHARE_TEMPLATE_STORAGE_KEY, getShareTemplate } from "@/lib/shareTemplate";
+import { PLATFORM_LABELS } from "@/lib/types";
 import { cn } from "@/lib/utils";
+
+const REALTIME_INFO: Record<RealtimeStatus, { label: string; dot: string }> = {
+  connecting: { label: "Connecting…", dot: "bg-amber-500" },
+  connected: { label: "Connected — live updates on", dot: "bg-emerald-500" },
+  error: { label: "Error — live updates may be stale", dot: "bg-red-500" },
+};
 
 const NAV_LINKS = [
   { href: "/board", label: "Board" },
@@ -58,7 +67,7 @@ function Section({
 }
 
 export function DevToolsPanel() {
-  const { posts, comments, suggestions, addPost, addComment } = useStore();
+  const { posts, comments, suggestions, profiles, categories, realtimeStatus, addPost, addComment } = useStore();
   const [open, setOpen] = useState(false);
   const [pagesExpanded, setPagesExpanded] = useState(false);
   const [stats, setStats] = useState<{ fileCount: number; totalBytes: number } | null>(null);
@@ -141,6 +150,30 @@ export function DevToolsPanel() {
     toast.success("Share message template saved");
   };
 
+  const handleExportCsv = () => {
+    const escape = (value: string) => `"${value.replace(/"/g, '""')}"`;
+    const headers = ["Title", "Platforms", "Status", "Target date", "Assignee", "Categories", "Published URL"];
+    const rows = posts.map((p) => [
+      p.title,
+      p.platforms.map((platform) => PLATFORM_LABELS[platform]).join("/"),
+      p.status,
+      p.targetDate ?? "",
+      profiles.find((pr) => pr.id === p.assigneeId)?.fullName ?? "",
+      p.categoryIds.map((id) => categories.find((c) => c.id === id)?.name).filter(Boolean).join(", "),
+      p.publishedUrl ?? "",
+    ]);
+    const csv = [headers, ...rows].map((row) => row.map((value) => escape(String(value))).join(",")).join("\n");
+
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `posts-export-${new Date().toISOString().slice(0, 10)}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+    toast.success(`Exported ${posts.length} posts`);
+  };
+
   const storagePercent = stats ? Math.min(100, (stats.totalBytes / STORAGE_QUOTA_BYTES) * 100) : 0;
 
   return (
@@ -192,6 +225,13 @@ export function DevToolsPanel() {
             )}
           </Section>
 
+          <Section title="Connection" icon={Wifi}>
+            <div className="flex items-center gap-2 text-sm">
+              <span className={cn("size-2 shrink-0 rounded-full", REALTIME_INFO[realtimeStatus].dot)} />
+              {REALTIME_INFO[realtimeStatus].label}
+            </div>
+          </Section>
+
           <Section title="Create test data" icon={FlaskConical}>
             <div className="flex flex-wrap gap-2">
               <Button type="button" variant="outline" onClick={handleCreateTestPost}>
@@ -212,6 +252,14 @@ export function DevToolsPanel() {
             <Button type="button" size="sm" onClick={handleSaveShareTemplate} className="self-start">
               <Save className="size-3.5" />
               Save template
+            </Button>
+          </Section>
+
+          <Section title="Export data" icon={Download}>
+            <p className="text-sm text-muted-foreground">Download every post as a CSV file.</p>
+            <Button type="button" variant="outline" onClick={handleExportCsv} className="self-start">
+              <Download className="size-3.5" />
+              Export {posts.length} posts as CSV
             </Button>
           </Section>
 

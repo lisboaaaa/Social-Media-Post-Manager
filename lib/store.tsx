@@ -33,6 +33,8 @@ export interface Filters {
 
 const EMPTY_FILTERS: Filters = { platform: "all", categoryId: "all", assigneeId: "all", dateFrom: null, dateTo: null };
 
+export type RealtimeStatus = "connecting" | "connected" | "error";
+
 type NewPostInput = Omit<
   Post,
   "id" | "postNumber" | "createdAt" | "updatedAt" | "createdBy" | "deletedAt" | "deletedBy" | "deleteReason"
@@ -42,6 +44,7 @@ type NewPostInput = Omit<
 
 interface StoreValue {
   loading: boolean;
+  realtimeStatus: RealtimeStatus;
   posts: Post[];
   categories: Category[];
   profiles: Profile[];
@@ -91,6 +94,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [filters, setFiltersState] = useState<Filters>(EMPTY_FILTERS);
   const [previewPostId, setPreviewPostId] = useState<string | null>(null);
   const [profileError, setProfileError] = useState<string | null>(null);
+  const [realtimeStatus, setRealtimeStatus] = useState<RealtimeStatus>("connecting");
 
   useEffect(() => {
     let cancelled = false;
@@ -257,7 +261,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         const incoming = mapSuggestionRow(payload.new as Parameters<typeof mapSuggestionRow>[0]);
         setSuggestions((prev) => prev.map((s) => (s.id === incoming.id ? incoming : s)));
       })
-      .subscribe();
+      .subscribe((status) => {
+        setRealtimeStatus(status === "SUBSCRIBED" ? "connected" : status === "CLOSED" ? "connecting" : "error");
+      });
 
     return () => {
       supabase.removeChannel(channel);
@@ -673,6 +679,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   const value: StoreValue = {
     loading,
+    realtimeStatus,
     posts,
     categories,
     profiles,
