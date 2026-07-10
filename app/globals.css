@@ -129,7 +129,7 @@
   }
   html {
     @apply font-sans;
-    font-size: 106.25%; /* nudges every rem-based text/spacing size up a little, app-wide */
+    font-size: 100%;
   }
   h1, h2, h3, h4, h5, h6 {
     @apply font-heading;
