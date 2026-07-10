@@ -1,6 +1,6 @@
 import { Draggable } from "@hello-pangea/dnd";
 import { format } from "date-fns";
-import { Play } from "lucide-react";
+import { ImageOff, Play } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { PlatformBadgeGroup } from "@/components/posts/PlatformBadge";
@@ -30,7 +30,7 @@ export function PostCard({ post, index }: { post: Post; index: number }) {
           {...provided.dragHandleProps}
           onClick={() => openPreview(post.id)}
           className={cn(
-            "cursor-pointer rounded-lg bg-background p-3 shadow-md transition-shadow hover:shadow-lg",
+            "cursor-pointer rounded-lg bg-background p-3 shadow-md transition-all duration-150 ease-out hover:-translate-y-0.5 hover:shadow-lg",
             snapshot.isDragging && "ring-2 ring-primary/40",
           )}
         >
@@ -62,7 +62,10 @@ export function PostCard({ post, index }: { post: Post; index: number }) {
                 <img src={post.images[0].imageUrl} alt="" className="mb-2.5 h-24 w-full rounded-md object-cover" />
               )
             ) : (
-              <div className="mb-2.5 h-24 rounded-md border border-dashed bg-muted/40" />
+              <div className="mb-2.5 flex h-24 flex-col items-center justify-center gap-1 rounded-md border border-dashed bg-muted/40 text-muted-foreground">
+                <ImageOff className="size-4" />
+                <span className="text-[10px]">No image yet</span>
+              </div>
             ))}
 
           <p className="mb-2.5 line-clamp-2 text-sm font-medium leading-snug">{post.title}</p>
