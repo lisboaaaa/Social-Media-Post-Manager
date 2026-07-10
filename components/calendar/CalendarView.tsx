@@ -15,16 +15,21 @@ import {
   subMonths,
 } from "date-fns";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useStore } from "@/lib/store";
+import { POST_STATUSES } from "@/lib/types";
 import { cn } from "@/lib/utils";
-import { PlatformBadge } from "@/components/posts/PlatformBadge";
+import { PlatformBadge, PlatformBadgeGroup } from "@/components/posts/PlatformBadge";
 
 const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 export function CalendarView() {
-  const { filteredPosts, openPreview } = useStore();
+  const { filteredPosts, openPreview, profiles } = useStore();
   const [cursor, setCursor] = useState(() => new Date());
+  const [selectedDay, setSelectedDay] = useState<Date | null>(null);
 
   const monthStart = startOfMonth(cursor);
   const monthEnd = endOfMonth(cursor);
@@ -40,11 +45,16 @@ export function CalendarView() {
       (post) => post.targetDate && isSameDay(new Date(`${post.targetDate}T00:00:00`), day),
     );
 
+  const selectedDayPosts = selectedDay ? postsForDay(selectedDay) : [];
+
   return (
     <div className="overflow-hidden rounded-lg bg-background shadow-md">
       <div className="flex items-center justify-between border-b px-5 py-4">
         <h2 className="text-3xl font-bold tracking-tight">{format(cursor, "MMMM yyyy")}</h2>
         <div className="flex gap-1.5">
+          <Button variant="outline" size="sm" onClick={() => setCursor(new Date())}>
+            Today
+          </Button>
           <Button variant="outline" size="icon-sm" aria-label="Previous month" onClick={() => setCursor((d) => subMonths(d, 1))}>
             <ChevronLeft className="size-4" />
           </Button>
@@ -77,8 +87,17 @@ export function CalendarView() {
           return (
             <div
               key={day.toISOString()}
+              role="button"
+              tabIndex={0}
+              onClick={() => setSelectedDay(day)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  setSelectedDay(day);
+                }
+              }}
               className={cn(
-                "flex min-h-[118px] flex-col gap-1.5 border-b border-r p-2 last:border-r-0",
+                "flex min-h-[124px] cursor-pointer flex-col gap-1.5 border-b border-r p-2 last:border-r-0 hover:bg-muted/40",
                 !inMonth ? "bg-slate-100" : isWeekend && "bg-slate-50",
               )}
             >
@@ -96,8 +115,11 @@ export function CalendarView() {
                 {dayPosts.map((post) => (
                   <button
                     key={post.id}
-                    onClick={() => openPreview(post.id)}
-                    className="flex items-center gap-1 truncate rounded px-1 py-0.5 text-left text-[11px] hover:bg-muted"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      openPreview(post.id);
+                    }}
+                    className="flex items-center gap-1 truncate rounded-md bg-muted/60 px-1.5 py-1 text-left text-xs hover:bg-muted"
                     title={post.title}
                   >
                     <PlatformBadge platform={post.platforms[0]} className="px-1 py-0 gap-1 shrink-0" />
@@ -117,6 +139,48 @@ export function CalendarView() {
           );
         })}
       </div>
+
+      <Dialog open={Boolean(selectedDay)} onOpenChange={(next) => !next && setSelectedDay(null)}>
+        <DialogContent className="max-h-[80vh] overflow-y-auto sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>{selectedDay ? format(selectedDay, "EEEE, MMMM d") : ""}</DialogTitle>
+          </DialogHeader>
+          <div className="flex flex-col gap-2">
+            {selectedDayPosts.length === 0 && (
+              <p className="text-sm text-muted-foreground">No posts scheduled for this day.</p>
+            )}
+            {selectedDayPosts.map((post) => {
+              const assignee = profiles.find((p) => p.id === post.assigneeId);
+              const statusLabel = POST_STATUSES.find((s) => s.value === post.status)?.label;
+              return (
+                <button
+                  key={post.id}
+                  onClick={() => {
+                    setSelectedDay(null);
+                    openPreview(post.id);
+                  }}
+                  className="flex items-center justify-between gap-2 rounded-lg border p-2.5 text-left hover:bg-muted"
+                >
+                  <div className="flex min-w-0 items-center gap-2">
+                    <PlatformBadgeGroup platforms={post.platforms} />
+                    <span className="truncate text-sm font-medium">{post.title || "Untitled post"}</span>
+                  </div>
+                  <div className="flex shrink-0 items-center gap-2">
+                    {assignee && (
+                      <Avatar size="sm" title={assignee.fullName}>
+                        <AvatarFallback className="text-[9px]">{assignee.initials}</AvatarFallback>
+                      </Avatar>
+                    )}
+                    <Badge variant="secondary" className="font-mono text-[10px] uppercase tracking-wide">
+                      {statusLabel}
+                    </Badge>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Lightbulb, LogOut } from "lucide-react";
+import Link from "next/link";
+import { ArrowLeft, Lightbulb, LogOut } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -22,6 +23,9 @@ export default function SuggestPage() {
   const [images, setImages] = useState<PostImage[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [mine, setMine] = useState<Suggestion[]>([]);
+  // Marketing folks can land here too (Dev Tools "Pages", an old bookmark…)
+  // and otherwise have no way back to the board short of signing out.
+  const [isMarketing, setIsMarketing] = useState(false);
 
   const loadMine = async () => {
     const supabase = createClient();
@@ -29,10 +33,21 @@ export default function SuggestPage() {
     setMine((data ?? []).map(mapSuggestionRow));
   };
 
+  const loadIsMarketing = async () => {
+    const supabase = createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user?.email) return;
+    const { data: profile } = await supabase.from("profiles").select("is_marketing").eq("email", user.email).maybeSingle();
+    setIsMarketing(Boolean(profile?.is_marketing));
+  };
+
   useEffect(() => {
     // Fetching-on-mount, not deriving from props/state — legitimate sync-with-server case.
     // eslint-disable-next-line react-hooks/set-state-in-effect
     loadMine();
+    loadIsMarketing();
   }, []);
 
   const handleSubmit = async () => {
@@ -77,15 +92,26 @@ export default function SuggestPage() {
           </span>
           <h1 className="text-2xl font-semibold tracking-tight">Got a post idea?</h1>
         </div>
-        <button
-          type="button"
-          onClick={handleSignOut}
-          aria-label="Sign out"
-          title="Sign out"
-          className="flex size-8 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"
-        >
-          <LogOut className="size-4" />
-        </button>
+        <div className="flex items-center gap-2">
+          {isMarketing && (
+            <Link
+              href="/board"
+              className="flex items-center gap-1.5 rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground"
+            >
+              <ArrowLeft className="size-4" />
+              Back to board
+            </Link>
+          )}
+          <button
+            type="button"
+            onClick={handleSignOut}
+            aria-label="Sign out"
+            title="Sign out"
+            className="flex size-8 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"
+          >
+            <LogOut className="size-4" />
+          </button>
+        </div>
       </div>
 
       <div className="flex flex-col gap-4 rounded-2xl border bg-background p-8 shadow-lg">
