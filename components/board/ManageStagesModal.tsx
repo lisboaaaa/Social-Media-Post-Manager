@@ -17,14 +17,31 @@ interface ManageStagesModalProps {
   onOpenChange: (open: boolean) => void;
 }
 
-const FLAG_TOGGLES: { key: keyof Stage; label: string }[] = [
-  { key: "requiresTargetDate", label: "Needs a target date before moving here" },
-  { key: "requiresPublishedUrl", label: "Needs a published link before moving here" },
-  { key: "blocksDelete", label: "Protect posts here from deletion" },
-  { key: "countsForMediaPurge", label: "Auto-delete media after 90 days here" },
-  { key: "locksEditing", label: "Lock editing once a post reaches here" },
-  { key: "isArchiveStage", label: "Show in the Archive tab" },
-  { key: "isReviewStage", label: "Moving back from here flags \"Needs changes\"" },
+// Grouped by what the flag is about, rather than one flat wall of 7
+// checkboxes — makes it clearer what each one is actually for.
+const FLAG_GROUPS: { title: string; items: { key: keyof Stage; label: string }[] }[] = [
+  {
+    title: "Requirements to move here",
+    items: [
+      { key: "requiresTargetDate", label: "Needs a target date" },
+      { key: "requiresPublishedUrl", label: "Needs a published link" },
+    ],
+  },
+  {
+    title: "Automatic behavior",
+    items: [
+      { key: "countsForMediaPurge", label: "Delete photos/videos automatically 90 days after a post reaches this stage" },
+      { key: "isArchiveStage", label: "Counts as finished — shows up in the Archive tab" },
+      { key: "isReviewStage", label: "Sending a post backward from this stage marks it as needing changes" },
+    ],
+  },
+  {
+    title: "Protection",
+    items: [
+      { key: "blocksDelete", label: "Protect posts here from deletion" },
+      { key: "locksEditing", label: "Lock editing once a post reaches here" },
+    ],
+  },
 ];
 
 export function ManageStagesModal({ open, onOpenChange }: ManageStagesModalProps) {
@@ -177,16 +194,25 @@ export function ManageStagesModal({ open, onOpenChange }: ManageStagesModalProps
                             <Trash2 className="size-3.5" />
                           </button>
                         </div>
-                        <div className="grid grid-cols-1 gap-1 pl-8 sm:grid-cols-2">
-                          {FLAG_TOGGLES.map(({ key, label }) => (
-                            <label key={key} className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                              <Checkbox
-                                className="size-3.5"
-                                checked={stage[key] as boolean}
-                                onCheckedChange={(checked) => updateStage(stage.id, { [key]: checked === true })}
-                              />
-                              {label}
-                            </label>
+                        <div className="flex flex-col gap-2 pl-8">
+                          {FLAG_GROUPS.map((group) => (
+                            <div key={group.title} className="flex flex-col gap-1">
+                              <span className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground/70">
+                                {group.title}
+                              </span>
+                              <div className="grid grid-cols-1 gap-1 sm:grid-cols-2">
+                                {group.items.map(({ key, label }) => (
+                                  <label key={key} className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                                    <Checkbox
+                                      className="size-3.5"
+                                      checked={stage[key] as boolean}
+                                      onCheckedChange={(checked) => updateStage(stage.id, { [key]: checked === true })}
+                                    />
+                                    {label}
+                                  </label>
+                                ))}
+                              </div>
+                            </div>
                           ))}
                         </div>
                       </div>
