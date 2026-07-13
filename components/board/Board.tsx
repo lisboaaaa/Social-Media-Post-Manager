@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { DragDropContext, type DropResult } from "@hello-pangea/dnd";
+import { DragDropContext, Draggable, Droppable, type DropResult } from "@hello-pangea/dnd";
 import { Column } from "./Column";
 import { PublishedUrlDialog } from "./PublishedUrlDialog";
 import { ScheduleDateDialog } from "./ScheduleDateDialog";
@@ -20,7 +20,7 @@ function isRecentlyPublished(post: { targetDate: string | null }) {
 }
 
 export function Board() {
-  const { filteredPosts, stages, movePost, getPostById } = useStore();
+  const { filteredPosts, stages, movePost, getPostById, updateStage, reorderStages } = useStore();
   const [pendingSchedule, setPendingSchedule] = useState<{ postId: string; status: PostStatus; index: number } | null>(null);
   const [pendingPublish, setPendingPublish] = useState<{ postId: string; status: PostStatus; index: number } | null>(null);
   const rowRef = useRef<HTMLDivElement>(null);
@@ -28,9 +28,17 @@ export function Board() {
   const stageById = (id: string) => stages.find((s) => s.id === id);
 
   const onDragEnd = (result: DropResult) => {
-    const { destination, source, draggableId } = result;
+    const { destination, source, draggableId, type } = result;
     if (!destination) return;
     if (destination.droppableId === source.droppableId && destination.index === source.index) return;
+
+    if (type === "COLUMN") {
+      const reordered = [...stages];
+      const [moved] = reordered.splice(source.index, 1);
+      reordered.splice(destination.index, 0, moved);
+      reorderStages(reordered.map((s) => s.id));
+      return;
+    }
 
     const newStatus = destination.droppableId as PostStatus;
     const post = getPostById(draggableId);
@@ -54,21 +62,38 @@ export function Board() {
   return (
     <>
       <DragDropContext onDragEnd={onDragEnd}>
-        <div
-          ref={rowRef}
-          className="scrollbar-hide grid flex-1 items-stretch overflow-x-auto pb-2 mx-auto w-full max-w-[1780px]"
-          style={{ gridTemplateColumns: `repeat(${stages.length}, minmax(188px, 1fr))` }}
-        >
-          {stages.map(({ id, label, isArchiveStage }) => (
-            <Column
-              key={id}
-              status={id}
-              label={label}
-              hint={isArchiveStage ? "Last 3 weeks — see Archive for more" : undefined}
-              posts={filteredPosts.filter((p) => p.status === id && (!isArchiveStage || isRecentlyPublished(p)))}
-            />
-          ))}
-        </div>
+        <Droppable droppableId="board-columns" direction="horizontal" type="COLUMN">
+          {(columnsProvided) => (
+            <div
+              ref={(el) => {
+                rowRef.current = el;
+                columnsProvided.innerRef(el);
+              }}
+              {...columnsProvided.droppableProps}
+              className="scrollbar-hide grid flex-1 items-stretch overflow-x-auto pb-2 mx-auto w-full max-w-[1780px]"
+              style={{ gridTemplateColumns: `repeat(${stages.length}, minmax(188px, 1fr))` }}
+            >
+              {stages.map((stage, index) => (
+                <Draggable key={stage.id} draggableId={`column-${stage.id}`} index={index}>
+                  {(dragProvided, dragSnapshot) => (
+                    <Column
+                      innerRef={dragProvided.innerRef}
+                      draggableProps={dragProvided.draggableProps}
+                      dragHandleProps={dragProvided.dragHandleProps}
+                      isDragging={dragSnapshot.isDragging}
+                      status={stage.id}
+                      label={stage.label}
+                      hint={stage.isArchiveStage ? "Last 3 weeks — see Archive for more" : undefined}
+                      posts={filteredPosts.filter((p) => p.status === stage.id && (!stage.isArchiveStage || isRecentlyPublished(p)))}
+                      onRename={(newLabel) => updateStage(stage.id, { label: newLabel })}
+                    />
+                  )}
+                </Draggable>
+              ))}
+              {columnsProvided.placeholder}
+            </div>
+          )}
+        </Droppable>
       </DragDropContext>
       <StickyScrollbar targetRef={rowRef} />
 

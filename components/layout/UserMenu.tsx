@@ -7,7 +7,9 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
+  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
@@ -44,22 +46,25 @@ export function UserMenu() {
           </Avatar>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-56">
-          <DropdownMenuItem onClick={() => setManageStagesOpen(true)}>
-            <Columns3 className="size-3.5" />
-            Manage stages
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => setConnectOpen(true)}>
-            <Sparkles className="size-3.5" />
-            Connect to Claude
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => setDevToolsOpen(true)}>
-            <Wrench className="size-3.5" />
-            Dev Tools
-          </DropdownMenuItem>
-          <DropdownMenuItem render={<Link href="/trash" />}>
-            <Trash2 className="size-3.5" />
-            Trash
-          </DropdownMenuItem>
+          <DropdownMenuGroup>
+            <DropdownMenuLabel>Advanced settings</DropdownMenuLabel>
+            <DropdownMenuItem onClick={() => setManageStagesOpen(true)}>
+              <Columns3 className="size-3.5" />
+              Manage stages
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setConnectOpen(true)}>
+              <Sparkles className="size-3.5" />
+              Connect to Claude
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setDevToolsOpen(true)}>
+              <Wrench className="size-3.5" />
+              Dev Tools
+            </DropdownMenuItem>
+            <DropdownMenuItem render={<Link href="/trash" />}>
+              <Trash2 className="size-3.5" />
+              Trash
+            </DropdownMenuItem>
+          </DropdownMenuGroup>
           <DropdownMenuSeparator />
           <DropdownMenuItem onClick={() => setStatsOpen(true)}>
             <BarChart3 className="size-3.5" />
