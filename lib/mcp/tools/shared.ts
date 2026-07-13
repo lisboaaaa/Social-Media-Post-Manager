@@ -1,12 +1,20 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { mapPostRow, POST_SELECT } from "@/lib/supabase/mappers";
+import { mapPostRow, mapStageRow, POST_SELECT } from "@/lib/supabase/mappers";
 import { storagePathFromPublicUrl } from "@/lib/supabase/storagePath";
-import type { Platform, Post, PostStatus, Profile } from "@/lib/types";
-import { POST_STATUSES } from "@/lib/types";
+import type { Platform, Post, Profile, Stage } from "@/lib/types";
 
-export const STATUS_ORDER: PostStatus[] = POST_STATUSES.map((s) => s.value);
+export { needsChangesPatch } from "@/lib/stageRules";
 
 export class McpToolError extends Error {}
+
+// MCP calls are short-lived, one-request invocations — no persistent store to
+// keep stages in, so each tool that needs them fetches fresh rather than
+// risking a stale cached list.
+export async function fetchStages(supabase: SupabaseClient): Promise<Stage[]> {
+  const { data, error } = await supabase.from("board_stages").select("*").order("position", { ascending: true });
+  if (error) throw new McpToolError(`Couldn't load stages: ${error.message}`);
+  return (data ?? []).map(mapStageRow);
+}
 
 // Board-touching tools are limited to the marketing team — everyone else's
 // token can still reach submit_idea, which stays ungated.
@@ -142,15 +150,4 @@ export async function uploadPostMedia(
   const { data } = supabase.storage.from("post-media").getPublicUrl(path);
   const mediaType: "image" | "video" = (contentType ?? filename).includes("video") ? "video" : "image";
   return { imageUrl: data.publicUrl, mediaType };
-}
-
-// Same rule the board enforces when dragging a card back from In Review
-// (components/board/Board.tsx) — flags a post as needing changes, cleared
-// once it moves forward again.
-export function needsChangesPatch(oldStatus: PostStatus, newStatus: PostStatus): { needsChanges?: boolean } {
-  const oldIndex = STATUS_ORDER.indexOf(oldStatus);
-  const newIndex = STATUS_ORDER.indexOf(newStatus);
-  if (oldStatus === "in_review" && newIndex < oldIndex) return { needsChanges: true };
-  if (newIndex > oldIndex) return { needsChanges: false };
-  return {};
 }

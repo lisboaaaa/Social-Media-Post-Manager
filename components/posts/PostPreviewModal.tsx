@@ -13,7 +13,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Separator } from "@/components/ui/separator";
 import { useStore } from "@/lib/store";
 import { getShareTemplate, renderShareTemplate } from "@/lib/shareTemplate";
-import { POST_STATUSES } from "@/lib/types";
 import { CommentThread } from "@/components/comments/CommentThread";
 import { DeleteReasonDialog } from "./DeleteReasonDialog";
 import { ShareDialog } from "./ShareDialog";
@@ -22,7 +21,7 @@ import { PlatformMockup } from "./mockups/PlatformMockup";
 
 export function PostPreviewModal() {
   const router = useRouter();
-  const { previewPostId, openPreview, closePreview, getPostById, addPost, deletePost, profiles, categories } = useStore();
+  const { previewPostId, openPreview, closePreview, getPostById, addPost, deletePost, profiles, categories, stages } = useStore();
   const post = previewPostId ? getPostById(previewPostId) : undefined;
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
@@ -41,7 +40,7 @@ export function PostPreviewModal() {
 
   const open = Boolean(post);
   const assignee = post ? profiles.find((p) => p.id === post.assigneeId) : undefined;
-  const statusLabel = post ? POST_STATUSES.find((s) => s.value === post.status)?.label : undefined;
+  const statusLabel = post ? stages.find((s) => s.id === post.status)?.label : undefined;
   const postCategories = post ? categories.filter((c) => post.categoryIds.includes(c.id)) : [];
 
   const handleDuplicate = () => {
@@ -50,7 +49,7 @@ export function PostPreviewModal() {
       platforms: post.platforms,
       title: post.title ? `${post.title} (copy)` : "",
       descriptions: post.descriptions,
-      status: "backlog",
+      status: stages.find((s) => s.isDefaultNewPostStage)?.id ?? stages[0]?.id ?? "backlog",
       targetDate: null,
       needsChanges: false,
       keepMedia: post.keepMedia,

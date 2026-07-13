@@ -1,12 +1,10 @@
 import { z } from "zod";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { mapPostRow, POST_SELECT } from "@/lib/supabase/mappers";
-import { PLATFORMS, POST_STATUSES } from "@/lib/types";
-
-const STATUS_VALUES = POST_STATUSES.map((s) => s.value) as [string, ...string[]];
+import { PLATFORMS } from "@/lib/types";
 
 export const listPostsSchema = z.object({
-  status: z.enum(STATUS_VALUES).optional(),
+  status: z.string().optional().describe("A stage id — call list_stages first to see current valid ids/labels"),
   platform: z.enum(PLATFORMS as [string, ...string[]]).optional(),
   categoryName: z.string().optional(),
   dateFrom: z.string().date().optional().describe("ISO date, inclusive lower bound on targetDate"),

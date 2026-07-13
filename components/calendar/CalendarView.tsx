@@ -21,7 +21,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useStore } from "@/lib/store";
-import { POST_STATUSES } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { PlatformBadge, PlatformBadgeGroup } from "@/components/posts/PlatformBadge";
 
@@ -29,7 +28,7 @@ const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 export function CalendarView() {
   const router = useRouter();
-  const { filteredPosts, openPreview, profiles, addPost } = useStore();
+  const { filteredPosts, openPreview, profiles, stages, addPost } = useStore();
   const [cursor, setCursor] = useState(() => new Date());
   const [selectedDay, setSelectedDay] = useState<Date | null>(null);
 
@@ -55,7 +54,7 @@ export function CalendarView() {
       platforms: ["linkedin"],
       title: "",
       descriptions: { linkedin: "", instagram: "", x: "" },
-      status: "backlog",
+      status: stages.find((s) => s.isDefaultNewPostStage)?.id ?? stages[0]?.id ?? "backlog",
       targetDate: format(selectedDay, "yyyy-MM-dd"),
       needsChanges: false,
       keepMedia: false,
@@ -177,7 +176,7 @@ export function CalendarView() {
             )}
             {selectedDayPosts.map((post) => {
               const assignee = profiles.find((p) => p.id === post.assigneeId);
-              const statusLabel = POST_STATUSES.find((s) => s.value === post.status)?.label;
+              const statusLabel = stages.find((s) => s.id === post.status)?.label;
               return (
                 <button
                   key={post.id}

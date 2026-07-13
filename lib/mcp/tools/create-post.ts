@@ -3,7 +3,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { mapPostRow, POST_SELECT } from "@/lib/supabase/mappers";
 import { PLATFORMS } from "@/lib/types";
 import type { Profile } from "@/lib/types";
-import { resolveCategoryIds, resolveProfileIdByEmail, syncPostChildren, uploadPostMedia, McpToolError } from "./shared";
+import { fetchStages, resolveCategoryIds, resolveProfileIdByEmail, syncPostChildren, uploadPostMedia, McpToolError } from "./shared";
 
 export const createPostSchema = z.object({
   title: z.string().default(""),
@@ -29,6 +29,8 @@ export type CreatePostInput = z.infer<typeof createPostSchema>;
 export async function createPostTool(input: CreatePostInput, profile: Profile, supabase: SupabaseClient) {
   const categoryIds = await resolveCategoryIds(supabase, input.categoryNames);
   const assigneeId = await resolveProfileIdByEmail(supabase, input.assigneeEmail);
+  const stages = await fetchStages(supabase);
+  const defaultStageId = stages.find((s) => s.isDefaultNewPostStage)?.id ?? stages[0]?.id ?? "backlog";
 
   const id = crypto.randomUUID();
   const timestamp = new Date().toISOString();
@@ -36,7 +38,7 @@ export async function createPostTool(input: CreatePostInput, profile: Profile, s
   const { error } = await supabase.from("posts").insert({
     id,
     title: input.title,
-    status: "backlog",
+    status: defaultStageId,
     target_date: input.targetDate ?? null,
     needs_changes: false,
     published_url: null,

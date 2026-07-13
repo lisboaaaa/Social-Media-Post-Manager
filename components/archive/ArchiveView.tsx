@@ -31,9 +31,10 @@ function groupByMonth(posts: Post[]): MonthGroup[] {
 }
 
 export function ArchiveView() {
-  const { filteredPosts, openPreview, profiles } = useStore();
+  const { filteredPosts, openPreview, profiles, stages } = useStore();
+  const archiveStageIds = new Set(stages.filter((s) => s.isArchiveStage).map((s) => s.id));
   const published = filteredPosts
-    .filter((p) => p.status === "published")
+    .filter((p) => archiveStageIds.has(p.status))
     .sort((a, b) => {
       if (!a.targetDate && !b.targetDate) return b.createdAt.localeCompare(a.createdAt);
       if (!a.targetDate) return 1;

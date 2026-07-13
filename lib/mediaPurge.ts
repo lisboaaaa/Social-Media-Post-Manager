@@ -25,13 +25,18 @@ export async function purgeOldMedia(supabase: SupabaseClient): Promise<PurgeResu
   const cutoffDate = cutoff.toISOString().slice(0, 10);
   const cutoffTimestamp = cutoff.toISOString();
 
+  const { data: purgeStages } = await supabase.from("board_stages").select("id").eq("counts_for_media_purge", true);
+  const purgeStageIds = (purgeStages ?? []).map((s) => s.id as string);
+
   const [{ data: published }, { data: trashed }] = await Promise.all([
-    supabase
-      .from("posts")
-      .select("id, post_images(id, image_url)")
-      .eq("status", "published")
-      .eq("keep_media", false)
-      .lt("target_date", cutoffDate),
+    purgeStageIds.length
+      ? supabase
+          .from("posts")
+          .select("id, post_images(id, image_url)")
+          .in("status", purgeStageIds)
+          .eq("keep_media", false)
+          .lt("target_date", cutoffDate)
+      : Promise.resolve({ data: [] }),
     supabase
       .from("posts")
       .select("id, post_images(id, image_url)")

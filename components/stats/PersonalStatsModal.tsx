@@ -20,27 +20,17 @@ const TREND_COLOR = "#4a3aa7"; // violet
 
 const NEEDS_CHANGES_COLOR = "#b45309"; // matches the amber "Needs changes" badge used elsewhere in the app
 
-const STAGE_SHORT_LABELS: Record<string, string> = {
-  backlog: "Backlog",
-  writing: "Writing",
-  designing: "Design",
-  in_review: "Review",
-  approved: "Approved",
-  scheduled: "Sched.",
-  published: "Published",
-};
-
 interface PersonalStatsModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
 export function PersonalStatsModal({ open, onOpenChange }: PersonalStatsModalProps) {
-  const { posts, categories, currentUser } = useStore();
+  const { posts, categories, stages, currentUser } = useStore();
 
   const stats = useMemo(
-    () => computePersonalStats(posts, categories, currentUser.id),
-    [posts, categories, currentUser.id],
+    () => computePersonalStats(posts, categories, stages, currentUser.id),
+    [posts, categories, stages, currentUser.id],
   );
 
   return (
@@ -67,7 +57,7 @@ export function PersonalStatsModal({ open, onOpenChange }: PersonalStatsModalPro
             rows={stats.byStatus.map((s) => ({
               key: s.status,
               label: s.label,
-              shortLabel: STAGE_SHORT_LABELS[s.status] ?? s.label,
+              shortLabel: s.label,
               count: s.count,
             }))}
           />

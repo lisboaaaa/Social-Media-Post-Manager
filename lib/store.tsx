@@ -4,9 +4,9 @@ import { createContext, useContext, useEffect, useMemo, useState, type ReactNode
 import { toast } from "sonner";
 import { createClient } from "./supabase/client";
 import { mentionsProfile } from "./mentions";
-import { mapCategoryRow, mapCommentReactionRow, mapCommentRow, mapPostRow, mapProfileRow, mapSuggestionRow, POST_SELECT } from "./supabase/mappers";
+import { mapCategoryRow, mapCommentReactionRow, mapCommentRow, mapPostRow, mapProfileRow, mapStageRow, mapSuggestionRow, POST_SELECT } from "./supabase/mappers";
 import { storagePathFromPublicUrl } from "./supabase/storagePath";
-import type { Category, Comment, CommentReaction, Platform, Post, PostStatus, Profile, Suggestion } from "./types";
+import type { Category, Comment, CommentReaction, Platform, Post, PostStatus, Profile, Stage, Suggestion } from "./types";
 
 // Mirrors the SQL side (handle_new_user() in auth-setup.sql) — company
 // emails are firstname.lastname@daredata.engineering. Used as a client-side
@@ -46,6 +46,7 @@ interface StoreValue {
   loading: boolean;
   realtimeStatus: RealtimeStatus;
   posts: Post[];
+  stages: Stage[];
   categories: Category[];
   profiles: Profile[];
   comments: Comment[];
@@ -65,6 +66,10 @@ interface StoreValue {
   addCategory: (name: string) => Category;
   updateCategory: (id: string, name: string) => void;
   deleteCategory: (id: string) => void;
+  addStage: (label: string) => Stage;
+  updateStage: (id: string, patch: Partial<Stage>) => void;
+  deleteStage: (id: string, reassignTo?: string) => void;
+  reorderStages: (orderedIds: string[]) => void;
   addComment: (postId: string | null, body: string, parentId?: string | null) => void;
   deleteComment: (id: string) => void;
   toggleReaction: (commentId: string, emoji: string) => void;
@@ -86,6 +91,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [posts, setPosts] = useState<Post[]>([]);
+  const [stages, setStages] = useState<Stage[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [comments, setComments] = useState<Comment[]>([]);
@@ -100,10 +106,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     let cancelled = false;
 
     async function load() {
-      const [userRes, profilesRes, categoriesRes, postsRes, commentsRes, reactionsRes, suggestionsRes] = await Promise.all([
+      const [userRes, profilesRes, categoriesRes, stagesRes, postsRes, commentsRes, reactionsRes, suggestionsRes] = await Promise.all([
         supabase.auth.getUser(),
         supabase.from("profiles").select("*"),
         supabase.from("categories").select("*"),
+        supabase.from("board_stages").select("*").order("position", { ascending: true }),
         supabase.from("posts").select(POST_SELECT).order("created_at", { ascending: true }),
         supabase.from("comments").select("*").order("created_at", { ascending: true }),
         supabase.from("comment_reactions").select("*"),
@@ -112,7 +119,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
       if (cancelled) return;
 
-      const firstError = profilesRes.error || categoriesRes.error || postsRes.error || commentsRes.error;
+      const firstError = profilesRes.error || categoriesRes.error || stagesRes.error || postsRes.error || commentsRes.error;
       if (firstError) {
         toast.error(`Couldn't load data from Supabase: ${firstError.message}`);
       }
@@ -158,6 +165,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       setUserEmail(email);
       setProfiles(loadedProfiles);
       setCategories((categoriesRes.data ?? []).map(mapCategoryRow));
+      setStages((stagesRes.data ?? []).map(mapStageRow));
       setPosts((postsRes.data ?? []).map(mapPostRow));
       setComments((commentsRes.data ?? []).map(mapCommentRow));
       setCommentReactions((reactionsRes.data ?? []).map(mapCommentReactionRow));
@@ -224,6 +232,18 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       .on("postgres_changes", { event: "DELETE", schema: "public", table: "categories" }, (payload) => {
         const deletedId = (payload.old as { id: string }).id;
         setCategories((prev) => prev.filter((c) => c.id !== deletedId));
+      })
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "board_stages" }, (payload) => {
+        const incoming = mapStageRow(payload.new as Parameters<typeof mapStageRow>[0]);
+        setStages((prev) => (prev.some((s) => s.id === incoming.id) ? prev : [...prev, incoming].sort((a, b) => a.position - b.position)));
+      })
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "board_stages" }, (payload) => {
+        const incoming = mapStageRow(payload.new as Parameters<typeof mapStageRow>[0]);
+        setStages((prev) => prev.map((s) => (s.id === incoming.id ? incoming : s)).sort((a, b) => a.position - b.position));
+      })
+      .on("postgres_changes", { event: "DELETE", schema: "public", table: "board_stages" }, (payload) => {
+        const deletedId = (payload.old as { id: string }).id;
+        setStages((prev) => prev.filter((s) => s.id !== deletedId));
       })
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "profiles" }, (payload) => {
         const incoming = mapProfileRow(payload.new as Parameters<typeof mapProfileRow>[0]);
@@ -542,6 +562,115 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     })();
   };
 
+  const slugifyStageLabel = (label: string) => {
+    const base = label.toLowerCase().trim().replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "") || "stage";
+    let slug = base;
+    let suffix = 2;
+    while (stages.some((s) => s.id === slug)) {
+      slug = `${base}_${suffix}`;
+      suffix++;
+    }
+    return slug;
+  };
+
+  const addStage = (label: string): Stage => {
+    const trimmed = label.trim();
+    const stage: Stage = {
+      id: slugifyStageLabel(trimmed),
+      label: trimmed,
+      position: stages.length ? Math.max(...stages.map((s) => s.position)) + 1 : 0,
+      requiresTargetDate: false,
+      requiresPublishedUrl: false,
+      blocksDelete: false,
+      countsForMediaPurge: false,
+      isReviewStage: false,
+      isArchiveStage: false,
+      locksEditing: false,
+      isDefaultNewPostStage: false,
+    };
+    setStages((prev) => [...prev, stage]);
+
+    (async () => {
+      const { error } = await supabase.from("board_stages").insert({
+        id: stage.id,
+        label: stage.label,
+        position: stage.position,
+      });
+      if (error) toast.error(`Couldn't save the stage: ${error.message}`);
+    })();
+
+    return stage;
+  };
+
+  const updateStage = (id: string, patch: Partial<Stage>) => {
+    setStages((prev) => prev.map((s) => (s.id === id ? { ...s, ...patch } : s)));
+
+    (async () => {
+      const columns: Record<string, unknown> = {};
+      if ("label" in patch) columns.label = patch.label;
+      if ("requiresTargetDate" in patch) columns.requires_target_date = patch.requiresTargetDate;
+      if ("requiresPublishedUrl" in patch) columns.requires_published_url = patch.requiresPublishedUrl;
+      if ("blocksDelete" in patch) columns.blocks_delete = patch.blocksDelete;
+      if ("countsForMediaPurge" in patch) columns.counts_for_media_purge = patch.countsForMediaPurge;
+      if ("isReviewStage" in patch) columns.is_review_stage = patch.isReviewStage;
+      if ("isArchiveStage" in patch) columns.is_archive_stage = patch.isArchiveStage;
+      if ("locksEditing" in patch) columns.locks_editing = patch.locksEditing;
+      if ("isDefaultNewPostStage" in patch) columns.is_default_new_post_stage = patch.isDefaultNewPostStage;
+
+      const { error } = await supabase.from("board_stages").update(columns).eq("id", id);
+      if (error) toast.error(`Couldn't save the stage: ${error.message}`);
+    })();
+  };
+
+  // Deleting a stage that still has posts in it requires an explicit
+  // reassignment destination (reassignTo) rather than silently guessing a
+  // fallback — the DB's FK (posts.status references board_stages) rejects
+  // the delete outright if posts still point at it, as a backstop against
+  // this check racing a concurrent edit from someone else.
+  const deleteStage = (id: string, reassignTo?: string) => {
+    const affectedIds = posts.filter((p) => p.status === id).map((p) => p.id);
+    if (affectedIds.length > 0 && !reassignTo) {
+      toast.error("Move the posts out of this stage first.");
+      return;
+    }
+
+    const now = new Date().toISOString();
+    if (affectedIds.length > 0 && reassignTo) {
+      setPosts((prev) => prev.map((p) => (p.status === id ? { ...p, status: reassignTo, updatedAt: now } : p)));
+    }
+    setStages((prev) => prev.filter((s) => s.id !== id));
+
+    (async () => {
+      if (affectedIds.length > 0 && reassignTo) {
+        const { error: reassignError } = await supabase
+          .from("posts")
+          .update({ status: reassignTo, updated_at: now })
+          .eq("status", id);
+        if (reassignError) {
+          toast.error(`Couldn't move posts out of the stage: ${reassignError.message}`);
+          return;
+        }
+      }
+      const { error } = await supabase.from("board_stages").delete().eq("id", id);
+      if (error) toast.error(`Couldn't delete the stage: ${error.message}`);
+    })();
+  };
+
+  const reorderStages = (orderedIds: string[]) => {
+    setStages((prev) => {
+      const byId = new Map(prev.map((s) => [s.id, s]));
+      return orderedIds.map((id, i) => ({ ...byId.get(id)!, position: i }));
+    });
+
+    (async () => {
+      const results = await Promise.all(
+        orderedIds.map((id, i) => supabase.from("board_stages").update({ position: i }).eq("id", id)),
+      );
+      const failed = results.find((r) => r.error);
+      if (failed?.error) toast.error(`Couldn't save the new order: ${failed.error.message}`);
+    })();
+  };
+
   const addComment = (postId: string | null, body: string, parentId: string | null = null) => {
     const comment: Comment = {
       id: crypto.randomUUID(),
@@ -617,7 +746,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       platforms: ["linkedin"],
       title: suggestion.description.slice(0, 60),
       descriptions: { linkedin: suggestion.description, instagram: "", x: "" },
-      status: "backlog",
+      status: stages.find((s) => s.isDefaultNewPostStage)?.id ?? stages[0]?.id ?? "backlog",
       targetDate: null,
       needsChanges: false,
       keepMedia: false,
@@ -681,6 +810,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     loading,
     realtimeStatus,
     posts,
+    stages,
     categories,
     profiles,
     comments,
@@ -700,6 +830,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     addCategory,
     updateCategory,
     deleteCategory,
+    addStage,
+    updateStage,
+    deleteStage,
+    reorderStages,
     addComment,
     deleteComment,
     toggleReaction,

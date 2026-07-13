@@ -7,6 +7,7 @@ import { listPostsSchema, listPostsTool } from "@/lib/mcp/tools/list-posts";
 import { getPostSchema, getPostTool } from "@/lib/mcp/tools/get-post";
 import { updatePostSchema, updatePostTool } from "@/lib/mcp/tools/update-post";
 import { movePostSchema, movePostTool } from "@/lib/mcp/tools/move-post";
+import { listStagesSchema, listStagesTool } from "@/lib/mcp/tools/list-stages";
 import { addCommentSchema, addCommentTool } from "@/lib/mcp/tools/add-comment";
 import { submitIdeaSchema, submitIdeaTool } from "@/lib/mcp/tools/submit-idea";
 import { assertMarketing, McpToolError } from "@/lib/mcp/tools/shared";
@@ -27,7 +28,7 @@ const handler = createMcpHandler(
       "create_post",
       {
         title: "Create post",
-        description: "Create a new social media post tracker entry in the Backlog column. Does not publish anywhere — this app only tracks status.",
+        description: "Create a new social media post tracker entry in the board's default stage. Does not publish anywhere — this app only tracks status.",
         inputSchema: createPostSchema,
       },
       async (input, extra) => {
@@ -95,7 +96,7 @@ const handler = createMcpHandler(
       "move_post",
       {
         title: "Move post",
-        description: "Change a post's workflow status (e.g. to 'scheduled' or 'published'). Scheduled requires a target date, Published requires a link.",
+        description: "Change a post's workflow stage. Stages are team-editable — call list_stages first to see current valid ids and what each one requires (a target date, a published link).",
         inputSchema: movePostSchema,
       },
       async (input, extra) => {
@@ -104,6 +105,21 @@ const handler = createMcpHandler(
         try {
           assertMarketing(profile);
           return textResult(await movePostTool(input, supabase));
+        } catch (error) {
+          return errorResult(error);
+        }
+      },
+    );
+
+    server.registerTool(
+      "list_stages",
+      { title: "List stages", description: "List the board's current workflow stages (ids, labels, order, and requirements) — call before move_post/create_post if you need to know valid stage ids.", inputSchema: listStagesSchema },
+      async (input, extra) => {
+        const profile = extra.authInfo!.extra!.profile as Profile;
+        const supabase = createServiceClient();
+        try {
+          assertMarketing(profile);
+          return textResult(await listStagesTool(input, supabase));
         } catch (error) {
           return errorResult(error);
         }

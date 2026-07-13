@@ -23,24 +23,23 @@ export const PLATFORM_IMAGE_LIMITS: Record<Platform, number> = {
   x: 4,
 };
 
-export type PostStatus =
-  | "backlog"
-  | "writing"
-  | "designing"
-  | "in_review"
-  | "approved"
-  | "scheduled"
-  | "published";
+// A post's workflow stage — a team-editable, shared list (board_stages
+// table), not a fixed set. Post.status stores a Stage id.
+export type PostStatus = string;
 
-export const POST_STATUSES: { value: PostStatus; label: string }[] = [
-  { value: "backlog", label: "Backlog" },
-  { value: "writing", label: "Writing" },
-  { value: "designing", label: "Designing" },
-  { value: "in_review", label: "In Review" },
-  { value: "approved", label: "Approved" },
-  { value: "scheduled", label: "Scheduled" },
-  { value: "published", label: "Published" },
-];
+export interface Stage {
+  id: string;
+  label: string;
+  position: number;
+  requiresTargetDate: boolean;
+  requiresPublishedUrl: boolean;
+  blocksDelete: boolean;
+  countsForMediaPurge: boolean;
+  isReviewStage: boolean;
+  isArchiveStage: boolean;
+  locksEditing: boolean;
+  isDefaultNewPostStage: boolean;
+}
 
 export interface Profile {
   id: string;

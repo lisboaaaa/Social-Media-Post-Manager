@@ -68,7 +68,7 @@ function Section({
 }
 
 export function DevToolsPanel() {
-  const { posts, comments, suggestions, profiles, categories, realtimeStatus, addPost, addComment } = useStore();
+  const { posts, comments, suggestions, profiles, categories, stages, realtimeStatus, addPost, addComment } = useStore();
   const [open, setOpen] = useState(false);
   const [pagesExpanded, setPagesExpanded] = useState(false);
   const [stats, setStats] = useState<{ fileCount: number; totalBytes: number } | null>(null);
@@ -119,7 +119,7 @@ export function DevToolsPanel() {
       platforms: ["linkedin"],
       title: `[DEV] Test post ${new Date().toLocaleTimeString()}`,
       descriptions: { linkedin: "", instagram: "", x: "" },
-      status: "backlog",
+      status: stages.find((s) => s.isDefaultNewPostStage)?.id ?? stages[0]?.id ?? "backlog",
       targetDate: null,
       needsChanges: false,
       keepMedia: false,

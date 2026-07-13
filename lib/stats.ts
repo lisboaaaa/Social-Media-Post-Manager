@@ -1,4 +1,4 @@
-import { POST_STATUSES, type Category, type Post, type PostStatus } from "./types";
+import type { Category, Post, PostStatus, Stage } from "./types";
 
 export interface StatusBreakdown {
   status: PostStatus;
@@ -34,13 +34,14 @@ const TREND_WEEKS = 10;
 
 // Personal stats are scoped to posts the user is the assignee on — that's
 // "their work", distinct from posts they merely requested or created.
-export function computePersonalStats(posts: Post[], categories: Category[], userId: string): PersonalStats {
+export function computePersonalStats(posts: Post[], categories: Category[], stages: Stage[], userId: string): PersonalStats {
   const mine = posts.filter((p) => p.assigneeId === userId);
+  const archiveStageIds = new Set(stages.filter((s) => s.isArchiveStage).map((s) => s.id));
 
-  const byStatus: StatusBreakdown[] = POST_STATUSES.map(({ value, label }) => ({
-    status: value,
+  const byStatus: StatusBreakdown[] = stages.map(({ id, label }) => ({
+    status: id,
     label,
-    count: mine.filter((p) => p.status === value).length,
+    count: mine.filter((p) => p.status === id).length,
   }));
 
   const categoryCounts = new Map<string, number>();
@@ -59,7 +60,7 @@ export function computePersonalStats(posts: Post[], categories: Category[], user
   // Published posts only, keyed by their target date — this tracks actual
   // output (what went out the door), not how many posts were merely added
   // to the tracker that week.
-  const published = mine.filter((p) => p.status === "published" && p.targetDate);
+  const published = mine.filter((p) => archiveStageIds.has(p.status) && p.targetDate);
   const weeklyActivity: WeeklyActivityPoint[] = Array.from({ length: TREND_WEEKS }, (_, i) => {
     const weeksAgo = TREND_WEEKS - 1 - i;
     const weekEnd = now - weeksAgo * WEEK_MS;
@@ -86,7 +87,7 @@ export function computePersonalStats(posts: Post[], categories: Category[], user
 
   return {
     totalPosts: mine.length,
-    publishedPosts: mine.filter((p) => p.status === "published").length,
+    publishedPosts: mine.filter((p) => archiveStageIds.has(p.status)).length,
     needsChangesPosts: mine.filter((p) => p.needsChanges).length,
     noDatePosts: mine.filter((p) => !p.targetDate).length,
     avgPostsPerWeek: mine.length ? mine.length / weeksActive : 0,

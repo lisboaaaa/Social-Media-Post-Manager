@@ -1,4 +1,4 @@
-import type { Category, Comment, CommentReaction, Platform, Post, PostImage, Profile, Suggestion } from "@/lib/types";
+import type { Category, Comment, CommentReaction, Platform, Post, PostImage, Profile, Stage, Suggestion } from "@/lib/types";
 
 // Shapes coming back from Supabase are snake_case and (for posts) nest their
 // related rows via PostgREST's embedded-resource syntax — these turn that
@@ -28,6 +28,20 @@ interface SuggestionRow {
 interface CategoryRow {
   id: string;
   name: string;
+}
+
+interface StageRow {
+  id: string;
+  label: string;
+  position: number;
+  requires_target_date: boolean;
+  requires_published_url: boolean;
+  blocks_delete: boolean;
+  counts_for_media_purge: boolean;
+  is_review_stage: boolean;
+  is_archive_stage: boolean;
+  locks_editing: boolean;
+  is_default_new_post_stage: boolean;
 }
 
 interface CommentRow {
@@ -112,6 +126,22 @@ export function mapSuggestionRow(row: SuggestionRow): Suggestion {
 
 export function mapCategoryRow(row: CategoryRow): Category {
   return { id: row.id, name: row.name };
+}
+
+export function mapStageRow(row: StageRow): Stage {
+  return {
+    id: row.id,
+    label: row.label,
+    position: row.position,
+    requiresTargetDate: row.requires_target_date,
+    requiresPublishedUrl: row.requires_published_url,
+    blocksDelete: row.blocks_delete,
+    countsForMediaPurge: row.counts_for_media_purge,
+    isReviewStage: row.is_review_stage,
+    isArchiveStage: row.is_archive_stage,
+    locksEditing: row.locks_editing,
+    isDefaultNewPostStage: row.is_default_new_post_stage,
+  };
 }
 
 export function mapCommentRow(row: CommentRow): Comment {

@@ -7,7 +7,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { PlatformBadgeGroup } from "@/components/posts/PlatformBadge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useStore } from "@/lib/store";
-import { POST_STATUSES, type Post, type PostStatus } from "@/lib/types";
+import type { Post, PostStatus } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 const GRID_COLS = "grid-cols-[1fr_190px_160px_110px_160px]";
@@ -30,7 +30,7 @@ const SORTERS: Record<SortKey, (a: Post, b: Post) => number> = {
 };
 
 export function ListView() {
-  const { filteredPosts, profiles, categories, openPreview } = useStore();
+  const { filteredPosts, profiles, categories, stages, openPreview } = useStore();
   const [collapsed, setCollapsed] = useState<Set<PostStatus>>(new Set());
   const [sortKey, setSortKey] = useState<SortKey>("default");
 
@@ -69,7 +69,7 @@ export function ListView() {
         </Select>
       </div>
 
-      {POST_STATUSES.map(({ value, label }) => {
+      {stages.map(({ id: value, label }) => {
         const rows = filteredPosts.filter((p) => p.status === value).sort(SORTERS[sortKey]);
         if (rows.length === 0) return null;
         const isCollapsed = collapsed.has(value);

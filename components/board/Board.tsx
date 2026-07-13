@@ -7,9 +7,9 @@ import { PublishedUrlDialog } from "./PublishedUrlDialog";
 import { ScheduleDateDialog } from "./ScheduleDateDialog";
 import { StickyScrollbar } from "./StickyScrollbar";
 import { useStore } from "@/lib/store";
-import { POST_STATUSES, type PostStatus } from "@/lib/types";
+import { needsChangesPatch } from "@/lib/stageRules";
+import type { PostStatus } from "@/lib/types";
 
-const STATUS_ORDER = POST_STATUSES.map((s) => s.value);
 const PUBLISHED_WINDOW_MS = 21 * 24 * 60 * 60 * 1000; // 3 weeks — older posts still live in the Archive tab
 
 function isRecentlyPublished(post: { targetDate: string | null }) {
@@ -19,26 +19,13 @@ function isRecentlyPublished(post: { targetDate: string | null }) {
   return Date.now() - new Date(`${post.targetDate}T00:00:00`).getTime() <= PUBLISHED_WINDOW_MS;
 }
 
-// Sending a post back from In Review (e.g. to Writing or Designing) is how
-// "changes requested" happens on this board, since there's no dedicated
-// column for it — flag it automatically. Moving forward again means the
-// changes were addressed, so the flag clears once the post moves past
-// wherever it was flagged. Only moves originating at In Review count —
-// dragging something already Approved/Scheduled/Published a step back is
-// usually just a correction or a misclick, not new review feedback.
-function needsChangesPatch(oldStatus: PostStatus, newStatus: PostStatus): { needsChanges: boolean } | Record<string, never> {
-  const oldIndex = STATUS_ORDER.indexOf(oldStatus);
-  const newIndex = STATUS_ORDER.indexOf(newStatus);
-  if (oldStatus === "in_review" && newIndex < oldIndex) return { needsChanges: true };
-  if (newIndex > oldIndex) return { needsChanges: false };
-  return {};
-}
-
 export function Board() {
-  const { filteredPosts, movePost, getPostById } = useStore();
+  const { filteredPosts, stages, movePost, getPostById } = useStore();
   const [pendingSchedule, setPendingSchedule] = useState<{ postId: string; status: PostStatus; index: number } | null>(null);
   const [pendingPublish, setPendingPublish] = useState<{ postId: string; status: PostStatus; index: number } | null>(null);
   const rowRef = useRef<HTMLDivElement>(null);
+
+  const stageById = (id: string) => stages.find((s) => s.id === id);
 
   const onDragEnd = (result: DropResult) => {
     const { destination, source, draggableId } = result;
@@ -47,19 +34,21 @@ export function Board() {
 
     const newStatus = destination.droppableId as PostStatus;
     const post = getPostById(draggableId);
-    if (!post) return;
+    const targetStage = stageById(newStatus);
+    if (!post || !targetStage) return;
 
-    if (newStatus === "scheduled" && !post.targetDate) {
+    if (targetStage.requiresTargetDate && !post.targetDate) {
       setPendingSchedule({ postId: draggableId, status: newStatus, index: destination.index });
       return;
     }
 
-    if (newStatus === "published" && !post.publishedUrl) {
+    if (targetStage.requiresPublishedUrl && !post.publishedUrl) {
       setPendingPublish({ postId: draggableId, status: newStatus, index: destination.index });
       return;
     }
 
-    movePost(draggableId, newStatus, destination.index, needsChangesPatch(post.status, newStatus));
+    const oldStage = stageById(post.status);
+    movePost(draggableId, newStatus, destination.index, oldStage ? needsChangesPatch(oldStage, targetStage) : {});
   };
 
   return (
@@ -67,15 +56,16 @@ export function Board() {
       <DragDropContext onDragEnd={onDragEnd}>
         <div
           ref={rowRef}
-          className="scrollbar-hide grid flex-1 grid-cols-[repeat(7,minmax(188px,1fr))] items-stretch overflow-x-auto pb-2 mx-auto w-full max-w-[1780px]"
+          className="scrollbar-hide grid flex-1 items-stretch overflow-x-auto pb-2 mx-auto w-full max-w-[1780px]"
+          style={{ gridTemplateColumns: `repeat(${stages.length}, minmax(188px, 1fr))` }}
         >
-          {POST_STATUSES.map(({ value, label }) => (
+          {stages.map(({ id, label, isArchiveStage }) => (
             <Column
-              key={value}
-              status={value}
+              key={id}
+              status={id}
               label={label}
-              hint={value === "published" ? "Last 3 weeks — see Archive for more" : undefined}
-              posts={filteredPosts.filter((p) => p.status === value && (value !== "published" || isRecentlyPublished(p)))}
+              hint={isArchiveStage ? "Last 3 weeks — see Archive for more" : undefined}
+              posts={filteredPosts.filter((p) => p.status === id && (!isArchiveStage || isRecentlyPublished(p)))}
             />
           ))}
         </div>
@@ -88,9 +78,11 @@ export function Board() {
         onConfirm={(date) => {
           if (!pendingSchedule) return;
           const post = getPostById(pendingSchedule.postId);
+          const oldStage = post ? stageById(post.status) : undefined;
+          const newStage = stageById(pendingSchedule.status);
           movePost(pendingSchedule.postId, pendingSchedule.status, pendingSchedule.index, {
             targetDate: date,
-            ...(post ? needsChangesPatch(post.status, pendingSchedule.status) : {}),
+            ...(oldStage && newStage ? needsChangesPatch(oldStage, newStage) : {}),
           });
           setPendingSchedule(null);
         }}
@@ -102,17 +94,21 @@ export function Board() {
         onSkip={() => {
           if (!pendingPublish) return;
           const post = getPostById(pendingPublish.postId);
+          const oldStage = post ? stageById(post.status) : undefined;
+          const newStage = stageById(pendingPublish.status);
           movePost(pendingPublish.postId, pendingPublish.status, pendingPublish.index, {
-            ...(post ? needsChangesPatch(post.status, pendingPublish.status) : {}),
+            ...(oldStage && newStage ? needsChangesPatch(oldStage, newStage) : {}),
           });
           setPendingPublish(null);
         }}
         onConfirm={(url) => {
           if (!pendingPublish) return;
           const post = getPostById(pendingPublish.postId);
+          const oldStage = post ? stageById(post.status) : undefined;
+          const newStage = stageById(pendingPublish.status);
           movePost(pendingPublish.postId, pendingPublish.status, pendingPublish.index, {
             publishedUrl: url,
-            ...(post ? needsChangesPatch(post.status, pendingPublish.status) : {}),
+            ...(oldStage && newStage ? needsChangesPatch(oldStage, newStage) : {}),
           });
           setPendingPublish(null);
         }}

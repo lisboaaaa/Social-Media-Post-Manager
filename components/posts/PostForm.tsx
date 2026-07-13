@@ -26,7 +26,6 @@ import {
   PLATFORMS,
   PLATFORM_IMAGE_LIMITS,
   PLATFORM_LABELS,
-  POST_STATUSES,
   type Platform,
   type Post,
   type PostStatus,
@@ -37,14 +36,16 @@ const EMPTY_DESCRIPTIONS: Record<Platform, string> = { linkedin: "", instagram: 
 
 export function PostForm({ post }: { post?: Post }) {
   const router = useRouter();
-  const { profiles, addPost, updatePost, deletePost, currentUser } = useStore();
+  const { profiles, stages, addPost, updatePost, deletePost, currentUser } = useStore();
 
   const [platforms, setPlatforms] = useState<Platform[]>(post?.platforms ?? ["linkedin"]);
   const [title, setTitle] = useState(post?.title ?? "");
   const [descriptions, setDescriptions] = useState<Record<Platform, string>>(
     post?.descriptions ?? EMPTY_DESCRIPTIONS,
   );
-  const [status, setStatus] = useState<PostStatus>(post?.status ?? "backlog");
+  const [status, setStatus] = useState<PostStatus>(
+    post?.status ?? stages.find((s) => s.isDefaultNewPostStage)?.id ?? stages[0]?.id ?? "backlog",
+  );
   const [targetDate, setTargetDate] = useState(post?.targetDate ?? "");
   // No longer user-editable here — preserved as-is; it's set automatically
   // when a post gets sent back from In Review (see Board's needsChangesPatch).
@@ -93,14 +94,15 @@ export function PostForm({ post }: { post?: Post }) {
     }
   };
 
-  const needsDateForScheduled = status === "scheduled" && !targetDate;
+  const currentStage = stages.find((s) => s.id === status);
+  const needsDateForScheduled = Boolean(currentStage?.requiresTargetDate) && !targetDate;
   const imageLimit = platforms.length > 0 ? Math.min(...platforms.map((p) => PLATFORM_IMAGE_LIMITS[p])) : undefined;
   const overLimitPlatform = imageLimit !== undefined && images.length > imageLimit
     ? platforms.find((p) => PLATFORM_IMAGE_LIMITS[p] === imageLimit)
     : undefined;
   const hasVideo = images.some((img) => img.mediaType === "video");
   const hasMixedMedia = hasVideo && images.length > 1;
-  const isArchived = post?.status === "published";
+  const isArchived = Boolean(stages.find((s) => s.id === post?.status)?.locksEditing);
   // A live stand-in Post built from the form's own state — lets the preview
   // below update as you type instead of only showing what was last saved.
   const draftPost: Post = {
@@ -127,7 +129,7 @@ export function PostForm({ post }: { post?: Post }) {
   };
   // Published URL only matters once a post is actually going out — hiding it
   // earlier keeps the sidebar focused on what's relevant right now.
-  const showPublishedUrl = status === "scheduled" || status === "published";
+  const showPublishedUrl = Boolean(currentStage?.requiresPublishedUrl || currentStage?.locksEditing);
 
   const togglePlatform = (platform: Platform, checked: boolean) => {
     setPlatforms((prev) => (checked ? [...prev, platform] : prev.filter((p) => p !== platform)));
@@ -201,7 +203,7 @@ export function PostForm({ post }: { post?: Post }) {
 
       {isArchived && (
         <p className="rounded-lg border bg-muted/50 p-3 text-sm text-muted-foreground">
-          {"This post is published — it's locked as a historical record. You can still update the published URL below."}
+          {"This post is locked as a historical record. You can still update the published URL below."}
         </p>
       )}
 
@@ -293,12 +295,12 @@ export function PostForm({ post }: { post?: Post }) {
               <Select value={status} onValueChange={(value) => setStatus(value as PostStatus)} disabled={isArchived}>
                 <SelectTrigger id="status" className="w-full">
                   <SelectValue>
-                    {(value: PostStatus) => POST_STATUSES.find((s) => s.value === value)?.label}
+                    {(value: PostStatus) => stages.find((s) => s.id === value)?.label}
                   </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
-                  {POST_STATUSES.map((s) => (
-                    <SelectItem key={s.value} value={s.value}>
+                  {stages.map((s) => (
+                    <SelectItem key={s.id} value={s.id}>
                       {s.label}
                     </SelectItem>
                   ))}
