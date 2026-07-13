@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { format } from "date-fns";
-import { ArrowUpDown, ChevronDown } from "lucide-react";
+import { ArrowUpDown, ChevronDown, ImageOff, Pencil, Play } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { PlatformBadgeGroup } from "@/components/posts/PlatformBadge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -10,7 +11,7 @@ import { useStore } from "@/lib/store";
 import type { Post, PostStatus } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
-const GRID_COLS = "grid-cols-[1fr_190px_160px_110px_160px]";
+const GRID_COLS = "grid-cols-[48px_1fr_190px_160px_110px_160px_32px]";
 
 const SORT_OPTIONS = [
   { value: "default", label: "Default order" },
@@ -33,6 +34,7 @@ export function ListView() {
   const { filteredPosts, profiles, categories, stages, openPreview } = useStore();
   const [collapsed, setCollapsed] = useState<Set<PostStatus>>(new Set());
   const [sortKey, setSortKey] = useState<SortKey>("default");
+  const today = format(new Date(), "yyyy-MM-dd");
 
   const toggleCollapsed = (status: PostStatus) => {
     setCollapsed((prev) => {
@@ -69,73 +71,117 @@ export function ListView() {
         </Select>
       </div>
 
-      {stages.map(({ id: value, label }) => {
-        const rows = filteredPosts.filter((p) => p.status === value).sort(SORTERS[sortKey]);
-        if (rows.length === 0) return null;
-        const isCollapsed = collapsed.has(value);
+      {stages.map((stage) => {
+        const rows = filteredPosts.filter((p) => p.status === stage.id).sort(SORTERS[sortKey]);
+        const isCollapsed = collapsed.has(stage.id);
 
         return (
-          <div key={value} className="flex flex-col gap-2">
+          <div key={stage.id} className="flex flex-col gap-2">
             <button
               type="button"
-              onClick={() => toggleCollapsed(value)}
+              onClick={() => toggleCollapsed(stage.id)}
               className="flex w-fit items-center gap-1.5 text-base font-semibold"
             >
               <ChevronDown className={cn("size-4 text-muted-foreground transition-transform", isCollapsed && "-rotate-90")} />
-              {label}
+              {stage.label}
               <span className="rounded-full bg-muted px-2 py-0.5 font-mono text-[11px] font-medium text-muted-foreground">
                 {rows.length}
               </span>
             </button>
             {!isCollapsed && (
               <div className="overflow-hidden rounded-lg bg-background shadow-sm">
-                <div className={cn("grid gap-3 border-b px-4 py-2 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground", GRID_COLS)}>
-                  <span>Post</span>
-                  <span>Platform</span>
-                  <span>Assignee</span>
-                  <span>Date</span>
-                  <span>Category</span>
-                </div>
-                {rows.map((post) => {
-                  const assignee = profiles.find((p) => p.id === post.assigneeId);
-                  const postCategories = categories.filter((c) => post.categoryIds.includes(c.id));
-                  return (
-                    <button
-                      key={post.id}
-                      type="button"
-                      onClick={() => openPreview(post.id)}
-                      className={cn("grid w-full items-center gap-3 border-b px-4 py-2.5 text-left text-sm last:border-b-0 hover:bg-muted/40", GRID_COLS)}
-                    >
-                      <span className="flex min-w-0 items-center gap-2">
-                        <span className="truncate font-medium">{post.title || "Untitled post"}</span>
-                        {post.needsChanges && (
-                          <span className="size-1.5 shrink-0 rounded-full bg-amber-500" title="Needs changes" />
-                        )}
-                      </span>
-                      <span className="min-w-0">
-                        <PlatformBadgeGroup platforms={post.platforms} />
-                      </span>
-                      <span className="flex items-center gap-1.5 truncate text-muted-foreground">
-                        {assignee ? (
-                          <>
-                            <Avatar size="sm" title={assignee.fullName}>
-                              <AvatarFallback className="text-[9px]">{assignee.initials}</AvatarFallback>
-                            </Avatar>
-                            <span className="truncate">{assignee.fullName}</span>
-                          </>
-                        ) : (
-                          "Unassigned"
-                        )}
-                      </span>
-                      <span className="text-muted-foreground">
-                        {post.targetDate ? format(new Date(`${post.targetDate}T00:00:00`), "MMM d") : "—"}
-                      </span>
-                      <span className="truncate text-muted-foreground">
-                        {postCategories.length > 0 ? postCategories.map((c) => c.name).join(", ") : "—"}
-                      </span>
-                    </button>
-                  );
-                })}
+                {rows.length === 0 ? (
+                  <p className="px-4 py-3 text-sm text-muted-foreground">No posts in this stage.</p>
+                ) : (
+                  <>
+                    <div className={cn("grid gap-3 border-b px-4 py-2 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground", GRID_COLS)}>
+                      <span />
+                      <span>Post</span>
+                      <span>Platform</span>
+                      <span>Assignee</span>
+                      <span>Date</span>
+                      <span>Category</span>
+                      <span />
+                    </div>
+                    {rows.map((post) => {
+                      const assignee = profiles.find((p) => p.id === post.assigneeId);
+                      const postCategories = categories.filter((c) => post.categoryIds.includes(c.id));
+                      const cover = post.images[0];
+                      const isOverdue = post.targetDate !== null && post.targetDate < today && !stage.requiresPublishedUrl && !stage.locksEditing;
+
+                      return (
+                        <div
+                          key={post.id}
+                          role="button"
+                          tabIndex={0}
+                          onClick={() => openPreview(post.id)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter" || e.key === " ") {
+                              e.preventDefault();
+                              openPreview(post.id);
+                            }
+                          }}
+                          className={cn(
+                            "group grid w-full cursor-pointer items-center gap-3 border-b px-4 py-2 text-left text-sm last:border-b-0 hover:bg-muted/40",
+                            GRID_COLS,
+                            isOverdue && "bg-red-50",
+                          )}
+                        >
+                          <span className="flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-md bg-muted text-muted-foreground">
+                            {cover ? (
+                              cover.mediaType === "video" ? (
+                                <span className="relative flex h-full w-full items-center justify-center bg-black/10">
+                                  <Play className="size-3.5 fill-foreground/70 text-foreground/70" />
+                                </span>
+                              ) : (
+                                // eslint-disable-next-line @next/next/no-img-element
+                                <img src={cover.imageUrl} alt="" className="h-full w-full object-cover" />
+                              )
+                            ) : (
+                              <ImageOff className="size-3.5" />
+                            )}
+                          </span>
+                          <span className="flex min-w-0 items-center gap-2">
+                            <span className="truncate font-medium">{post.title || "Untitled post"}</span>
+                            {post.needsChanges && (
+                              <span className="size-1.5 shrink-0 rounded-full bg-amber-500" title="Needs changes" />
+                            )}
+                          </span>
+                          <span className="min-w-0">
+                            <PlatformBadgeGroup platforms={post.platforms} />
+                          </span>
+                          <span className="flex items-center gap-1.5 truncate text-muted-foreground">
+                            {assignee ? (
+                              <>
+                                <Avatar size="sm" title={assignee.fullName}>
+                                  <AvatarFallback className="text-[9px]">{assignee.initials}</AvatarFallback>
+                                </Avatar>
+                                <span className="truncate">{assignee.fullName}</span>
+                              </>
+                            ) : (
+                              "Unassigned"
+                            )}
+                          </span>
+                          <span className={cn(isOverdue ? "font-semibold text-red-600" : "text-muted-foreground")}>
+                            {post.targetDate ? format(new Date(`${post.targetDate}T00:00:00`), "MMM d") : "—"}
+                          </span>
+                          <span className="truncate text-muted-foreground">
+                            {postCategories.length > 0 ? postCategories.map((c) => c.name).join(", ") : "—"}
+                          </span>
+                          <Link
+                            href={`/posts/${post.id}`}
+                            onClick={(e) => e.stopPropagation()}
+                            aria-label="Edit post"
+                            title="Edit post"
+                            className="flex size-7 shrink-0 items-center justify-center rounded-md text-muted-foreground opacity-0 hover:bg-background hover:text-foreground group-hover:opacity-100"
+                          >
+                            <Pencil className="size-3.5" />
+                          </Link>
+                        </div>
+                      );
+                    })}
+                  </>
+                )}
               </div>
             )}
           </div>
