@@ -7,6 +7,14 @@ const PLATFORM_STYLES: Record<Platform, string> = {
   x: "text-neutral-900 bg-neutral-200",
 };
 
+// Background-only, for tinting a larger area (e.g. a calendar entry) by
+// platform rather than just the small text badge itself.
+export const PLATFORM_BG_CLASSES: Record<Platform, string> = {
+  linkedin: "bg-[#EAF2FC]",
+  instagram: "bg-[#FDEAF2]",
+  x: "bg-neutral-200",
+};
+
 export function PlatformBadge({ platform, className }: { platform: Platform; className?: string }) {
   return (
     <span

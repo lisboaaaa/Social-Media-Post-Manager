@@ -22,7 +22,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
-import { PlatformBadge, PlatformBadgeGroup } from "@/components/posts/PlatformBadge";
+import { PLATFORM_BG_CLASSES, PlatformBadge, PlatformBadgeGroup } from "@/components/posts/PlatformBadge";
 
 const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
@@ -140,10 +140,13 @@ export function CalendarView() {
                       e.stopPropagation();
                       openPreview(post.id);
                     }}
-                    className="flex items-center gap-1 truncate rounded-md bg-muted/60 px-1.5 py-1 text-left text-xs hover:bg-muted"
+                    className={cn(
+                      "flex items-center gap-1 truncate rounded-md px-1.5 py-1 text-left text-xs hover:brightness-95",
+                      PLATFORM_BG_CLASSES[post.platforms[0]],
+                    )}
                     title={post.title}
                   >
-                    <PlatformBadge platform={post.platforms[0]} className="px-1 py-0 gap-1 shrink-0" />
+                    <PlatformBadge platform={post.platforms[0]} className="bg-transparent px-1 py-0 gap-1 shrink-0" />
                     {post.platforms.length > 1 && (
                       <span className="shrink-0 font-mono text-[10px] text-muted-foreground" title={`Also on ${post.platforms.length - 1} more platform${post.platforms.length > 2 ? "s" : ""}`}>
                         +{post.platforms.length - 1}
