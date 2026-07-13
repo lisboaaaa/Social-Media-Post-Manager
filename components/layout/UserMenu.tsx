@@ -2,15 +2,12 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { BarChart3, Columns3, LayoutGrid, LogOut, Rows3, Sparkles, Trash2, Wrench } from "lucide-react";
+import { BarChart3, Columns3, LogOut, Sparkles, Trash2, Wrench } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
@@ -18,13 +15,15 @@ import { PersonalStatsModal } from "@/components/stats/PersonalStatsModal";
 import { ConnectClaudeModal } from "@/components/settings/ConnectClaudeModal";
 import { DevToolsPanel } from "@/components/devtools/DevToolsPanel";
 import { ManageStagesModal } from "@/components/board/ManageStagesModal";
-import { useStore, type BoardViewMode } from "@/lib/store";
+import { useStore } from "@/lib/store";
 
 // Everything that isn't part of daily work (admin/config actions, personal
 // display preferences, account actions) lives in this one menu instead of
-// scattered as separate header icons.
+// scattered as separate header icons. The Board/List view choice moved to
+// its own "eye" icon in the FilterBar instead — it's related to filtering
+// what you see, not to the account, per team feedback.
 export function UserMenu() {
-  const { currentUser, boardViewMode, setBoardViewMode, signOut } = useStore();
+  const { currentUser, signOut } = useStore();
   const [statsOpen, setStatsOpen] = useState(false);
   const [connectOpen, setConnectOpen] = useState(false);
   const [devToolsOpen, setDevToolsOpen] = useState(false);
@@ -45,18 +44,6 @@ export function UserMenu() {
           </Avatar>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-56">
-          <DropdownMenuRadioGroup value={boardViewMode} onValueChange={(value) => setBoardViewMode(value as BoardViewMode)}>
-            <DropdownMenuLabel>View</DropdownMenuLabel>
-            <DropdownMenuRadioItem value="board">
-              <LayoutGrid className="size-3.5" />
-              Board
-            </DropdownMenuRadioItem>
-            <DropdownMenuRadioItem value="list">
-              <Rows3 className="size-3.5" />
-              List
-            </DropdownMenuRadioItem>
-          </DropdownMenuRadioGroup>
-          <DropdownMenuSeparator />
           <DropdownMenuItem onClick={() => setManageStagesOpen(true)}>
             <Columns3 className="size-3.5" />
             Manage stages
