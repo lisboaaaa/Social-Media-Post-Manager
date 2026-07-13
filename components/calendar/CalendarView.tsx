@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   addMonths,
   eachDayOfInterval,
@@ -14,7 +15,7 @@ import {
   startOfWeek,
   subMonths,
 } from "date-fns";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -27,7 +28,8 @@ import { PlatformBadge, PlatformBadgeGroup } from "@/components/posts/PlatformBa
 const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 export function CalendarView() {
-  const { filteredPosts, openPreview, profiles } = useStore();
+  const router = useRouter();
+  const { filteredPosts, openPreview, profiles, addPost } = useStore();
   const [cursor, setCursor] = useState(() => new Date());
   const [selectedDay, setSelectedDay] = useState<Date | null>(null);
 
@@ -46,6 +48,26 @@ export function CalendarView() {
     );
 
   const selectedDayPosts = selectedDay ? postsForDay(selectedDay) : [];
+
+  const handleAddDraft = () => {
+    if (!selectedDay) return;
+    const draft = addPost({
+      platforms: ["linkedin"],
+      title: "",
+      descriptions: { linkedin: "", instagram: "", x: "" },
+      status: "backlog",
+      targetDate: format(selectedDay, "yyyy-MM-dd"),
+      needsChanges: false,
+      keepMedia: false,
+      publishedUrl: null,
+      assigneeId: null,
+      requestedById: null,
+      categoryIds: [],
+      images: [],
+    });
+    setSelectedDay(null);
+    router.push(`/posts/${draft.id}`);
+  };
 
   return (
     <div className="overflow-hidden rounded-lg bg-background shadow-md">
@@ -145,6 +167,10 @@ export function CalendarView() {
           <DialogHeader>
             <DialogTitle>{selectedDay ? format(selectedDay, "EEEE, MMMM d") : ""}</DialogTitle>
           </DialogHeader>
+          <Button type="button" onClick={handleAddDraft} className="w-full">
+            <Plus className="size-4" />
+            Add post draft
+          </Button>
           <div className="flex flex-col gap-2">
             {selectedDayPosts.length === 0 && (
               <p className="text-sm text-muted-foreground">No posts scheduled for this day.</p>
