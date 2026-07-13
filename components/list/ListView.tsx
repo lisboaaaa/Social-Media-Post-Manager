@@ -2,18 +2,37 @@
 
 import { useState } from "react";
 import { format } from "date-fns";
-import { ChevronDown } from "lucide-react";
+import { ArrowUpDown, ChevronDown } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { PlatformBadgeGroup } from "@/components/posts/PlatformBadge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useStore } from "@/lib/store";
-import { POST_STATUSES, type PostStatus } from "@/lib/types";
+import { POST_STATUSES, type Post, type PostStatus } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 const GRID_COLS = "grid-cols-[1fr_190px_160px_110px_160px]";
 
+const SORT_OPTIONS = [
+  { value: "default", label: "Default order" },
+  { value: "alphabetical", label: "Alphabetical" },
+  { value: "targetDate", label: "Publish date" },
+  { value: "createdAt", label: "Created on" },
+  { value: "updatedAt", label: "Last modified" },
+] as const;
+type SortKey = (typeof SORT_OPTIONS)[number]["value"];
+
+const SORTERS: Record<SortKey, (a: Post, b: Post) => number> = {
+  default: () => 0,
+  alphabetical: (a, b) => (a.title || "Untitled post").localeCompare(b.title || "Untitled post"),
+  targetDate: (a, b) => (a.targetDate ?? "9999-99-99").localeCompare(b.targetDate ?? "9999-99-99"),
+  createdAt: (a, b) => a.createdAt.localeCompare(b.createdAt),
+  updatedAt: (a, b) => b.updatedAt.localeCompare(a.updatedAt),
+};
+
 export function ListView() {
   const { filteredPosts, profiles, categories, openPreview } = useStore();
   const [collapsed, setCollapsed] = useState<Set<PostStatus>>(new Set());
+  const [sortKey, setSortKey] = useState<SortKey>("default");
 
   const toggleCollapsed = (status: PostStatus) => {
     setCollapsed((prev) => {
@@ -33,9 +52,25 @@ export function ListView() {
   }
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-4">
+      <div className="flex items-center gap-2 self-end">
+        <ArrowUpDown className="size-3.5 text-muted-foreground" />
+        <Select value={sortKey} onValueChange={(v) => setSortKey(v as SortKey)}>
+          <SelectTrigger size="sm" className="min-w-40">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {SORT_OPTIONS.map((o) => (
+              <SelectItem key={o.value} value={o.value}>
+                {o.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
       {POST_STATUSES.map(({ value, label }) => {
-        const rows = filteredPosts.filter((p) => p.status === value);
+        const rows = filteredPosts.filter((p) => p.status === value).sort(SORTERS[sortKey]);
         if (rows.length === 0) return null;
         const isCollapsed = collapsed.has(value);
 
