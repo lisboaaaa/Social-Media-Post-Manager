@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { BarChart3, Columns3, LayoutGrid, LogOut, Rows3, Sparkles, Wrench } from "lucide-react";
+import Link from "next/link";
+import { BarChart3, Columns3, LayoutGrid, LogOut, Rows3, Sparkles, Trash2, Wrench } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -67,6 +68,10 @@ export function UserMenu() {
           <DropdownMenuItem onClick={() => setDevToolsOpen(true)}>
             <Wrench className="size-3.5" />
             Dev Tools
+          </DropdownMenuItem>
+          <DropdownMenuItem render={<Link href="/trash" />}>
+            <Trash2 className="size-3.5" />
+            Trash
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem onClick={() => setStatsOpen(true)}>
