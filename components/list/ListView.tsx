@@ -57,7 +57,7 @@ export function ListView() {
         <ArrowUpDown className="size-3.5 text-muted-foreground" />
         <Select value={sortKey} onValueChange={(v) => setSortKey(v as SortKey)}>
           <SelectTrigger size="sm" className="min-w-40">
-            <SelectValue />
+            <SelectValue>{(value: SortKey) => SORT_OPTIONS.find((o) => o.value === value)?.label}</SelectValue>
           </SelectTrigger>
           <SelectContent>
             {SORT_OPTIONS.map((o) => (
