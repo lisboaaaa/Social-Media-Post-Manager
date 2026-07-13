@@ -8,6 +8,7 @@ import { useStore } from "@/lib/store";
 
 const TABS = [
   { href: "/board", label: "Board" },
+  { href: "/list", label: "List" },
   { href: "/calendar", label: "Calendar" },
   { href: "/archive", label: "Archive" },
   { href: "/inbox", label: "Suggestions" },
