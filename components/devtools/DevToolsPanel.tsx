@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { toast } from "sonner";
 import {
-  Wrench,
   ChevronDown,
   AlertTriangle,
   ExternalLink,
@@ -17,7 +16,7 @@ import {
   Wifi,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Textarea } from "@/components/ui/textarea";
 import { createClient } from "@/lib/supabase/client";
 import { useStore, type RealtimeStatus } from "@/lib/store";
@@ -33,7 +32,6 @@ const REALTIME_INFO: Record<RealtimeStatus, { label: string; dot: string }> = {
 
 const NAV_LINKS = [
   { href: "/board", label: "Board" },
-  { href: "/list", label: "List" },
   { href: "/calendar", label: "Calendar" },
   { href: "/archive", label: "Archive" },
   { href: "/inbox", label: "Suggestions (marketing)" },
@@ -67,9 +65,13 @@ function Section({
   );
 }
 
-export function DevToolsPanel() {
+interface DevToolsPanelProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}
+
+export function DevToolsPanel({ open, onOpenChange }: DevToolsPanelProps) {
   const { posts, comments, suggestions, profiles, categories, stages, realtimeStatus, addPost, addComment } = useStore();
-  const [open, setOpen] = useState(false);
   const [pagesExpanded, setPagesExpanded] = useState(false);
   const [stats, setStats] = useState<{ fileCount: number; totalBytes: number } | null>(null);
   const [loadingStats, setLoadingStats] = useState(false);
@@ -96,7 +98,7 @@ export function DevToolsPanel() {
   };
 
   const handleOpenChange = (next: boolean) => {
-    setOpen(next);
+    onOpenChange(next);
     if (next) loadStats();
   };
 
@@ -179,19 +181,6 @@ export function DevToolsPanel() {
 
   return (
     <Sheet open={open} onOpenChange={handleOpenChange}>
-      <SheetTrigger
-        render={
-          <button
-            type="button"
-            aria-label="Development tools"
-            title="Development tools"
-            className="flex size-8 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"
-          />
-        }
-      >
-        <Wrench className="size-4" />
-      </SheetTrigger>
-
       <SheetContent side="right" className="w-full gap-2 overflow-y-auto bg-muted sm:max-w-md">
         <SheetHeader className="pb-0">
           <SheetTitle className="text-xl">Development tools</SheetTitle>

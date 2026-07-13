@@ -1,17 +1,16 @@
 "use client";
 
 import { useState } from "react";
-import { LogOut, Sparkles } from "lucide-react";
+import { BarChart3, LogOut } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { PersonalStatsModal } from "@/components/stats/PersonalStatsModal";
-import { ConnectClaudeModal } from "@/components/settings/ConnectClaudeModal";
-import { DevToolsPanel } from "@/components/devtools/DevToolsPanel";
+import { SettingsMenu } from "./SettingsMenu";
 import { useStore } from "@/lib/store";
 
 export function UserMenu() {
   const { currentUser, signOut } = useStore();
   const [statsOpen, setStatsOpen] = useState(false);
-  const [connectOpen, setConnectOpen] = useState(false);
 
   const handleSignOut = () => {
     if (confirm("Sign out?")) signOut();
@@ -19,38 +18,29 @@ export function UserMenu() {
 
   return (
     <div className="flex items-center gap-2">
-      <button
-        type="button"
-        onClick={() => setConnectOpen(true)}
-        aria-label="Connect to Claude"
-        title="Connect to Claude"
-        className="flex size-8 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"
-      >
-        <Sparkles className="size-4" />
-      </button>
-      <DevToolsPanel />
-      <button
-        type="button"
-        onClick={() => setStatsOpen(true)}
-        aria-label="View your stats"
-        title={`${currentUser.fullName} — view your stats`}
-        className="rounded-full outline-offset-2"
-      >
-        <Avatar className="h-7 w-7">
-          <AvatarFallback className="text-[10px]">{currentUser.initials}</AvatarFallback>
-        </Avatar>
-      </button>
-      <button
-        type="button"
-        onClick={handleSignOut}
-        aria-label="Sign out"
-        title="Sign out"
-        className="flex size-8 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"
-      >
-        <LogOut className="size-4" />
-      </button>
+      <SettingsMenu />
+
+      <DropdownMenu>
+        <DropdownMenuTrigger
+          render={<button type="button" aria-label={currentUser.fullName} title={currentUser.fullName} className="rounded-full outline-offset-2" />}
+        >
+          <Avatar className="h-7 w-7">
+            <AvatarFallback className="text-[10px]">{currentUser.initials}</AvatarFallback>
+          </Avatar>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-44">
+          <DropdownMenuItem onClick={() => setStatsOpen(true)}>
+            <BarChart3 className="size-3.5" />
+            Your stats
+          </DropdownMenuItem>
+          <DropdownMenuItem variant="destructive" onClick={handleSignOut}>
+            <LogOut className="size-3.5" />
+            Sign out
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+
       <PersonalStatsModal open={statsOpen} onOpenChange={setStatsOpen} />
-      <ConnectClaudeModal open={connectOpen} onOpenChange={setConnectOpen} />
     </div>
   );
 }

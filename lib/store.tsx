@@ -35,6 +35,13 @@ const EMPTY_FILTERS: Filters = { platform: "all", categoryId: "all", assigneeId:
 
 export type RealtimeStatus = "connecting" | "connected" | "error";
 
+// A personal display preference (which layout /board renders), not shared
+// team data — kept in this same context (not Supabase) so the Settings menu
+// and the page content stay in sync instantly in the same tab, but persisted
+// to localStorage so it survives a reload.
+export type BoardViewMode = "board" | "list";
+const BOARD_VIEW_MODE_KEY = "boardViewMode";
+
 type NewPostInput = Omit<
   Post,
   "id" | "postNumber" | "createdAt" | "updatedAt" | "createdBy" | "deletedAt" | "deletedBy" | "deleteReason"
@@ -82,6 +89,8 @@ interface StoreValue {
   openPreview: (postId: string) => void;
   closePreview: () => void;
   signOut: () => void;
+  boardViewMode: BoardViewMode;
+  setBoardViewMode: (mode: BoardViewMode) => void;
 }
 
 const StoreContext = createContext<StoreValue | null>(null);
@@ -101,6 +110,19 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [previewPostId, setPreviewPostId] = useState<string | null>(null);
   const [profileError, setProfileError] = useState<string | null>(null);
   const [realtimeStatus, setRealtimeStatus] = useState<RealtimeStatus>("connecting");
+  const [boardViewMode, setBoardViewModeState] = useState<BoardViewMode>("board");
+
+  useEffect(() => {
+    // Reading a saved preference on mount — legitimate sync-with-storage case.
+    const saved = window.localStorage.getItem(BOARD_VIEW_MODE_KEY);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (saved === "board" || saved === "list") setBoardViewModeState(saved);
+  }, []);
+
+  const setBoardViewMode = (mode: BoardViewMode) => {
+    setBoardViewModeState(mode);
+    window.localStorage.setItem(BOARD_VIEW_MODE_KEY, mode);
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -846,6 +868,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     openPreview: setPreviewPostId,
     closePreview: () => setPreviewPostId(null),
     signOut,
+    boardViewMode,
+    setBoardViewMode,
   };
 
   if (loading) {
