@@ -9,7 +9,7 @@ import { useStore } from "@/lib/store";
 import { POST_STATUSES, type PostStatus } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
-const GRID_COLS = "grid-cols-[1fr_130px_160px_110px_160px]";
+const GRID_COLS = "grid-cols-[1fr_190px_160px_110px_160px]";
 
 export function ListView() {
   const { filteredPosts, profiles, categories, openPreview } = useStore();
