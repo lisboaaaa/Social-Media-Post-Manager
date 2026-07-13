@@ -1,16 +1,33 @@
 "use client";
 
 import { useState } from "react";
-import { BarChart3, LogOut } from "lucide-react";
+import { BarChart3, Columns3, LayoutGrid, LogOut, Rows3, Sparkles, Wrench } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { PersonalStatsModal } from "@/components/stats/PersonalStatsModal";
-import { SettingsMenu } from "./SettingsMenu";
-import { useStore } from "@/lib/store";
+import { ConnectClaudeModal } from "@/components/settings/ConnectClaudeModal";
+import { DevToolsPanel } from "@/components/devtools/DevToolsPanel";
+import { ManageStagesModal } from "@/components/board/ManageStagesModal";
+import { useStore, type BoardViewMode } from "@/lib/store";
 
+// Everything that isn't part of daily work (admin/config actions, personal
+// display preferences, account actions) lives in this one menu instead of
+// scattered as separate header icons.
 export function UserMenu() {
-  const { currentUser, signOut } = useStore();
+  const { currentUser, boardViewMode, setBoardViewMode, signOut } = useStore();
   const [statsOpen, setStatsOpen] = useState(false);
+  const [connectOpen, setConnectOpen] = useState(false);
+  const [devToolsOpen, setDevToolsOpen] = useState(false);
+  const [manageStagesOpen, setManageStagesOpen] = useState(false);
 
   const handleSignOut = () => {
     if (confirm("Sign out?")) signOut();
@@ -18,8 +35,6 @@ export function UserMenu() {
 
   return (
     <div className="flex items-center gap-2">
-      <SettingsMenu />
-
       <DropdownMenu>
         <DropdownMenuTrigger
           render={<button type="button" aria-label={currentUser.fullName} title={currentUser.fullName} className="rounded-full outline-offset-2" />}
@@ -28,7 +43,32 @@ export function UserMenu() {
             <AvatarFallback className="text-[10px]">{currentUser.initials}</AvatarFallback>
           </Avatar>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-44">
+        <DropdownMenuContent align="end" className="w-56">
+          <DropdownMenuRadioGroup value={boardViewMode} onValueChange={(value) => setBoardViewMode(value as BoardViewMode)}>
+            <DropdownMenuLabel>View</DropdownMenuLabel>
+            <DropdownMenuRadioItem value="board">
+              <LayoutGrid className="size-3.5" />
+              Board
+            </DropdownMenuRadioItem>
+            <DropdownMenuRadioItem value="list">
+              <Rows3 className="size-3.5" />
+              List
+            </DropdownMenuRadioItem>
+          </DropdownMenuRadioGroup>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem onClick={() => setManageStagesOpen(true)}>
+            <Columns3 className="size-3.5" />
+            Manage stages
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => setConnectOpen(true)}>
+            <Sparkles className="size-3.5" />
+            Connect to Claude
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => setDevToolsOpen(true)}>
+            <Wrench className="size-3.5" />
+            Dev Tools
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
           <DropdownMenuItem onClick={() => setStatsOpen(true)}>
             <BarChart3 className="size-3.5" />
             Your stats
@@ -41,6 +81,9 @@ export function UserMenu() {
       </DropdownMenu>
 
       <PersonalStatsModal open={statsOpen} onOpenChange={setStatsOpen} />
+      <ConnectClaudeModal open={connectOpen} onOpenChange={setConnectOpen} />
+      <DevToolsPanel open={devToolsOpen} onOpenChange={setDevToolsOpen} />
+      <ManageStagesModal open={manageStagesOpen} onOpenChange={setManageStagesOpen} />
     </div>
   );
 }
