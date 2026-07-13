@@ -42,8 +42,8 @@ export function SettingsMenu() {
           <Settings className="size-4" />
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-56">
-          <DropdownMenuLabel>View</DropdownMenuLabel>
           <DropdownMenuRadioGroup value={boardViewMode} onValueChange={(value) => setBoardViewMode(value as BoardViewMode)}>
+            <DropdownMenuLabel>View</DropdownMenuLabel>
             <DropdownMenuRadioItem value="board">
               <LayoutGrid className="size-3.5" />
               Board
