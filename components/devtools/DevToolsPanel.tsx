@@ -38,7 +38,7 @@ const NAV_LINKS = [
   { href: "/trash", label: "Trash" },
   { href: "/posts/new", label: "New post form" },
   { href: "/suggest", label: "Suggest (everyone)" },
-  { href: "/login", label: "Login" },
+  { href: "/login?preview=1", label: "Login" },
 ];
 
 // Supabase's free tier storage quota — what "Storage & media" below is

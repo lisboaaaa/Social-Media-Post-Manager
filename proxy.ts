@@ -44,7 +44,10 @@ export async function proxy(request: NextRequest) {
   if (user && request.nextUrl.pathname !== "/auth/callback" && request.nextUrl.pathname !== "/api/mcp") {
     const isEveryonePath = EVERYONE_PATHS.some((path) => request.nextUrl.pathname.startsWith(path));
 
-    if (request.nextUrl.pathname === "/login") {
+    // ?preview=1 lets a signed-in dev open /login from the Dev Tools panel to
+    // actually look at it, instead of always bouncing to /board — the page
+    // itself has nothing sensitive to protect either way.
+    if (request.nextUrl.pathname === "/login" && request.nextUrl.searchParams.get("preview") !== "1") {
       const { data: profile } = await supabase.from("profiles").select("is_marketing").eq("email", user.email).maybeSingle();
       return NextResponse.redirect(new URL(profile?.is_marketing ? "/board" : "/suggest", request.url));
     }
