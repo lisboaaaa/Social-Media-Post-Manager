@@ -140,6 +140,10 @@ export function CalendarView() {
                       e.stopPropagation();
                       openPreview(post.id);
                     }}
+                    onDoubleClick={(e) => {
+                      e.stopPropagation();
+                      router.push(`/posts/${post.id}`);
+                    }}
                     className={cn(
                       "flex items-center gap-1 truncate rounded-md px-1.5 py-1 text-left text-xs hover:brightness-95",
                       PLATFORM_BG_CLASSES[post.platforms[0]],

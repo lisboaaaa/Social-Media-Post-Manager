@@ -1,3 +1,4 @@
+import { useRouter } from "next/navigation";
 import { Draggable } from "@hello-pangea/dnd";
 import { format } from "date-fns";
 import { ImageOff, Play } from "lucide-react";
@@ -10,6 +11,7 @@ import { cn } from "@/lib/utils";
 
 export function PostCard({ post, index }: { post: Post; index: number }) {
   const { profiles, categories, openPreview } = useStore();
+  const router = useRouter();
   const assignee = profiles.find((p) => p.id === post.assigneeId);
   const postCategories = categories.filter((c) => post.categoryIds.includes(c.id));
   const showImageArea = post.status !== "backlog" && post.status !== "writing";
@@ -29,6 +31,7 @@ export function PostCard({ post, index }: { post: Post; index: number }) {
           {...provided.draggableProps}
           {...provided.dragHandleProps}
           onClick={() => openPreview(post.id)}
+          onDoubleClick={() => router.push(`/posts/${post.id}`)}
           className={cn(
             "cursor-pointer rounded-lg bg-background p-3 shadow-md transition-all duration-150 ease-out hover:-translate-y-0.5 hover:shadow-lg",
             snapshot.isDragging && "ring-2 ring-primary/40",

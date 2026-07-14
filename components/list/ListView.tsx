@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { format } from "date-fns";
 import { DragDropContext, Draggable, Droppable, type DropResult } from "@hello-pangea/dnd";
 import { ArrowUpDown, CalendarDays, ChevronDown, FileText, GripVertical, ImageOff, Pencil, Play, Radio, Tag, UserRound } from "lucide-react";
@@ -36,6 +37,7 @@ const SORTERS: Record<SortKey, (a: Post, b: Post) => number> = {
 
 export function ListView() {
   const { filteredPosts, profiles, categories, stages, openPreview, movePost, getPostById, updateStage, reorderStages } = useStore();
+  const router = useRouter();
   const [collapsed, setCollapsed] = useState<Set<PostStatus>>(new Set());
   const [sortKey, setSortKey] = useState<SortKey>("default");
   const [renamingId, setRenamingId] = useState<string | null>(null);
@@ -236,6 +238,7 @@ export function ListView() {
                                               role="button"
                                               tabIndex={0}
                                               onClick={() => openPreview(post.id)}
+                                              onDoubleClick={() => router.push(`/posts/${post.id}`)}
                                               onKeyDown={(e) => {
                                                 if (e.key === "Enter" || e.key === " ") {
                                                   e.preventDefault();
