@@ -45,21 +45,23 @@ export function ListView() {
   const [pendingSchedule, setPendingSchedule] = useState<{ postId: string; status: PostStatus; index: number } | null>(null);
   const [pendingPublish, setPendingPublish] = useState<{ postId: string; status: PostStatus; index: number } | null>(null);
   const today = format(new Date(), "yyyy-MM-dd");
-  // Rows are also dnd drag handles, whose mousedown/touch sensors swallow the
-  // browser's native dblclick — track clicks by hand instead.
-  const lastClickRef = useRef<{ id: string; time: number }>({ id: "", time: 0 });
+  // Opening the preview is delayed slightly so a second click can cancel it
+  // and navigate to the edit page instead — without the delay, the first
+  // click's modal would already be open by the time the second click lands,
+  // so it'd hit the modal's backdrop (closing it) rather than the row.
+  const clickTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const handleRowClick = (postId: string) => {
-    // Only ever runs from the onClick below, never during render.
-    // eslint-disable-next-line react-hooks/purity
-    const now = Date.now();
-    if (lastClickRef.current.id === postId && now - lastClickRef.current.time < 400) {
-      lastClickRef.current = { id: "", time: 0 };
+    if (clickTimerRef.current) {
+      clearTimeout(clickTimerRef.current);
+      clickTimerRef.current = null;
       router.push(`/posts/${postId}`);
       return;
     }
-    lastClickRef.current = { id: postId, time: now };
-    openPreview(postId);
+    clickTimerRef.current = setTimeout(() => {
+      clickTimerRef.current = null;
+      openPreview(postId);
+    }, 250);
   };
 
   const stageById = (id: string) => stages.find((s) => s.id === id);

@@ -31,19 +31,23 @@ export function CalendarView() {
   const { filteredPosts, openPreview, profiles, stages, addPost } = useStore();
   const [cursor, setCursor] = useState(() => new Date());
   const [selectedDay, setSelectedDay] = useState<Date | null>(null);
-  const lastClickRef = useRef<{ id: string; time: number }>({ id: "", time: 0 });
+  // Opening the preview is delayed slightly so a second click can cancel it
+  // and navigate to the edit page instead — without the delay, the first
+  // click's modal would already be open by the time the second click lands,
+  // so it'd hit the modal's backdrop (closing it) rather than the entry.
+  const clickTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const handlePostClick = (postId: string) => {
-    // Only ever runs from the onClick handlers below, never during render.
-    // eslint-disable-next-line react-hooks/purity
-    const now = Date.now();
-    if (lastClickRef.current.id === postId && now - lastClickRef.current.time < 400) {
-      lastClickRef.current = { id: "", time: 0 };
+    if (clickTimerRef.current) {
+      clearTimeout(clickTimerRef.current);
+      clickTimerRef.current = null;
       router.push(`/posts/${postId}`);
       return;
     }
-    lastClickRef.current = { id: postId, time: now };
-    openPreview(postId);
+    clickTimerRef.current = setTimeout(() => {
+      clickTimerRef.current = null;
+      openPreview(postId);
+    }, 250);
   };
 
   const monthStart = startOfMonth(cursor);

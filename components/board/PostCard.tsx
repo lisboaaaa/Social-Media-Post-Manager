@@ -10,25 +10,28 @@ import { useStore } from "@/lib/store";
 import type { Post } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
-const DOUBLE_CLICK_MS = 400;
+const DOUBLE_CLICK_MS = 250;
 
 export function PostCard({ post, index }: { post: Post; index: number }) {
   const { profiles, categories, openPreview } = useStore();
   const router = useRouter();
-  // The whole card is also the dnd drag handle, whose own mousedown/touch
-  // sensors swallow the browser's native dblclick — track clicks by hand
-  // instead of relying on onDoubleClick.
-  const lastClickRef = useRef(0);
+  // Opening the preview is delayed slightly so a second click can cancel it
+  // and navigate to the edit page instead — without the delay, the first
+  // click's modal would already be open by the time the second click lands,
+  // so it'd hit the modal's backdrop (closing it) rather than the card.
+  const clickTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const handleClick = () => {
-    const now = Date.now();
-    if (now - lastClickRef.current < DOUBLE_CLICK_MS) {
-      lastClickRef.current = 0;
+    if (clickTimerRef.current) {
+      clearTimeout(clickTimerRef.current);
+      clickTimerRef.current = null;
       router.push(`/posts/${post.id}`);
       return;
     }
-    lastClickRef.current = now;
-    openPreview(post.id);
+    clickTimerRef.current = setTimeout(() => {
+      clickTimerRef.current = null;
+      openPreview(post.id);
+    }, DOUBLE_CLICK_MS);
   };
   const assignee = profiles.find((p) => p.id === post.assigneeId);
   const postCategories = categories.filter((c) => post.categoryIds.includes(c.id));
