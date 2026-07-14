@@ -3,10 +3,14 @@
 import { useState } from "react";
 import Link from "next/link";
 import { format } from "date-fns";
-import { ArrowUpDown, CalendarDays, ChevronDown, FileText, ImageOff, Pencil, Play, Radio, Tag, UserRound } from "lucide-react";
+import { DragDropContext, Draggable, Droppable, type DropResult } from "@hello-pangea/dnd";
+import { ArrowUpDown, CalendarDays, ChevronDown, FileText, GripVertical, ImageOff, Pencil, Play, Radio, Tag, UserRound } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { PlatformBadgeGroup } from "@/components/posts/PlatformBadge";
+import { PublishedUrlDialog } from "@/components/board/PublishedUrlDialog";
+import { ScheduleDateDialog } from "@/components/board/ScheduleDateDialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { needsChangesPatch } from "@/lib/stageRules";
 import { useStore } from "@/lib/store";
 import type { Post, PostStatus } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -31,10 +35,16 @@ const SORTERS: Record<SortKey, (a: Post, b: Post) => number> = {
 };
 
 export function ListView() {
-  const { filteredPosts, profiles, categories, stages, openPreview } = useStore();
+  const { filteredPosts, profiles, categories, stages, openPreview, movePost, getPostById, updateStage, reorderStages } = useStore();
   const [collapsed, setCollapsed] = useState<Set<PostStatus>>(new Set());
   const [sortKey, setSortKey] = useState<SortKey>("default");
+  const [renamingId, setRenamingId] = useState<string | null>(null);
+  const [renameDraft, setRenameDraft] = useState("");
+  const [pendingSchedule, setPendingSchedule] = useState<{ postId: string; status: PostStatus; index: number } | null>(null);
+  const [pendingPublish, setPendingPublish] = useState<{ postId: string; status: PostStatus; index: number } | null>(null);
   const today = format(new Date(), "yyyy-MM-dd");
+
+  const stageById = (id: string) => stages.find((s) => s.id === id);
 
   const toggleCollapsed = (status: PostStatus) => {
     setCollapsed((prev) => {
@@ -43,6 +53,52 @@ export function ListView() {
       else next.add(status);
       return next;
     });
+  };
+
+  const startRename = (stage: { id: string; label: string }) => {
+    setRenamingId(stage.id);
+    setRenameDraft(stage.label);
+  };
+
+  const commitRename = () => {
+    const trimmed = renameDraft.trim();
+    const id = renamingId;
+    setRenamingId(null);
+    if (!id || !trimmed) return;
+    const stage = stageById(id);
+    if (stage && trimmed !== stage.label) updateStage(id, { label: trimmed });
+  };
+
+  const onDragEnd = (result: DropResult) => {
+    const { destination, source, draggableId, type } = result;
+    if (!destination) return;
+    if (destination.droppableId === source.droppableId && destination.index === source.index) return;
+
+    if (type === "COLUMN") {
+      const reordered = [...stages];
+      const [moved] = reordered.splice(source.index, 1);
+      reordered.splice(destination.index, 0, moved);
+      reorderStages(reordered.map((s) => s.id));
+      return;
+    }
+
+    const newStatus = destination.droppableId as PostStatus;
+    const post = getPostById(draggableId);
+    const targetStage = stageById(newStatus);
+    if (!post || !targetStage) return;
+
+    if (targetStage.requiresTargetDate && !post.targetDate) {
+      setPendingSchedule({ postId: draggableId, status: newStatus, index: destination.index });
+      return;
+    }
+
+    if (targetStage.requiresPublishedUrl && !post.publishedUrl) {
+      setPendingPublish({ postId: draggableId, status: newStatus, index: destination.index });
+      return;
+    }
+
+    const oldStage = stageById(post.status);
+    movePost(draggableId, newStatus, destination.index, oldStage ? needsChangesPatch(oldStage, targetStage) : {});
   };
 
   if (filteredPosts.length === 0) {
@@ -80,123 +136,233 @@ export function ListView() {
         <span className="border-l" />
       </div>
 
-      {stages.map((stage) => {
-        const rows = filteredPosts.filter((p) => p.status === stage.id).sort(SORTERS[sortKey]);
-        const isCollapsed = collapsed.has(stage.id);
+      <DragDropContext onDragEnd={onDragEnd}>
+        <Droppable droppableId="list-stages" direction="vertical" type="COLUMN">
+          {(stagesProvided) => (
+            <div ref={stagesProvided.innerRef} {...stagesProvided.droppableProps} className="flex flex-col gap-4">
+              {stages.map((stage, stageIndex) => {
+                const rows = filteredPosts.filter((p) => p.status === stage.id).sort(SORTERS[sortKey]);
+                const isCollapsed = collapsed.has(stage.id);
+                const isRenaming = renamingId === stage.id;
 
-        return (
-          <div key={stage.id} className="flex flex-col gap-2">
-            <button
-              type="button"
-              onClick={() => toggleCollapsed(stage.id)}
-              className="flex w-fit items-center gap-1.5 text-base font-semibold"
-            >
-              <ChevronDown className={cn("size-4 text-muted-foreground transition-transform", isCollapsed && "-rotate-90")} />
-              {stage.label}
-              <span
-                className={cn(
-                  "rounded-full px-2 py-0.5 font-mono text-[11px] font-medium",
-                  stage.isArchiveStage
-                    ? "bg-emerald-100 text-emerald-700"
-                    : stage.isReviewStage
-                      ? "bg-amber-100 text-amber-700"
-                      : "bg-muted text-muted-foreground",
-                )}
-              >
-                {rows.length}
-              </span>
-            </button>
-            {!isCollapsed && (
-              <div className="flex flex-col gap-2">
-                <div className="h-px bg-border" />
-                <div className="overflow-hidden rounded-lg bg-background shadow-sm">
-                {rows.length === 0 ? (
-                  <p className="px-4 py-3 text-sm text-muted-foreground">No posts in this stage.</p>
-                ) : (
-                    rows.map((post) => {
-                      const assignee = profiles.find((p) => p.id === post.assigneeId);
-                      const postCategories = categories.filter((c) => post.categoryIds.includes(c.id));
-                      const cover = post.images[0];
-                      const isOverdue = post.targetDate !== null && post.targetDate < today && !stage.requiresPublishedUrl && !stage.locksEditing;
-
-                      return (
-                        <div
-                          key={post.id}
-                          role="button"
-                          tabIndex={0}
-                          onClick={() => openPreview(post.id)}
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter" || e.key === " ") {
-                              e.preventDefault();
-                              openPreview(post.id);
-                            }
-                          }}
-                          className={cn(
-                            "group grid w-full cursor-pointer items-center border-b px-4 py-2 text-left text-sm last:border-b-0 hover:bg-muted/40",
-                            GRID_COLS,
-                            isOverdue && "bg-red-50",
-                          )}
-                        >
-                          <span className="flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-md bg-muted text-muted-foreground">
-                            {cover ? (
-                              cover.mediaType === "video" ? (
-                                <span className="relative flex h-full w-full items-center justify-center bg-black/10">
-                                  <Play className="size-3.5 fill-foreground/70 text-foreground/70" />
-                                </span>
-                              ) : (
-                                // eslint-disable-next-line @next/next/no-img-element
-                                <img src={cover.imageUrl} alt="" className="h-full w-full object-cover" />
-                              )
-                            ) : (
-                              <ImageOff className="size-3.5" />
-                            )}
-                          </span>
-                          <span className="flex min-w-0 items-center gap-2 px-3">
-                            <span className="truncate font-medium">{post.title || "Untitled post"}</span>
-                            {post.needsChanges && (
-                              <span className="size-2.5 shrink-0 rounded-full bg-amber-500" title="Needs changes" />
-                            )}
-                          </span>
-                          <span className="min-w-0 border-l px-3">
-                            <PlatformBadgeGroup platforms={post.platforms} />
-                          </span>
-                          <span className="flex items-center gap-1.5 truncate border-l px-3 text-muted-foreground">
-                            {assignee ? (
-                              <>
-                                <Avatar size="sm" title={assignee.fullName}>
-                                  <AvatarFallback className="text-[9px]">{assignee.initials}</AvatarFallback>
-                                </Avatar>
-                                <span className="truncate">{assignee.fullName}</span>
-                              </>
-                            ) : (
-                              "Unassigned"
-                            )}
-                          </span>
-                          <span className={cn("border-l px-3", isOverdue ? "font-semibold text-red-600" : "text-muted-foreground")}>
-                            {post.targetDate ? format(new Date(`${post.targetDate}T00:00:00`), "MMM d") : "—"}
-                          </span>
-                          <span className="truncate border-l px-3 text-muted-foreground">
-                            {postCategories.length > 0 ? postCategories.map((c) => c.name).join(", ") : "—"}
-                          </span>
-                          <Link
-                            href={`/posts/${post.id}`}
-                            onClick={(e) => e.stopPropagation()}
-                            aria-label="Edit post"
-                            title="Edit post"
-                            className="flex size-7 shrink-0 items-center justify-center rounded-md border-l text-muted-foreground opacity-0 hover:bg-background hover:text-foreground group-hover:opacity-100"
+                return (
+                  <Draggable key={stage.id} draggableId={`column-${stage.id}`} index={stageIndex}>
+                    {(stageDragProvided) => (
+                      <div ref={stageDragProvided.innerRef} {...stageDragProvided.draggableProps} className="flex flex-col gap-2">
+                        <div className="group flex w-fit items-center gap-1.5">
+                          <span
+                            {...stageDragProvided.dragHandleProps}
+                            aria-label={`Reorder ${stage.label}`}
+                            title="Drag to reorder"
+                            className="flex size-5 shrink-0 cursor-grab items-center justify-center text-muted-foreground/50 opacity-0 group-hover:opacity-100"
                           >
-                            <Pencil className="size-3.5" />
-                          </Link>
+                            <GripVertical className="size-3.5" />
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => toggleCollapsed(stage.id)}
+                            aria-label="Toggle stage"
+                            className="flex items-center"
+                          >
+                            <ChevronDown className={cn("size-4 text-muted-foreground transition-transform", isCollapsed && "-rotate-90")} />
+                          </button>
+                          {isRenaming ? (
+                            <input
+                              autoFocus
+                              value={renameDraft}
+                              onChange={(e) => setRenameDraft(e.target.value)}
+                              onBlur={commitRename}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter") (e.target as HTMLInputElement).blur();
+                                if (e.key === "Escape") setRenamingId(null);
+                              }}
+                              className="rounded-md bg-muted px-1.5 py-0.5 text-base font-semibold text-foreground outline-none ring-1 ring-primary"
+                            />
+                          ) : (
+                            <span
+                              onClick={() => startRename(stage)}
+                              title="Click to rename"
+                              className="cursor-text rounded-md px-1.5 py-0.5 text-base font-semibold hover:bg-muted"
+                            >
+                              {stage.label}
+                            </span>
+                          )}
+                          <span
+                            className={cn(
+                              "rounded-full px-2 py-0.5 font-mono text-[11px] font-medium",
+                              stage.isArchiveStage
+                                ? "bg-emerald-100 text-emerald-700"
+                                : stage.isReviewStage
+                                  ? "bg-amber-100 text-amber-700"
+                                  : "bg-muted text-muted-foreground",
+                            )}
+                          >
+                            {rows.length}
+                          </span>
                         </div>
-                      );
-                    })
-                )}
-                </div>
-              </div>
-            )}
-          </div>
-        );
-      })}
+                        {!isCollapsed && (
+                          <div className="flex flex-col gap-2">
+                            <div className="h-px bg-border" />
+                            <Droppable droppableId={stage.id}>
+                              {(rowsProvided, rowsSnapshot) => (
+                                <div
+                                  ref={rowsProvided.innerRef}
+                                  {...rowsProvided.droppableProps}
+                                  className={cn(
+                                    "overflow-hidden rounded-lg bg-background shadow-sm",
+                                    rowsSnapshot.isDraggingOver && "ring-2 ring-primary/30",
+                                  )}
+                                >
+                                  {rows.length === 0 ? (
+                                    <p className="px-4 py-3 text-sm text-muted-foreground">No posts in this stage.</p>
+                                  ) : (
+                                    rows.map((post, rowIndex) => {
+                                      const assignee = profiles.find((p) => p.id === post.assigneeId);
+                                      const postCategories = categories.filter((c) => post.categoryIds.includes(c.id));
+                                      const cover = post.images[0];
+                                      const isOverdue =
+                                        post.targetDate !== null &&
+                                        post.targetDate < today &&
+                                        !stage.requiresPublishedUrl &&
+                                        !stage.locksEditing;
+
+                                      return (
+                                        <Draggable key={post.id} draggableId={post.id} index={rowIndex}>
+                                          {(postDragProvided, postDragSnapshot) => (
+                                            <div
+                                              ref={postDragProvided.innerRef}
+                                              {...postDragProvided.draggableProps}
+                                              {...postDragProvided.dragHandleProps}
+                                              role="button"
+                                              tabIndex={0}
+                                              onClick={() => openPreview(post.id)}
+                                              onKeyDown={(e) => {
+                                                if (e.key === "Enter" || e.key === " ") {
+                                                  e.preventDefault();
+                                                  openPreview(post.id);
+                                                }
+                                              }}
+                                              className={cn(
+                                                "group grid w-full cursor-pointer items-center border-b px-4 py-2 text-left text-sm last:border-b-0 hover:bg-muted/40",
+                                                GRID_COLS,
+                                                isOverdue && "bg-red-50",
+                                                postDragSnapshot.isDragging && "bg-background shadow-lg ring-2 ring-primary/40",
+                                              )}
+                                            >
+                                              <span className="flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-md bg-muted text-muted-foreground">
+                                                {cover ? (
+                                                  cover.mediaType === "video" ? (
+                                                    <span className="relative flex h-full w-full items-center justify-center bg-black/10">
+                                                      <Play className="size-3.5 fill-foreground/70 text-foreground/70" />
+                                                    </span>
+                                                  ) : (
+                                                    // eslint-disable-next-line @next/next/no-img-element
+                                                    <img src={cover.imageUrl} alt="" className="h-full w-full object-cover" />
+                                                  )
+                                                ) : (
+                                                  <ImageOff className="size-3.5" />
+                                                )}
+                                              </span>
+                                              <span className="flex min-w-0 items-center gap-2 px-3">
+                                                <span className="truncate font-medium">{post.title || "Untitled post"}</span>
+                                                {post.needsChanges && (
+                                                  <span className="size-2.5 shrink-0 rounded-full bg-amber-500" title="Needs changes" />
+                                                )}
+                                              </span>
+                                              <span className="min-w-0 border-l px-3">
+                                                <PlatformBadgeGroup platforms={post.platforms} />
+                                              </span>
+                                              <span className="flex items-center gap-1.5 truncate border-l px-3 text-muted-foreground">
+                                                {assignee ? (
+                                                  <>
+                                                    <Avatar size="sm" title={assignee.fullName}>
+                                                      <AvatarFallback className="text-[9px]">{assignee.initials}</AvatarFallback>
+                                                    </Avatar>
+                                                    <span className="truncate">{assignee.fullName}</span>
+                                                  </>
+                                                ) : (
+                                                  "Unassigned"
+                                                )}
+                                              </span>
+                                              <span className={cn("border-l px-3", isOverdue ? "font-semibold text-red-600" : "text-muted-foreground")}>
+                                                {post.targetDate ? format(new Date(`${post.targetDate}T00:00:00`), "MMM d") : "—"}
+                                              </span>
+                                              <span className="truncate border-l px-3 text-muted-foreground">
+                                                {postCategories.length > 0 ? postCategories.map((c) => c.name).join(", ") : "—"}
+                                              </span>
+                                              <Link
+                                                href={`/posts/${post.id}`}
+                                                onClick={(e) => e.stopPropagation()}
+                                                aria-label="Edit post"
+                                                title="Edit post"
+                                                className="flex size-7 shrink-0 items-center justify-center rounded-md border-l text-muted-foreground opacity-0 hover:bg-background hover:text-foreground group-hover:opacity-100"
+                                              >
+                                                <Pencil className="size-3.5" />
+                                              </Link>
+                                            </div>
+                                          )}
+                                        </Draggable>
+                                      );
+                                    })
+                                  )}
+                                  {rowsProvided.placeholder}
+                                </div>
+                              )}
+                            </Droppable>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </Draggable>
+                );
+              })}
+              {stagesProvided.placeholder}
+            </div>
+          )}
+        </Droppable>
+      </DragDropContext>
+
+      <ScheduleDateDialog
+        open={pendingSchedule !== null}
+        onCancel={() => setPendingSchedule(null)}
+        onConfirm={(date) => {
+          if (!pendingSchedule) return;
+          const post = getPostById(pendingSchedule.postId);
+          const oldStage = post ? stageById(post.status) : undefined;
+          const newStage = stageById(pendingSchedule.status);
+          movePost(pendingSchedule.postId, pendingSchedule.status, pendingSchedule.index, {
+            targetDate: date,
+            ...(oldStage && newStage ? needsChangesPatch(oldStage, newStage) : {}),
+          });
+          setPendingSchedule(null);
+        }}
+      />
+
+      <PublishedUrlDialog
+        open={pendingPublish !== null}
+        onCancel={() => setPendingPublish(null)}
+        onSkip={() => {
+          if (!pendingPublish) return;
+          const post = getPostById(pendingPublish.postId);
+          const oldStage = post ? stageById(post.status) : undefined;
+          const newStage = stageById(pendingPublish.status);
+          movePost(pendingPublish.postId, pendingPublish.status, pendingPublish.index, {
+            ...(oldStage && newStage ? needsChangesPatch(oldStage, newStage) : {}),
+          });
+          setPendingPublish(null);
+        }}
+        onConfirm={(url) => {
+          if (!pendingPublish) return;
+          const post = getPostById(pendingPublish.postId);
+          const oldStage = post ? stageById(post.status) : undefined;
+          const newStage = stageById(pendingPublish.status);
+          movePost(pendingPublish.postId, pendingPublish.status, pendingPublish.index, {
+            publishedUrl: url,
+            ...(oldStage && newStage ? needsChangesPatch(oldStage, newStage) : {}),
+          });
+          setPendingPublish(null);
+        }}
+      />
     </div>
   );
 }
