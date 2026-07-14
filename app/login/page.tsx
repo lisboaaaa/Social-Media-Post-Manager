@@ -2,6 +2,7 @@
 
 import { useState, type FormEvent } from "react";
 import { toast } from "sonner";
+import { Sparkles } from "lucide-react";
 import { AppBackground } from "@/components/layout/AppBackground";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -26,6 +27,7 @@ export default function LoginPage() {
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+  const [showEmailForm, setShowEmailForm] = useState(false);
 
   const handleGoogleSignIn = async () => {
     setGoogleLoading(true);
@@ -69,16 +71,21 @@ export default function LoginPage() {
   return (
     <div className="flex min-h-screen items-center justify-center px-4">
       <AppBackground />
-      <div className="w-full max-w-sm rounded-lg border bg-background p-6">
-        <h1 className="text-lg font-semibold tracking-tight">Social Media Post Manager</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Sign in with your {COMPANY_DOMAIN} account.
-        </p>
+      <div className="w-full max-w-md rounded-2xl border bg-background p-8 shadow-lg">
+        <div className="flex flex-col items-center text-center">
+          <span className="flex size-11 items-center justify-center rounded-full bg-primary/10 text-primary">
+            <Sparkles className="size-5" />
+          </span>
+          <h1 className="mt-3 text-2xl font-semibold tracking-tight">Social Media Post Manager</h1>
+          <p className="mt-1.5 text-sm text-muted-foreground">
+            Sign in with your {COMPANY_DOMAIN} account.
+          </p>
+        </div>
 
         <Button
           type="button"
-          variant="outline"
-          className="mt-6 w-full"
+          size="lg"
+          className="mt-8 w-full"
           onClick={handleGoogleSignIn}
           disabled={googleLoading}
         >
@@ -86,18 +93,12 @@ export default function LoginPage() {
           {googleLoading ? "Redirecting…" : "Continue with Google"}
         </Button>
 
-        <div className="my-4 flex items-center gap-3">
-          <div className="h-px flex-1 bg-border" />
-          <span className="text-xs text-muted-foreground">or</span>
-          <div className="h-px flex-1 bg-border" />
-        </div>
-
         {sent ? (
-          <p className="rounded-md bg-muted/50 p-3 text-sm">
+          <p className="mt-4 rounded-md bg-muted/50 p-3 text-sm">
             Check your inbox at <span className="font-medium">{email}</span> for a sign-in link.
           </p>
-        ) : (
-          <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+        ) : showEmailForm ? (
+          <form onSubmit={handleSubmit} className="mt-4 flex flex-col gap-3">
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="email">Email</Label>
               <Input
@@ -109,10 +110,18 @@ export default function LoginPage() {
                 placeholder={`you${COMPANY_DOMAIN}`}
               />
             </div>
-            <Button type="submit" disabled={sending || !email.trim()}>
+            <Button type="submit" variant="outline" disabled={sending || !email.trim()}>
               {sending ? "Sending…" : "Send sign-in link"}
             </Button>
           </form>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setShowEmailForm(true)}
+            className="mt-4 w-full text-center text-sm text-muted-foreground hover:text-foreground hover:underline"
+          >
+            Use your email instead
+          </button>
         )}
       </div>
     </div>
