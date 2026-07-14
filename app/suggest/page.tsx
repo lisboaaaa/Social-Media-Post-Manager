@@ -72,7 +72,7 @@ export default function SuggestPage() {
     <div className="mx-auto flex w-full max-w-2xl flex-col gap-8">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <span className="flex size-11 items-center justify-center rounded-full bg-gradient-to-br from-primary/20 to-fuchsia-400/20 text-primary">
+          <span className="flex size-11 items-center justify-center rounded-full bg-primary/10 text-primary">
             <Lightbulb className="size-5" />
           </span>
           <h1 className="text-2xl font-semibold tracking-tight">Got a post idea?</h1>
@@ -100,10 +100,10 @@ export default function SuggestPage() {
       </div>
 
       <div className="overflow-hidden rounded-2xl border bg-background shadow-lg">
-        <div className="h-1.5 w-full bg-gradient-to-r from-primary via-fuchsia-400 to-amber-400" />
+        <div className="h-1.5 w-full bg-primary" />
         <div className="flex flex-col gap-6 p-8">
           <p className="text-base text-muted-foreground">
-            Seen something worth posting about? Tell us — a customer win, a milestone, something funny that happened at the office. We&apos;ll take it from there.
+            Seen something worth posting about? Tell us — a customer win, a milestone, an event you went to. Got photos from it? Add them below.
           </p>
 
           <div className="flex flex-col gap-1.5">
