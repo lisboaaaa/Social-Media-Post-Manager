@@ -1,26 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { groupByDay } from "@/lib/commentGroups";
+import { findRootId, groupByDay } from "@/lib/commentGroups";
 import { useStore } from "@/lib/store";
 import type { Comment } from "@/lib/types";
 import { CommentForm } from "./CommentForm";
 import { CommentItem } from "./CommentItem";
 import { DateSeparator } from "./DateSeparator";
-
-// Threads are flattened to one level, like most lightweight comment
-// systems: a reply-to-a-reply still nests under the original top-level
-// comment (not under its immediate parent), so the layout never has to
-// handle arbitrarily deep indentation.
-function findRootId(comment: Comment, byId: Map<string, Comment>): string {
-  let current = comment;
-  while (current.parentId) {
-    const parent = byId.get(current.parentId);
-    if (!parent) break;
-    current = parent;
-  }
-  return current.id;
-}
 
 export function CommentThread({ postId }: { postId: string }) {
   const { comments, profiles, currentUser, addComment } = useStore();

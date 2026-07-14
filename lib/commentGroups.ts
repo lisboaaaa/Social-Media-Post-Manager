@@ -1,8 +1,22 @@
 import { format, isThisYear, isToday, isYesterday } from "date-fns";
+import type { Comment } from "./types";
 
 export interface CommentGroup<T> {
   label: string;
   items: T[];
+}
+
+// Threads are flattened to one level: a reply-to-a-reply still resolves to
+// the original top-level comment, so callers never have to handle
+// arbitrarily deep indentation.
+export function findRootId(comment: Comment, byId: Map<string, Comment>): string {
+  let current = comment;
+  while (current.parentId) {
+    const parent = byId.get(current.parentId);
+    if (!parent) break;
+    current = parent;
+  }
+  return current.id;
 }
 
 function dayLabel(iso: string): string {
