@@ -9,29 +9,15 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { ImageUploader } from "@/components/posts/ImageUploader";
 import { createClient } from "@/lib/supabase/client";
-import { mapSuggestionRow } from "@/lib/supabase/mappers";
-import type { PostImage, Suggestion } from "@/lib/types";
-
-const STATUS_LABEL: Record<Suggestion["status"], string> = {
-  new: "Waiting for review",
-  accepted: "Turned into a post",
-  dismissed: "Not moving forward",
-};
+import type { PostImage } from "@/lib/types";
 
 export default function SuggestPage() {
   const [description, setDescription] = useState("");
   const [images, setImages] = useState<PostImage[]>([]);
   const [submitting, setSubmitting] = useState(false);
-  const [mine, setMine] = useState<Suggestion[]>([]);
   // Marketing folks can land here too (Dev Tools "Pages", an old bookmark…)
   // and otherwise have no way back to the board short of signing out.
   const [isMarketing, setIsMarketing] = useState(false);
-
-  const loadMine = async () => {
-    const supabase = createClient();
-    const { data } = await supabase.from("suggestions").select("*").order("created_at", { ascending: false });
-    setMine((data ?? []).map(mapSuggestionRow));
-  };
 
   const loadIsMarketing = async () => {
     const supabase = createClient();
@@ -46,7 +32,6 @@ export default function SuggestPage() {
   useEffect(() => {
     // Fetching-on-mount, not deriving from props/state — legitimate sync-with-server case.
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    loadMine();
     loadIsMarketing();
   }, []);
 
@@ -73,7 +58,6 @@ export default function SuggestPage() {
     toast.success("Thanks! The marketing team will take a look.");
     setDescription("");
     setImages([]);
-    loadMine();
   };
 
   const handleSignOut = () => {
@@ -115,9 +99,9 @@ export default function SuggestPage() {
         </div>
       </div>
 
-      <div className="flex flex-col gap-4 rounded-2xl border bg-background p-8 shadow-lg">
+      <div className="flex flex-col gap-6 rounded-2xl border bg-background p-8 shadow-lg">
         <p className="text-base text-muted-foreground">
-          Got something worth posting? Just describe it below — we&apos;ll take it from there.
+          Seen something worth posting about? Tell us — a customer win, a milestone, something funny that happened at the office. We&apos;ll take it from there.
         </p>
 
         <div className="flex flex-col gap-1.5">
@@ -134,7 +118,7 @@ export default function SuggestPage() {
           />
         </div>
 
-        <div className="flex flex-col gap-1.5">
+        <div className="flex flex-col gap-1.5 border-t pt-6">
           <Label className="text-base">Photo (optional)</Label>
           <ImageUploader images={images} onChange={(next) => setImages(next.slice(-1))} />
         </div>
@@ -143,20 +127,6 @@ export default function SuggestPage() {
           {submitting ? "Sending…" : "Send idea"}
         </Button>
       </div>
-
-      {mine.length > 0 && (
-        <div className="flex flex-col gap-2">
-          <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Your submitted ideas</h2>
-          <div className="flex flex-col gap-2">
-            {mine.map((s) => (
-              <div key={s.id} className="rounded-xl border bg-background p-4 text-base shadow-sm">
-                <p className="text-foreground/90">{s.description}</p>
-                <p className="mt-1 text-sm text-muted-foreground">{STATUS_LABEL[s.status]}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
     </div>
   );
 }
