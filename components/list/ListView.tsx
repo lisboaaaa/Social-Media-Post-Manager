@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
@@ -45,6 +45,22 @@ export function ListView() {
   const [pendingSchedule, setPendingSchedule] = useState<{ postId: string; status: PostStatus; index: number } | null>(null);
   const [pendingPublish, setPendingPublish] = useState<{ postId: string; status: PostStatus; index: number } | null>(null);
   const today = format(new Date(), "yyyy-MM-dd");
+  // Rows are also dnd drag handles, whose mousedown/touch sensors swallow the
+  // browser's native dblclick — track clicks by hand instead.
+  const lastClickRef = useRef<{ id: string; time: number }>({ id: "", time: 0 });
+
+  const handleRowClick = (postId: string) => {
+    // Only ever runs from the onClick below, never during render.
+    // eslint-disable-next-line react-hooks/purity
+    const now = Date.now();
+    if (lastClickRef.current.id === postId && now - lastClickRef.current.time < 400) {
+      lastClickRef.current = { id: "", time: 0 };
+      router.push(`/posts/${postId}`);
+      return;
+    }
+    lastClickRef.current = { id: postId, time: now };
+    openPreview(postId);
+  };
 
   const stageById = (id: string) => stages.find((s) => s.id === id);
 
@@ -237,8 +253,7 @@ export function ListView() {
                                               {...postDragProvided.dragHandleProps}
                                               role="button"
                                               tabIndex={0}
-                                              onClick={() => openPreview(post.id)}
-                                              onDoubleClick={() => router.push(`/posts/${post.id}`)}
+                                              onClick={() => handleRowClick(post.id)}
                                               onKeyDown={(e) => {
                                                 if (e.key === "Enter" || e.key === " ") {
                                                   e.preventDefault();

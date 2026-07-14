@@ -1,3 +1,4 @@
+import { useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Draggable } from "@hello-pangea/dnd";
 import { format } from "date-fns";
@@ -9,9 +10,26 @@ import { useStore } from "@/lib/store";
 import type { Post } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
+const DOUBLE_CLICK_MS = 400;
+
 export function PostCard({ post, index }: { post: Post; index: number }) {
   const { profiles, categories, openPreview } = useStore();
   const router = useRouter();
+  // The whole card is also the dnd drag handle, whose own mousedown/touch
+  // sensors swallow the browser's native dblclick — track clicks by hand
+  // instead of relying on onDoubleClick.
+  const lastClickRef = useRef(0);
+
+  const handleClick = () => {
+    const now = Date.now();
+    if (now - lastClickRef.current < DOUBLE_CLICK_MS) {
+      lastClickRef.current = 0;
+      router.push(`/posts/${post.id}`);
+      return;
+    }
+    lastClickRef.current = now;
+    openPreview(post.id);
+  };
   const assignee = profiles.find((p) => p.id === post.assigneeId);
   const postCategories = categories.filter((c) => post.categoryIds.includes(c.id));
   const showImageArea = post.status !== "backlog" && post.status !== "writing";
@@ -30,8 +48,7 @@ export function PostCard({ post, index }: { post: Post; index: number }) {
           ref={provided.innerRef}
           {...provided.draggableProps}
           {...provided.dragHandleProps}
-          onClick={() => openPreview(post.id)}
-          onDoubleClick={() => router.push(`/posts/${post.id}`)}
+          onClick={handleClick}
           className={cn(
             "cursor-pointer rounded-lg bg-background p-3 shadow-md transition-all duration-150 ease-out hover:-translate-y-0.5 hover:shadow-lg",
             snapshot.isDragging && "ring-2 ring-primary/40",

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   addMonths,
@@ -31,6 +31,20 @@ export function CalendarView() {
   const { filteredPosts, openPreview, profiles, stages, addPost } = useStore();
   const [cursor, setCursor] = useState(() => new Date());
   const [selectedDay, setSelectedDay] = useState<Date | null>(null);
+  const lastClickRef = useRef<{ id: string; time: number }>({ id: "", time: 0 });
+
+  const handlePostClick = (postId: string) => {
+    // Only ever runs from the onClick handlers below, never during render.
+    // eslint-disable-next-line react-hooks/purity
+    const now = Date.now();
+    if (lastClickRef.current.id === postId && now - lastClickRef.current.time < 400) {
+      lastClickRef.current = { id: "", time: 0 };
+      router.push(`/posts/${postId}`);
+      return;
+    }
+    lastClickRef.current = { id: postId, time: now };
+    openPreview(postId);
+  };
 
   const monthStart = startOfMonth(cursor);
   const monthEnd = endOfMonth(cursor);
@@ -138,11 +152,7 @@ export function CalendarView() {
                     key={post.id}
                     onClick={(e) => {
                       e.stopPropagation();
-                      openPreview(post.id);
-                    }}
-                    onDoubleClick={(e) => {
-                      e.stopPropagation();
-                      router.push(`/posts/${post.id}`);
+                      handlePostClick(post.id);
                     }}
                     className={cn(
                       "flex items-center gap-1 truncate rounded-md px-1.5 py-1 text-left text-xs hover:brightness-95",
@@ -189,7 +199,7 @@ export function CalendarView() {
                   key={post.id}
                   onClick={() => {
                     setSelectedDay(null);
-                    openPreview(post.id);
+                    handlePostClick(post.id);
                   }}
                   className="flex items-center justify-between gap-2 rounded-lg border p-2.5 text-left hover:bg-muted"
                 >
