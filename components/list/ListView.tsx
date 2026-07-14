@@ -71,14 +71,13 @@ export function ListView() {
         </Select>
       </div>
 
-      <div className={cn("grid divide-x divide-border px-4 text-[11px] font-semibold uppercase tracking-wide text-foreground/70", GRID_COLS)}>
-        <span />
-        <span className="flex items-center gap-1 px-3"><FileText className="size-3" />Post</span>
-        <span className="flex items-center gap-1 px-3"><Radio className="size-3" />Platform</span>
-        <span className="flex items-center gap-1 px-3"><UserRound className="size-3" />Assignee</span>
-        <span className="flex items-center gap-1 px-3"><CalendarDays className="size-3" />Date</span>
-        <span className="flex items-center gap-1 px-3"><Tag className="size-3" />Category</span>
-        <span />
+      <div className={cn("grid px-4 text-[11px] font-semibold uppercase tracking-wide text-foreground/70", GRID_COLS)}>
+        <span className="col-span-2 flex items-center gap-1"><FileText className="size-3" />Post</span>
+        <span className="flex items-center gap-1 border-l px-3"><Radio className="size-3" />Platform</span>
+        <span className="flex items-center gap-1 border-l px-3"><UserRound className="size-3" />Assignee</span>
+        <span className="flex items-center gap-1 border-l px-3"><CalendarDays className="size-3" />Date</span>
+        <span className="flex items-center gap-1 border-l px-3"><Tag className="size-3" />Category</span>
+        <span className="border-l" />
       </div>
 
       {stages.map((stage) => {
@@ -133,7 +132,7 @@ export function ListView() {
                             }
                           }}
                           className={cn(
-                            "group grid w-full cursor-pointer items-center divide-x divide-border border-b px-4 py-2 text-left text-sm last:border-b-0 hover:bg-muted/40",
+                            "group grid w-full cursor-pointer items-center border-b px-4 py-2 text-left text-sm last:border-b-0 hover:bg-muted/40",
                             GRID_COLS,
                             isOverdue && "bg-red-50",
                           )}
@@ -158,10 +157,10 @@ export function ListView() {
                               <span className="size-2.5 shrink-0 rounded-full bg-amber-500" title="Needs changes" />
                             )}
                           </span>
-                          <span className="min-w-0 px-3">
+                          <span className="min-w-0 border-l px-3">
                             <PlatformBadgeGroup platforms={post.platforms} />
                           </span>
-                          <span className="flex items-center gap-1.5 truncate px-3 text-muted-foreground">
+                          <span className="flex items-center gap-1.5 truncate border-l px-3 text-muted-foreground">
                             {assignee ? (
                               <>
                                 <Avatar size="sm" title={assignee.fullName}>
@@ -173,10 +172,10 @@ export function ListView() {
                               "Unassigned"
                             )}
                           </span>
-                          <span className={cn("px-3", isOverdue ? "font-semibold text-red-600" : "text-muted-foreground")}>
+                          <span className={cn("border-l px-3", isOverdue ? "font-semibold text-red-600" : "text-muted-foreground")}>
                             {post.targetDate ? format(new Date(`${post.targetDate}T00:00:00`), "MMM d") : "—"}
                           </span>
-                          <span className="truncate px-3 text-muted-foreground">
+                          <span className="truncate border-l px-3 text-muted-foreground">
                             {postCategories.length > 0 ? postCategories.map((c) => c.name).join(", ") : "—"}
                           </span>
                           <Link
@@ -184,7 +183,7 @@ export function ListView() {
                             onClick={(e) => e.stopPropagation()}
                             aria-label="Edit post"
                             title="Edit post"
-                            className="flex size-7 shrink-0 items-center justify-center rounded-md text-muted-foreground opacity-0 hover:bg-background hover:text-foreground group-hover:opacity-100"
+                            className="flex size-7 shrink-0 items-center justify-center rounded-md border-l text-muted-foreground opacity-0 hover:bg-background hover:text-foreground group-hover:opacity-100"
                           >
                             <Pencil className="size-3.5" />
                           </Link>

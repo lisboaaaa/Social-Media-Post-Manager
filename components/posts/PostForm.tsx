@@ -454,7 +454,7 @@ export function PostForm({ post }: { post?: Post }) {
           </button>
           <div
             className={cn(
-              "fixed right-0 top-0 z-30 flex h-screen w-full flex-col overflow-y-auto border-l bg-background shadow-2xl transition-transform duration-300 ease-out sm:w-[420px]",
+              "fixed right-0 top-0 z-30 flex h-screen w-[420px] max-w-[90vw] flex-col overflow-y-auto border-l bg-background shadow-2xl transition-transform duration-300 ease-out",
               previewOpen ? "translate-x-0" : "translate-x-full",
             )}
           >
