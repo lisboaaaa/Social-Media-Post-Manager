@@ -27,6 +27,7 @@ export function ConnectClaudeModal({ open, onOpenChange }: ConnectClaudeModalPro
   const [name, setName] = useState("Claude");
   const [creating, setCreating] = useState(false);
   const [freshToken, setFreshToken] = useState<string | null>(null);
+  const origin = typeof window !== "undefined" ? window.location.origin : "";
 
   const loadTokens = async () => {
     const res = await fetch("/api/tokens");
@@ -89,16 +90,46 @@ export function ConnectClaudeModal({ open, onOpenChange }: ConnectClaudeModalPro
         </DialogHeader>
 
         {freshToken && (
-          <div className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm">
-            <p className="mb-2 font-medium text-amber-900">
-              Copy this token now — you won&apos;t be able to see it again.
+          <div className="flex flex-col gap-3 rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm">
+            <p className="font-medium text-amber-900">
+              Copy what you need now — you won&apos;t be able to see this token again after closing this.
             </p>
-            <div className="flex items-center gap-2">
-              <code className="flex-1 truncate rounded bg-background px-2 py-1 text-xs">{freshToken}</code>
-              <Button type="button" size="sm" variant="outline" onClick={() => copy(freshToken)}>
-                <Copy className="size-3.5" />
-                Copy
-              </Button>
+
+            <div>
+              <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-amber-900/80">
+                claude.ai or Claude Desktop — paste as the server URL
+              </p>
+              <div className="flex items-center gap-2">
+                <code className="flex-1 truncate rounded bg-background px-2 py-1 text-xs">{origin}/api/mcp?token={freshToken}</code>
+                <Button type="button" size="sm" variant="outline" onClick={() => copy(`${origin}/api/mcp?token=${freshToken}`)}>
+                  <Copy className="size-3.5" />
+                  Copy
+                </Button>
+              </div>
+            </div>
+
+            <div>
+              <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-amber-900/80">
+                Claude Code — run in a terminal
+              </p>
+              <div className="flex items-center gap-2">
+                <code className="flex-1 truncate rounded bg-background px-2 py-1 text-xs">
+                  claude mcp add --transport http social-media-posts {origin}/api/mcp --header &quot;Authorization: Bearer {freshToken}&quot; --scope user
+                </code>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={() =>
+                    copy(
+                      `claude mcp add --transport http social-media-posts ${origin}/api/mcp --header "Authorization: Bearer ${freshToken}" --scope user`,
+                    )
+                  }
+                >
+                  <Copy className="size-3.5" />
+                  Copy
+                </Button>
+              </div>
             </div>
           </div>
         )}
@@ -134,8 +165,10 @@ export function ConnectClaudeModal({ open, onOpenChange }: ConnectClaudeModalPro
         </div>
 
         <p className="text-xs text-muted-foreground">
-          MCP endpoint: <code>{typeof window !== "undefined" ? window.location.origin : ""}/api/mcp</code>, token as{" "}
-          <code>Authorization: Bearer</code>. Give Claude an image URL — pasted photos don&apos;t attach.
+          MCP endpoint: <code>{origin}/api/mcp</code>. claude.ai/Desktop take the token as a{" "}
+          <code>?token=</code> URL param (no header field in that dialog); Claude Code takes it as an{" "}
+          <code>Authorization: Bearer</code> header. Generate a new token above to get both ready to copy.
+          Give Claude an image URL — pasted photos don&apos;t attach.
         </p>
       </DialogContent>
     </Dialog>

@@ -18,11 +18,17 @@ export function generateToken(): { raw: string; hash: string; prefix: string } {
 // Resolves a Claude-supplied bearer token to the profile that owns it. Every
 // MCP tool call attributes its writes to this profile — same as a browser
 // write attributes to whoever is signed in.
-export async function verifyToken(_req: Request, bearerToken?: string): Promise<AuthInfo | undefined> {
-  if (!bearerToken) return undefined;
+//
+// claude.ai and Claude Desktop's "Add custom connector" dialog has no field
+// for a custom header, only a server URL — so for those, the token is
+// pasted straight into the URL as ?token=... instead. Claude Code's --header
+// flag still sends it the normal way, via the Authorization header.
+export async function verifyToken(req: Request, bearerToken?: string): Promise<AuthInfo | undefined> {
+  const token = bearerToken ?? new URL(req.url).searchParams.get("token") ?? undefined;
+  if (!token) return undefined;
 
   const supabase = createServiceClient();
-  const hash = sha256Hex(bearerToken);
+  const hash = sha256Hex(token);
 
   const { data } = await supabase
     .from("api_tokens")
@@ -38,7 +44,7 @@ export async function verifyToken(_req: Request, bearerToken?: string): Promise<
   const profile = mapProfileRow(data.profiles as unknown as Parameters<typeof mapProfileRow>[0]);
 
   return {
-    token: bearerToken,
+    token,
     clientId: profile.id,
     scopes: ["posts:read", "posts:write"],
     extra: { profile } satisfies { profile: Profile },
