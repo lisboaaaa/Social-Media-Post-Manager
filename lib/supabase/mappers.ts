@@ -10,6 +10,7 @@ interface ProfileRow {
   email: string;
   initials: string;
   last_read_team_notes_at: string | null;
+  last_read_suggestions_at: string | null;
   is_marketing: boolean;
 }
 
@@ -106,6 +107,7 @@ export function mapProfileRow(row: ProfileRow): Profile {
     email: row.email,
     initials: row.initials,
     lastReadTeamNotesAt: row.last_read_team_notes_at,
+    lastReadSuggestionsAt: row.last_read_suggestions_at,
     isMarketing: row.is_marketing,
   };
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { X } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -15,16 +15,25 @@ export function CommentForm({
   placeholder = "Write a comment…",
   showButton = true,
   replyingTo = null,
+  autoFocus = false,
 }: {
   onSubmit: (body: string) => void;
   placeholder?: string;
   showButton?: boolean;
   replyingTo?: { label: string; onCancel: () => void } | null;
+  autoFocus?: boolean;
 }) {
   const { profiles } = useStore();
   const [body, setBody] = useState("");
   const [mentionQuery, setMentionQuery] = useState<string | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // The reply banner appears on an already-mounted form (CommentThread reuses
+  // one form for both a fresh comment and any reply), so autoFocus alone
+  // wouldn't refire — focus explicitly whenever a reply target is picked.
+  useEffect(() => {
+    if (replyingTo) textareaRef.current?.focus();
+  }, [replyingTo]);
 
   const submit = () => {
     const trimmed = body.trim();
@@ -85,6 +94,7 @@ export function CommentForm({
       <div className="relative">
         <Textarea
           ref={textareaRef}
+          autoFocus={autoFocus}
           value={body}
           onChange={(e) => {
             setBody(e.target.value);

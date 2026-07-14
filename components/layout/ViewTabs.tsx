@@ -15,8 +15,10 @@ const TABS = [
 
 export function ViewTabs() {
   const pathname = usePathname();
-  const { suggestions } = useStore();
-  const hasNewSuggestions = suggestions.some((s) => s.status === "new");
+  const { suggestions, lastReadSuggestionsAt } = useStore();
+  const hasNewSuggestions = suggestions.some(
+    (s) => s.status === "new" && (lastReadSuggestionsAt === null || s.createdAt > lastReadSuggestionsAt),
+  );
   const activeIndex = TABS.findIndex((tab) => tab.href === pathname);
   const tabRefs = useRef<(HTMLAnchorElement | null)[]>([]);
   const [indicator, setIndicator] = useState<{ left: number; width: number } | null>(null);

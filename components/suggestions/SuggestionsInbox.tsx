@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
 import { Inbox } from "lucide-react";
@@ -55,8 +55,15 @@ function SuggestionCard({ suggestion }: { suggestion: Suggestion }) {
 }
 
 export function SuggestionsInbox() {
-  const { suggestions } = useStore();
+  const { suggestions, markSuggestionsRead } = useStore();
   const [tab, setTab] = useState<SuggestionStatus>("new");
+
+  useEffect(() => {
+    markSuggestionsRead();
+    // Only on mount — opening this page is what "read" means here, not every
+    // suggestions/markSuggestionsRead identity change.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <div className="flex flex-col gap-4">

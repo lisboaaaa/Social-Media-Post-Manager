@@ -85,6 +85,8 @@ interface StoreValue {
   hasUnreadTeamNotes: boolean;
   lastReadTeamNotesAt: string | null;
   markTeamNotesRead: () => void;
+  lastReadSuggestionsAt: string | null;
+  markSuggestionsRead: () => void;
   previewPostId: string | null;
   openPreview: (postId: string) => void;
   closePreview: () => void;
@@ -165,7 +167,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       // security), surface a clear error instead of a silent, endless spinner.
       if (email && !loadedProfiles.some((p) => p.email === email)) {
         const { fullName, initials } = deriveNameFromEmail(email);
-        const selfProvisioned: Profile = { id: crypto.randomUUID(), fullName, email, initials, lastReadTeamNotesAt: null, isMarketing: false };
+        const selfProvisioned: Profile = { id: crypto.randomUUID(), fullName, email, initials, lastReadTeamNotesAt: null, lastReadSuggestionsAt: null, isMarketing: false };
         const { error: insertError } = await supabase.from("profiles").insert({
           id: selfProvisioned.id,
           full_name: selfProvisioned.fullName,
@@ -828,6 +830,19 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     })();
   };
 
+  const lastReadSuggestionsAt = currentUser?.lastReadSuggestionsAt ?? null;
+
+  const markSuggestionsRead = () => {
+    if (!currentUser) return;
+    const now = new Date().toISOString();
+    setProfiles((prev) => prev.map((p) => (p.id === currentUser.id ? { ...p, lastReadSuggestionsAt: now } : p)));
+
+    (async () => {
+      const { error } = await supabase.from("profiles").update({ last_read_suggestions_at: now }).eq("id", currentUser.id);
+      if (error) toast.error(`Couldn't save read status: ${error.message}`);
+    })();
+  };
+
   const value: StoreValue = {
     loading,
     realtimeStatus,
@@ -864,6 +879,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     hasUnreadTeamNotes,
     lastReadTeamNotesAt,
     markTeamNotesRead,
+    lastReadSuggestionsAt,
+    markSuggestionsRead,
     previewPostId,
     openPreview: setPreviewPostId,
     closePreview: () => setPreviewPostId(null),

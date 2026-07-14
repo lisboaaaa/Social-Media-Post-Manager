@@ -47,6 +47,7 @@ export interface Profile {
   email: string;
   initials: string;
   lastReadTeamNotesAt: string | null;
+  lastReadSuggestionsAt: string | null;
   isMarketing: boolean;
 }
 

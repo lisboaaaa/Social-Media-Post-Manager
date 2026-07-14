@@ -15,7 +15,18 @@ const GRID_COLS = "grid-cols-[48px_1fr_190px_160px_110px_160px_32px]";
 
 // Rotates by a stage's position so each column reads as visually distinct in
 // the List view, independent of however many stages the team has defined.
-const STAGE_STRIPE_COLORS = ["#0EA5E9", "#8B5CF6", "#F59E0B", "#10B981", "#EC4899", "#6366F1", "#F43F5E", "#14B8A6"];
+// Faded (alpha'd) rather than solid — a thin stripe reads fine at lower
+// saturation and it's much less "loud" against the plain white rows.
+const STAGE_STRIPE_COLORS = [
+  "rgba(14,165,233,0.45)",
+  "rgba(139,92,246,0.45)",
+  "rgba(245,158,11,0.45)",
+  "rgba(16,185,129,0.45)",
+  "rgba(236,72,153,0.45)",
+  "rgba(99,102,241,0.45)",
+  "rgba(244,63,94,0.45)",
+  "rgba(20,184,166,0.45)",
+];
 
 const SORT_OPTIONS = [
   { value: "default", label: "Default order" },
@@ -75,6 +86,16 @@ export function ListView() {
         </Select>
       </div>
 
+      <div className={cn("grid gap-3 px-4 text-[11px] font-semibold uppercase tracking-wide text-foreground/70", GRID_COLS)}>
+        <span />
+        <span className="flex items-center gap-1"><FileText className="size-3" />Post</span>
+        <span className="flex items-center gap-1"><Radio className="size-3" />Platform</span>
+        <span className="flex items-center gap-1"><UserRound className="size-3" />Assignee</span>
+        <span className="flex items-center gap-1"><CalendarDays className="size-3" />Date</span>
+        <span className="flex items-center gap-1"><Tag className="size-3" />Category</span>
+        <span />
+      </div>
+
       {stages.map((stage, stageIndex) => {
         const rows = filteredPosts.filter((p) => p.status === stage.id).sort(SORTERS[sortKey]);
         const isCollapsed = collapsed.has(stage.id);
@@ -107,17 +128,7 @@ export function ListView() {
                 {rows.length === 0 ? (
                   <p className="px-4 py-3 text-sm text-muted-foreground">No posts in this stage.</p>
                 ) : (
-                  <>
-                    <div className={cn("grid gap-3 border-b px-4 py-2 text-[11px] font-semibold uppercase tracking-wide text-foreground/70", GRID_COLS)}>
-                      <span />
-                      <span className="flex items-center gap-1"><FileText className="size-3 text-sky-500" />Post</span>
-                      <span className="flex items-center gap-1"><Radio className="size-3 text-primary" />Platform</span>
-                      <span className="flex items-center gap-1"><UserRound className="size-3 text-violet-500" />Assignee</span>
-                      <span className="flex items-center gap-1"><CalendarDays className="size-3 text-amber-500" />Date</span>
-                      <span className="flex items-center gap-1"><Tag className="size-3 text-emerald-500" />Category</span>
-                      <span />
-                    </div>
-                    {rows.map((post) => {
+                    rows.map((post) => {
                       const assignee = profiles.find((p) => p.id === post.assigneeId);
                       const postCategories = categories.filter((c) => post.categoryIds.includes(c.id));
                       const cover = post.images[0];
@@ -159,7 +170,7 @@ export function ListView() {
                           <span className="flex min-w-0 items-center gap-2">
                             <span className="truncate font-medium">{post.title || "Untitled post"}</span>
                             {post.needsChanges && (
-                              <span className="size-1.5 shrink-0 rounded-full bg-amber-500" title="Needs changes" />
+                              <span className="size-2.5 shrink-0 rounded-full bg-amber-500" title="Needs changes" />
                             )}
                           </span>
                           <span className="min-w-0">
@@ -194,8 +205,7 @@ export function ListView() {
                           </Link>
                         </div>
                       );
-                    })}
-                  </>
+                    })
                 )}
               </div>
             )}

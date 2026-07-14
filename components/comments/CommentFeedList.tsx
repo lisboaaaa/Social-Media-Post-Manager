@@ -106,6 +106,7 @@ export function CommentFeedList({
               <div className="pl-9">
                 <CommentForm
                   placeholder="Write a reply…"
+                  autoFocus
                   onSubmit={(body) => {
                     addComment(post.id, body, comment.id);
                     setReplyBoxId(null);

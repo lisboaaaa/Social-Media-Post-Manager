@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
 const QUICK_EMOJIS = ["👍", "❤️", "🎉", "😂", "👀", "✅"];
 
 export function CommentReactions({ commentId }: { commentId: string }) {
-  const { commentReactions, currentUser, toggleReaction } = useStore();
+  const { commentReactions, currentUser, profiles, toggleReaction } = useStore();
   const [pickerOpen, setPickerOpen] = useState(false);
 
   // Group this comment's reactions by emoji, keeping who reacted so the
@@ -26,11 +26,15 @@ export function CommentReactions({ commentId }: { commentId: string }) {
     <div className="mt-1.5 flex flex-wrap items-center gap-1">
       {[...groups.entries()].map(([emoji, authorIds]) => {
         const isMine = authorIds.includes(currentUser.id);
+        const names = authorIds.map((id) =>
+          id === currentUser.id ? "You" : (profiles.find((p) => p.id === id)?.fullName ?? "Unknown"),
+        );
         return (
           <button
             key={emoji}
             type="button"
             onClick={() => toggleReaction(commentId, emoji)}
+            title={names.join(", ")}
             className={cn(
               "flex items-center gap-1 rounded-full border px-1.5 py-0.5 text-xs transition-colors",
               isMine ? "border-primary/40 bg-primary/10" : "border-border bg-muted/40 hover:bg-muted",
