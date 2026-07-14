@@ -5,7 +5,7 @@ import Link from "next/link";
 import { format } from "date-fns";
 import { ArrowUpDown, ChevronDown, ImageOff, Pencil, Play } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { PlatformBadgeGroup } from "@/components/posts/PlatformBadge";
+import { PLATFORM_ACCENT_COLORS, PlatformBadgeGroup } from "@/components/posts/PlatformBadge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useStore } from "@/lib/store";
 import type { Post, PostStatus } from "@/lib/types";
@@ -84,7 +84,16 @@ export function ListView() {
             >
               <ChevronDown className={cn("size-4 text-muted-foreground transition-transform", isCollapsed && "-rotate-90")} />
               {stage.label}
-              <span className="rounded-full bg-muted px-2 py-0.5 font-mono text-[11px] font-medium text-muted-foreground">
+              <span
+                className={cn(
+                  "rounded-full px-2 py-0.5 font-mono text-[11px] font-medium",
+                  stage.isArchiveStage
+                    ? "bg-emerald-100 text-emerald-700"
+                    : stage.isReviewStage
+                      ? "bg-amber-100 text-amber-700"
+                      : "bg-muted text-muted-foreground",
+                )}
+              >
                 {rows.length}
               </span>
             </button>
@@ -121,8 +130,9 @@ export function ListView() {
                               openPreview(post.id);
                             }
                           }}
+                          style={{ borderLeftColor: PLATFORM_ACCENT_COLORS[post.platforms[0]] }}
                           className={cn(
-                            "group grid w-full cursor-pointer items-center gap-3 border-b px-4 py-2 text-left text-sm last:border-b-0 hover:bg-muted/40",
+                            "group grid w-full cursor-pointer items-center gap-3 border-b border-l-4 px-4 py-2 text-left text-sm last:border-b-0 hover:bg-muted/40",
                             GRID_COLS,
                             isOverdue && "bg-red-50",
                           )}
