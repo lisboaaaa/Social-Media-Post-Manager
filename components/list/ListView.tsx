@@ -13,21 +13,6 @@ import { cn } from "@/lib/utils";
 
 const GRID_COLS = "grid-cols-[48px_1fr_190px_160px_110px_160px_32px]";
 
-// Rotates by a stage's position so each column reads as visually distinct in
-// the List view, independent of however many stages the team has defined.
-// Faded (alpha'd) rather than solid — a thin stripe reads fine at lower
-// saturation and it's much less "loud" against the plain white rows.
-const STAGE_STRIPE_COLORS = [
-  "rgba(14,165,233,0.45)",
-  "rgba(139,92,246,0.45)",
-  "rgba(245,158,11,0.45)",
-  "rgba(16,185,129,0.45)",
-  "rgba(236,72,153,0.45)",
-  "rgba(99,102,241,0.45)",
-  "rgba(244,63,94,0.45)",
-  "rgba(20,184,166,0.45)",
-];
-
 const SORT_OPTIONS = [
   { value: "default", label: "Default order" },
   { value: "alphabetical", label: "Alphabetical" },
@@ -96,10 +81,9 @@ export function ListView() {
         <span />
       </div>
 
-      {stages.map((stage, stageIndex) => {
+      {stages.map((stage) => {
         const rows = filteredPosts.filter((p) => p.status === stage.id).sort(SORTERS[sortKey]);
         const isCollapsed = collapsed.has(stage.id);
-        const stripeColor = STAGE_STRIPE_COLORS[stageIndex % STAGE_STRIPE_COLORS.length];
 
         return (
           <div key={stage.id} className="flex flex-col gap-2">
@@ -148,9 +132,8 @@ export function ListView() {
                               openPreview(post.id);
                             }
                           }}
-                          style={{ borderLeftColor: stripeColor }}
                           className={cn(
-                            "group grid w-full cursor-pointer items-center gap-3 border-b border-l-4 px-4 py-2 text-left text-sm last:border-b-0 hover:bg-muted/40",
+                            "group grid w-full cursor-pointer items-center gap-3 border-b px-4 py-2 text-left text-sm last:border-b-0 hover:bg-muted/40",
                             GRID_COLS,
                             isOverdue && "bg-red-50",
                           )}
