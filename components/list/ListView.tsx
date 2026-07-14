@@ -3,15 +3,19 @@
 import { useState } from "react";
 import Link from "next/link";
 import { format } from "date-fns";
-import { ArrowUpDown, ChevronDown, ImageOff, Pencil, Play } from "lucide-react";
+import { ArrowUpDown, CalendarDays, ChevronDown, FileText, ImageOff, Pencil, Play, Radio, Tag, UserRound } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { PLATFORM_ACCENT_COLORS, PlatformBadgeGroup } from "@/components/posts/PlatformBadge";
+import { PlatformBadgeGroup } from "@/components/posts/PlatformBadge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useStore } from "@/lib/store";
 import type { Post, PostStatus } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 const GRID_COLS = "grid-cols-[48px_1fr_190px_160px_110px_160px_32px]";
+
+// Rotates by a stage's position so each column reads as visually distinct in
+// the List view, independent of however many stages the team has defined.
+const STAGE_STRIPE_COLORS = ["#0EA5E9", "#8B5CF6", "#F59E0B", "#10B981", "#EC4899", "#6366F1", "#F43F5E", "#14B8A6"];
 
 const SORT_OPTIONS = [
   { value: "default", label: "Default order" },
@@ -71,9 +75,10 @@ export function ListView() {
         </Select>
       </div>
 
-      {stages.map((stage) => {
+      {stages.map((stage, stageIndex) => {
         const rows = filteredPosts.filter((p) => p.status === stage.id).sort(SORTERS[sortKey]);
         const isCollapsed = collapsed.has(stage.id);
+        const stripeColor = STAGE_STRIPE_COLORS[stageIndex % STAGE_STRIPE_COLORS.length];
 
         return (
           <div key={stage.id} className="flex flex-col gap-2">
@@ -103,13 +108,13 @@ export function ListView() {
                   <p className="px-4 py-3 text-sm text-muted-foreground">No posts in this stage.</p>
                 ) : (
                   <>
-                    <div className={cn("grid gap-3 border-b px-4 py-2 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground", GRID_COLS)}>
+                    <div className={cn("grid gap-3 border-b px-4 py-2 text-[11px] font-semibold uppercase tracking-wide text-foreground/70", GRID_COLS)}>
                       <span />
-                      <span>Post</span>
-                      <span>Platform</span>
-                      <span>Assignee</span>
-                      <span>Date</span>
-                      <span>Category</span>
+                      <span className="flex items-center gap-1"><FileText className="size-3 text-sky-500" />Post</span>
+                      <span className="flex items-center gap-1"><Radio className="size-3 text-primary" />Platform</span>
+                      <span className="flex items-center gap-1"><UserRound className="size-3 text-violet-500" />Assignee</span>
+                      <span className="flex items-center gap-1"><CalendarDays className="size-3 text-amber-500" />Date</span>
+                      <span className="flex items-center gap-1"><Tag className="size-3 text-emerald-500" />Category</span>
                       <span />
                     </div>
                     {rows.map((post) => {
@@ -130,7 +135,7 @@ export function ListView() {
                               openPreview(post.id);
                             }
                           }}
-                          style={{ borderLeftColor: PLATFORM_ACCENT_COLORS[post.platforms[0]] }}
+                          style={{ borderLeftColor: stripeColor }}
                           className={cn(
                             "group grid w-full cursor-pointer items-center gap-3 border-b border-l-4 px-4 py-2 text-left text-sm last:border-b-0 hover:bg-muted/40",
                             GRID_COLS,

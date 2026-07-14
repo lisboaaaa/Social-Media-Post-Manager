@@ -15,15 +15,6 @@ export const PLATFORM_BG_CLASSES: Record<Platform, string> = {
   x: "bg-neutral-200",
 };
 
-// Solid brand colors, for an accent (e.g. a left border stripe) rather than
-// a background tint — needs a real hex, not a Tailwind class, since it's set
-// via inline style.
-export const PLATFORM_ACCENT_COLORS: Record<Platform, string> = {
-  linkedin: "#0A66C2",
-  instagram: "#C2185B",
-  x: "#171717",
-};
-
 export function PlatformBadge({ platform, className }: { platform: Platform; className?: string }) {
   return (
     <span
