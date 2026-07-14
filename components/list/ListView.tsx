@@ -124,7 +124,9 @@ export function ListView() {
               </span>
             </button>
             {!isCollapsed && (
-              <div className="overflow-hidden rounded-lg bg-background shadow-sm">
+              <div className="flex flex-col gap-2">
+                <div className="h-px bg-border" />
+                <div className="overflow-hidden rounded-lg bg-background shadow-sm">
                 {rows.length === 0 ? (
                   <p className="px-4 py-3 text-sm text-muted-foreground">No posts in this stage.</p>
                 ) : (
@@ -207,6 +209,7 @@ export function ListView() {
                       );
                     })
                 )}
+                </div>
               </div>
             )}
           </div>

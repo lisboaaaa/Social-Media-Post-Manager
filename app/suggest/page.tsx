@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, Lightbulb, LogOut } from "lucide-react";
+import { ArrowLeft, ImageIcon, Lightbulb, LogOut } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -71,9 +71,9 @@ export default function SuggestPage() {
   return (
     <div className="mx-auto flex w-full max-w-2xl flex-col gap-8">
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2.5">
-          <span className="flex size-9 items-center justify-center rounded-full bg-primary/10 text-primary">
-            <Lightbulb className="size-4.5" />
+        <div className="flex items-center gap-3">
+          <span className="flex size-11 items-center justify-center rounded-full bg-gradient-to-br from-primary/20 to-fuchsia-400/20 text-primary">
+            <Lightbulb className="size-5" />
           </span>
           <h1 className="text-2xl font-semibold tracking-tight">Got a post idea?</h1>
         </div>
@@ -99,33 +99,39 @@ export default function SuggestPage() {
         </div>
       </div>
 
-      <div className="flex flex-col gap-6 rounded-2xl border bg-background p-8 shadow-lg">
-        <p className="text-base text-muted-foreground">
-          Seen something worth posting about? Tell us — a customer win, a milestone, something funny that happened at the office. We&apos;ll take it from there.
-        </p>
+      <div className="overflow-hidden rounded-2xl border bg-background shadow-lg">
+        <div className="h-1.5 w-full bg-gradient-to-r from-primary via-fuchsia-400 to-amber-400" />
+        <div className="flex flex-col gap-6 p-8">
+          <p className="text-base text-muted-foreground">
+            Seen something worth posting about? Tell us — a customer win, a milestone, something funny that happened at the office. We&apos;ll take it from there.
+          </p>
 
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="idea" className="text-base">
-            Your idea
-          </Label>
-          <Textarea
-            id="idea"
-            rows={5}
-            className="text-base"
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            placeholder="e.g. We just hit 100 customers, could be a nice shoutout post"
-          />
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="idea" className="text-base">
+              Your idea
+            </Label>
+            <Textarea
+              id="idea"
+              rows={5}
+              className="text-base"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="e.g. We just hit 100 customers, could be a nice shoutout post"
+            />
+          </div>
+
+          <div className="flex flex-col gap-1.5 border-t pt-6">
+            <Label className="flex items-center gap-1.5 text-base">
+              <ImageIcon className="size-4 text-muted-foreground" />
+              Photo (optional)
+            </Label>
+            <ImageUploader images={images} onChange={(next) => setImages(next.slice(-1))} />
+          </div>
+
+          <Button type="button" size="lg" onClick={handleSubmit} disabled={submitting || !description.trim()}>
+            {submitting ? "Sending…" : "Send idea"}
+          </Button>
         </div>
-
-        <div className="flex flex-col gap-1.5 border-t pt-6">
-          <Label className="text-base">Photo (optional)</Label>
-          <ImageUploader images={images} onChange={(next) => setImages(next.slice(-1))} />
-        </div>
-
-        <Button type="button" onClick={handleSubmit} disabled={submitting || !description.trim()}>
-          {submitting ? "Sending…" : "Send idea"}
-        </Button>
       </div>
     </div>
   );
