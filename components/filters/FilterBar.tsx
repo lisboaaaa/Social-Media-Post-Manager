@@ -1,7 +1,6 @@
 "use client";
 
-import { useState } from "react";
-import { Eye, LayoutGrid, Radio, Rows3, Settings2, Tag, UserRound, X } from "lucide-react";
+import { Eye, LayoutGrid, Radio, Rows3, Tag, UserRound, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -15,7 +14,6 @@ import { useStore, type BoardViewMode } from "@/lib/store";
 import { PLATFORMS, PLATFORM_LABELS, type Platform } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { DateRangeFilter } from "./DateRangeFilter";
-import { ManageCategoriesModal } from "./ManageCategoriesModal";
 
 // Chip style shared by every filter trigger — no border, sits as its own
 // pill inside the tray instead of a bordered form-field-with-label-above.
@@ -24,7 +22,6 @@ const ACTIVE_TRIGGER_CLASS = "bg-primary/10 text-primary";
 
 export function FilterBar() {
   const { filters, setFilters, clearFilters, categories, profiles, boardViewMode, setBoardViewMode } = useStore();
-  const [manageCategoriesOpen, setManageCategoriesOpen] = useState(false);
   const active =
     filters.platform !== "all" ||
     filters.categoryId !== "all" ||
@@ -99,15 +96,6 @@ export function FilterBar() {
           ))}
         </SelectContent>
       </Select>
-      <button
-        type="button"
-        onClick={() => setManageCategoriesOpen(true)}
-        aria-label="Manage categories"
-        title="Manage categories"
-        className="flex size-7 items-center justify-center rounded-lg text-muted-foreground hover:bg-background hover:text-foreground"
-      >
-        <Settings2 className="size-3.5" />
-      </button>
 
       <Select value={filters.assigneeId} onValueChange={(value) => setFilters({ assigneeId: value ?? "all" })}>
         <SelectTrigger size="sm" className={cn(CHIP_CLASS, "min-w-40", filters.assigneeId !== "all" && ACTIVE_TRIGGER_CLASS)}>
@@ -136,8 +124,6 @@ export function FilterBar() {
           Clear
         </Button>
       )}
-
-      <ManageCategoriesModal open={manageCategoriesOpen} onOpenChange={setManageCategoriesOpen} />
     </div>
   );
 }

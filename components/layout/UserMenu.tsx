@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { BarChart3, Columns3, LogOut, Sparkles, Trash2, Wrench } from "lucide-react";
+import { BarChart3, Columns3, LogOut, Sparkles, Tag, Trash2, Wrench } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -17,6 +17,7 @@ import { PersonalStatsModal } from "@/components/stats/PersonalStatsModal";
 import { ConnectClaudeModal } from "@/components/settings/ConnectClaudeModal";
 import { DevToolsPanel } from "@/components/devtools/DevToolsPanel";
 import { ManageStagesModal } from "@/components/board/ManageStagesModal";
+import { ManageCategoriesModal } from "@/components/filters/ManageCategoriesModal";
 import { useStore } from "@/lib/store";
 
 // Everything that isn't part of daily work (admin/config actions, personal
@@ -30,6 +31,7 @@ export function UserMenu() {
   const [connectOpen, setConnectOpen] = useState(false);
   const [devToolsOpen, setDevToolsOpen] = useState(false);
   const [manageStagesOpen, setManageStagesOpen] = useState(false);
+  const [manageCategoriesOpen, setManageCategoriesOpen] = useState(false);
 
   const handleSignOut = () => {
     if (confirm("Sign out?")) signOut();
@@ -51,6 +53,10 @@ export function UserMenu() {
             <DropdownMenuItem onClick={() => setManageStagesOpen(true)}>
               <Columns3 className="size-3.5" />
               Manage stages
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setManageCategoriesOpen(true)}>
+              <Tag className="size-3.5" />
+              Manage categories
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => setConnectOpen(true)}>
               <Sparkles className="size-3.5" />
@@ -81,6 +87,7 @@ export function UserMenu() {
       <ConnectClaudeModal open={connectOpen} onOpenChange={setConnectOpen} />
       <DevToolsPanel open={devToolsOpen} onOpenChange={setDevToolsOpen} />
       <ManageStagesModal open={manageStagesOpen} onOpenChange={setManageStagesOpen} />
+      <ManageCategoriesModal open={manageCategoriesOpen} onOpenChange={setManageCategoriesOpen} />
     </div>
   );
 }
