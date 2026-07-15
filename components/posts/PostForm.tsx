@@ -359,7 +359,6 @@ export function PostForm({ post }: { post?: Post }) {
             {needsDateForScheduled && (
               <p className="text-xs text-destructive">Required to move this post to Scheduled.</p>
             )}
-            {post && <p className="font-mono text-[10.5px] text-muted-foreground">id: #{post.postNumber}</p>}
           </div>
 
           <div className="flex flex-col gap-2">

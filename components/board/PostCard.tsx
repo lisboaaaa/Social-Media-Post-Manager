@@ -117,6 +117,7 @@ export function PostCard({ post, index }: { post: Post; index: number }) {
               </span>
             </div>
           </div>
+          <p className="mt-1 text-right font-mono text-[10px] text-muted-foreground/70">id: #{post.postNumber}</p>
         </div>
       )}
     </Draggable>
