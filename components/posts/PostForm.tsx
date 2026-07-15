@@ -244,7 +244,9 @@ export function PostForm({ post }: { post?: Post }) {
           </div>
 
           {PLATFORMS.filter((p) => platforms.includes(p)).map((p) => {
-            const detectedUrl = findFirstUrl(descriptions[p]);
+            const rawUrl = findFirstUrl(descriptions[p]);
+            // Don't re-prompt for a link that's already been tagged.
+            const detectedUrl = rawUrl && !rawUrl.includes("utm_source=") ? rawUrl : null;
             return (
               <div key={p} className="flex flex-col gap-2">
                 <div className="flex items-center justify-between">
@@ -261,7 +263,15 @@ export function PostForm({ post }: { post?: Post }) {
                   placeholder="Write the post copy — this is what actually gets published…"
                   disabled={isArchived}
                 />
-                {detectedUrl && <LinkTagHint url={detectedUrl} platform={p} campaign={title} />}
+                {detectedUrl && (
+                  <LinkTagHint
+                    url={detectedUrl}
+                    platform={p}
+                    campaign={title}
+                    description={descriptions[p]}
+                    onApply={(next) => setDescriptions((prev) => ({ ...prev, [p]: next }))}
+                  />
+                )}
               </div>
             );
           })}

@@ -8,32 +8,39 @@ import { Input } from "@/components/ui/input";
 import { buildTaggedUrl } from "@/lib/utm";
 import type { Platform } from "@/lib/types";
 
-export function LinkTagHint({ url, platform, campaign }: { url: string; platform: Platform; campaign: string }) {
+export function LinkTagHint({
+  url,
+  platform,
+  campaign,
+  description,
+  onApply,
+}: {
+  url: string;
+  platform: Platform;
+  campaign: string;
+  description: string;
+  onApply: (newDescription: string) => void;
+}) {
   const [editableUrl, setEditableUrl] = useState(url);
-  const [taggedUrl, setTaggedUrl] = useState<string | null>(null);
 
-  // Re-seed when the description's detected link changes — but a freshly
-  // detected link means any previous "transformed" result is now stale.
+  // Re-seed when a freshly detected (still untagged) link shows up.
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setEditableUrl(url);
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setTaggedUrl(null);
   }, [url]);
 
   const handleTransform = () => {
-    const result = buildTaggedUrl(editableUrl, platform, campaign);
-    if (!result) {
+    const tagged = buildTaggedUrl(editableUrl, platform, campaign);
+    if (!tagged) {
       toast.error("That doesn't look like a valid link.");
       return;
     }
-    setTaggedUrl(result);
-  };
-
-  const handleCopy = () => {
-    if (!taggedUrl) return;
-    navigator.clipboard.writeText(taggedUrl);
-    toast.success("Copied! Paste it wherever the link needs to go.");
+    // Swaps the tagged link straight into the description — for LinkedIn/X
+    // that's what actually gets published. Also copied to clipboard since on
+    // Instagram the destination is the bio link, not the caption itself.
+    onApply(description.replace(url, tagged));
+    navigator.clipboard.writeText(tagged);
+    toast.success("Link tagged — swapped into the description and copied to your clipboard.");
   };
 
   return (
@@ -44,23 +51,10 @@ export function LinkTagHint({ url, platform, campaign }: { url: string; platform
           ? "Links aren't clickable in Instagram captions — still want to generate a UTM-tagged version (e.g. for your bio link)?"
           : "Link detected — want to tag it for tracking before you publish?"}
       </p>
-      <Input
-        value={editableUrl}
-        onChange={(e) => setEditableUrl(e.target.value)}
-        className="font-mono text-xs"
-      />
-      {taggedUrl ? (
-        <div className="flex flex-col gap-1.5">
-          <Input readOnly value={taggedUrl} className="font-mono text-xs" />
-          <Button type="button" size="sm" variant="outline" onClick={handleCopy}>
-            Copy tagged link
-          </Button>
-        </div>
-      ) : (
-        <Button type="button" size="sm" variant="outline" onClick={handleTransform}>
-          Transform with UTM tags
-        </Button>
-      )}
+      <Input value={editableUrl} onChange={(e) => setEditableUrl(e.target.value)} className="font-mono text-xs" />
+      <Button type="button" size="sm" variant="outline" onClick={handleTransform}>
+        Transform with UTM tags
+      </Button>
     </div>
   );
 }
