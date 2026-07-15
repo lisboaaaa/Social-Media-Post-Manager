@@ -1,16 +1,9 @@
 "use client";
 
-import { Eye, LayoutGrid, Radio, Rows3, Tag, UserRound, X } from "lucide-react";
+import { Eye, Radio, Tag, UserRound, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useStore, type BoardViewMode } from "@/lib/store";
+import { useStore } from "@/lib/store";
 import { PLATFORMS, PLATFORM_LABELS, type Platform } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { DateRangeFilter } from "./DateRangeFilter";
@@ -31,32 +24,15 @@ export function FilterBar() {
 
   return (
     <div className="flex flex-wrap items-center gap-1.5 rounded-xl bg-muted/50 p-1.5 shadow-sm">
-      <DropdownMenu>
-        <DropdownMenuTrigger
-          render={
-            <button
-              type="button"
-              aria-label="View"
-              title="View: Board or List"
-              className="flex size-7 items-center justify-center rounded-lg text-muted-foreground hover:bg-background hover:text-foreground"
-            />
-          }
-        >
-          <Eye className="size-3.5" />
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="start" className="w-40">
-          <DropdownMenuRadioGroup value={boardViewMode} onValueChange={(value) => setBoardViewMode(value as BoardViewMode)}>
-            <DropdownMenuRadioItem value="board">
-              <LayoutGrid className="size-3.5" />
-              Board
-            </DropdownMenuRadioItem>
-            <DropdownMenuRadioItem value="list">
-              <Rows3 className="size-3.5" />
-              List
-            </DropdownMenuRadioItem>
-          </DropdownMenuRadioGroup>
-        </DropdownMenuContent>
-      </DropdownMenu>
+      <button
+        type="button"
+        aria-label={boardViewMode === "board" ? "Switch to List view" : "Switch to Board view"}
+        title={boardViewMode === "board" ? "Switch to List view" : "Switch to Board view"}
+        onClick={() => setBoardViewMode(boardViewMode === "board" ? "list" : "board")}
+        className="flex size-7 items-center justify-center rounded-lg text-muted-foreground hover:bg-background hover:text-foreground"
+      >
+        <Eye className="size-3.5" />
+      </button>
 
       <Select
         value={filters.platform}
