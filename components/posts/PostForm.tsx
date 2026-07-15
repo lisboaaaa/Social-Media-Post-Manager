@@ -18,6 +18,7 @@ import { CategoryPicker } from "./CategoryPicker";
 import { CharacterCounter } from "./CharacterCounter";
 import { DeleteReasonDialog } from "./DeleteReasonDialog";
 import { ImageUploader } from "./ImageUploader";
+import { LinkTagHint } from "./LinkTagHint";
 import { PlatformBadge } from "./PlatformBadge";
 import { PlatformMockup } from "./mockups/PlatformMockup";
 import { useStore } from "@/lib/store";
@@ -30,6 +31,7 @@ import {
   type Post,
   type PostStatus,
 } from "@/lib/types";
+import { findFirstUrl } from "@/lib/links";
 
 const NONE = "__none__";
 const EMPTY_DESCRIPTIONS: Record<Platform, string> = { linkedin: "", instagram: "", x: "" };
@@ -241,24 +243,28 @@ export function PostForm({ post }: { post?: Post }) {
             />
           </div>
 
-          {PLATFORMS.filter((p) => platforms.includes(p)).map((p) => (
-            <div key={p} className="flex flex-col gap-2">
-              <div className="flex items-center justify-between">
-                <Label htmlFor={`description-${p}`} className="text-lg font-semibold">
-                  {platforms.length > 1 ? `Description — ${PLATFORM_LABELS[p]}` : "Description"}
-                </Label>
-                <CharacterCounter platform={p} length={descriptions[p].length} />
+          {PLATFORMS.filter((p) => platforms.includes(p)).map((p) => {
+            const detectedUrl = findFirstUrl(descriptions[p]);
+            return (
+              <div key={p} className="flex flex-col gap-2">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor={`description-${p}`} className="text-lg font-semibold">
+                    {platforms.length > 1 ? `Description — ${PLATFORM_LABELS[p]}` : "Description"}
+                  </Label>
+                  <CharacterCounter platform={p} length={descriptions[p].length} />
+                </div>
+                <Textarea
+                  id={`description-${p}`}
+                  value={descriptions[p]}
+                  onChange={(e) => setDescriptions((prev) => ({ ...prev, [p]: e.target.value }))}
+                  rows={6}
+                  placeholder="Write the post copy — this is what actually gets published…"
+                  disabled={isArchived}
+                />
+                {detectedUrl && <LinkTagHint url={detectedUrl} platform={p} campaign={title} />}
               </div>
-              <Textarea
-                id={`description-${p}`}
-                value={descriptions[p]}
-                onChange={(e) => setDescriptions((prev) => ({ ...prev, [p]: e.target.value }))}
-                rows={6}
-                placeholder="Write the post copy — this is what actually gets published…"
-                disabled={isArchived}
-              />
-            </div>
-          ))}
+            );
+          })}
 
           <div className="flex flex-col gap-2">
             <div className="flex items-baseline gap-2">
