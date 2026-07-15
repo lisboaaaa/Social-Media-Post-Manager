@@ -50,7 +50,7 @@ export function InstagramMockup({
             <span className="text-[13px] font-semibold">genos.hq</span>
             <span className="rounded-[4px] border border-white/70 px-1.5 py-0.5 text-[10px] font-semibold">Follow</span>
           </div>
-          <p className="mt-1.5 line-clamp-2 text-[12px]">{description || "No caption yet."}</p>
+          <p className="mt-1.5 whitespace-pre-wrap text-[12px]">{description || "No caption yet."}</p>
         </div>
         <div className="pointer-events-none absolute bottom-16 right-2 flex flex-col items-center gap-3.5 text-white">
           <div className="flex flex-col items-center gap-0.5">
@@ -129,10 +129,9 @@ export function InstagramMockup({
 
       <div className="px-3 pb-3 pt-2 text-[13px] leading-snug">
         <span className="font-semibold">genos.hq</span>{" "}
-        <span className="line-clamp-2 whitespace-pre-wrap">
+        <span className="whitespace-pre-wrap">
           {description || "No caption yet."}
         </span>
-        {description.length > 60 && <span className="text-muted-foreground"> …more</span>}
         <div className="mt-1 font-mono text-[10px] uppercase text-muted-foreground">
           {post.targetDate ?? "no date"}
         </div>
