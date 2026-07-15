@@ -170,6 +170,7 @@ export function PostPreviewModal() {
                     <span className="font-normal text-muted-foreground">No date</span>
                   )}
                 </div>
+                <div className="mt-1 font-mono text-[10.5px] text-muted-foreground">id: #{post.postNumber}</div>
               </div>
               {post.publishedUrl && (
                 <div className="col-span-2">
