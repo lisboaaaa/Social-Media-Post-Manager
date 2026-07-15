@@ -1,6 +1,7 @@
 import { Bookmark, Heart, MessageCircle, MoreHorizontal, Send } from "lucide-react";
 import type { Post } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { CAPTION_PREVIEW_LIMIT, truncateCaption } from "./captionPreview";
 import { ImageCarousel } from "./ImageCarousel";
 import type { Device } from "./device";
 
@@ -15,6 +16,8 @@ export function InstagramMockup({
 }) {
   const desktop = device === "desktop";
   const video = post.images.find((img) => img.mediaType === "video");
+  // The expanded desktop modal shows the caption in full, same as the real thing.
+  const { shown, truncated } = truncateCaption(description, desktop ? null : CAPTION_PREVIEW_LIMIT.instagram);
 
   const avatar = (
     <div className="flex size-7 shrink-0 items-center justify-center rounded-full bg-gradient-to-tr from-amber-400 via-pink-500 to-purple-600 text-[10px] font-bold text-white">
@@ -50,7 +53,10 @@ export function InstagramMockup({
             <span className="text-[13px] font-semibold">genos.hq</span>
             <span className="rounded-[4px] border border-white/70 px-1.5 py-0.5 text-[10px] font-semibold">Follow</span>
           </div>
-          <p className="mt-1.5 whitespace-pre-wrap text-[12px]">{description || "No caption yet."}</p>
+          <p className="mt-1.5 whitespace-pre-wrap text-[12px]">
+            {shown || "No caption yet."}
+            {truncated && <span className="text-white/70"> … more</span>}
+          </p>
         </div>
         <div className="pointer-events-none absolute bottom-16 right-2 flex flex-col items-center gap-3.5 text-white">
           <div className="flex flex-col items-center gap-0.5">
@@ -130,8 +136,9 @@ export function InstagramMockup({
       <div className="px-3 pb-3 pt-2 text-[13px] leading-snug">
         <span className="font-semibold">genos.hq</span>{" "}
         <span className="whitespace-pre-wrap">
-          {description || "No caption yet."}
+          {shown || "No caption yet."}
         </span>
+        {truncated && <span className="text-muted-foreground"> … more</span>}
         <div className="mt-1 font-mono text-[10px] uppercase text-muted-foreground">
           {post.targetDate ?? "no date"}
         </div>

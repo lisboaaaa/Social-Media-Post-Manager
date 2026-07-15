@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Globe2, MessageCircle, MoreHorizontal, Repeat2, Send, ThumbsUp } from "lucide-react";
 import type { Post } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { CAPTION_PREVIEW_LIMIT, truncateCaption } from "./captionPreview";
 import { ImageCarousel } from "./ImageCarousel";
 import { ImageGrid } from "./ImageGrid";
 import { Lightbox } from "./Lightbox";
@@ -21,6 +22,8 @@ export function LinkedInMockup({
   const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
   const desktop = device === "desktop";
   const video = post.images.find((img) => img.mediaType === "video");
+  // The desktop feed gives a post more room before it clips, same as the real thing.
+  const { shown, truncated } = truncateCaption(description, desktop ? null : CAPTION_PREVIEW_LIMIT.linkedin);
 
   return (
     <div className={cn("relative mx-auto w-full overflow-hidden rounded-lg border bg-white", desktop ? "max-w-xl" : "max-w-sm")}>
@@ -42,7 +45,8 @@ export function LinkedInMockup({
       </div>
 
       <p className="whitespace-pre-wrap px-3 py-2.5 text-[13px] leading-snug">
-        {description || "No text yet."}
+        {shown || "No text yet."}
+        {truncated && <span className="text-muted-foreground">…see more</span>}
       </p>
 
       {video && <ImageCarousel images={[video]} className="aspect-[1.91/1] w-full" fit="contain" />}

@@ -90,8 +90,10 @@ The same posts are shown two ways (not two databases — one set of posts, two l
 
 ## 7. Image preview
 
-- The team wants a **simple, rough preview** — image + text shown together so it "looks roughly right."
-- **NOT** a faithful per-platform mockup with exact caption-truncation rules. (Faithful truncation is more work, the rules drift as platforms change, and the team confirmed they don't need it.)
+- **Decision reversed (2026-07-15):** the preview should now be as faithful as practical to each platform's real caption-truncation behavior, so it doesn't mislead the person writing the post. The earlier "simple, rough preview" call (below) is superseded.
+- Implementation approximates truncation by **character count**, not CSS line-clamp, since visual line count depends on container width/font rendering: LinkedIn mobile ~210 chars before "…see more", Instagram mobile ~125 chars before "… more", X shown in full (280-char cap already fits without clipping). Desktop views show the caption in full, matching each platform's expanded/desktop behavior.
+- These cutoffs are a best-effort approximation, not verified live against the platforms — they will drift as LinkedIn/Instagram/X tweak their UI. Re-check the numbers in `components/posts/mockups/captionPreview.ts` against the real apps periodically.
+- ~~The team wants a simple, rough preview — image + text shown together so it "looks roughly right." NOT a faithful per-platform mockup with exact caption-truncation rules. (Faithful truncation is more work, the rules drift as platforms change, and the team confirmed they don't need it.)~~ *(superseded above)*
 
 ---
 
