@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { DragDropContext, Draggable, Droppable, type DropResult } from "@hello-pangea/dnd";
-import { GripVertical, Plus, Trash2 } from "lucide-react";
+import { ChevronDown, GripVertical, Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -53,6 +53,18 @@ export function ManageStagesModal({ open, onOpenChange }: ManageStagesModalProps
   const [drafts, setDrafts] = useState<Record<string, string>>({});
   const [reassigning, setReassigning] = useState<{ stageId: string; label: string; count: number } | null>(null);
   const [reassignTarget, setReassignTarget] = useState("");
+  // Collapsed by default — the per-stage requirements/behavior/protection
+  // flags are a wall of checkboxes when every stage shows them at once.
+  const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
+
+  const toggleExpanded = (id: string) => {
+    setExpandedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
 
   const createStage = () => {
     const trimmed = newLabel.trim();
@@ -162,6 +174,15 @@ export function ManageStagesModal({ open, onOpenChange }: ManageStagesModalProps
                           >
                             <GripVertical className="size-4" />
                           </span>
+                          <button
+                            type="button"
+                            onClick={() => toggleExpanded(stage.id)}
+                            aria-label={expandedIds.has(stage.id) ? `Hide ${stage.label} settings` : `Show ${stage.label} settings`}
+                            title={expandedIds.has(stage.id) ? "Hide settings" : "Show settings"}
+                            className="flex size-6 shrink-0 items-center justify-center text-muted-foreground hover:text-foreground"
+                          >
+                            <ChevronDown className={cn("size-4 transition-transform", expandedIds.has(stage.id) && "-rotate-180")} />
+                          </button>
                           <Input
                             value={drafts[stage.id] ?? stage.label}
                             onChange={(e) => setDrafts((prev) => ({ ...prev, [stage.id]: e.target.value }))}
@@ -194,6 +215,7 @@ export function ManageStagesModal({ open, onOpenChange }: ManageStagesModalProps
                             <Trash2 className="size-3.5" />
                           </button>
                         </div>
+                        {expandedIds.has(stage.id) && (
                         <div className="flex flex-col gap-2 pl-8">
                           {FLAG_GROUPS.map((group) => (
                             <div key={group.title} className="flex flex-col gap-1">
@@ -215,6 +237,7 @@ export function ManageStagesModal({ open, onOpenChange }: ManageStagesModalProps
                             </div>
                           ))}
                         </div>
+                        )}
                       </div>
                     )}
                   </Draggable>
