@@ -51,6 +51,7 @@ interface CommentRow {
   author_id: string;
   body: string;
   parent_id: string | null;
+  guest_name: string | null;
   created_at: string;
 }
 
@@ -161,6 +162,7 @@ export function mapCommentRow(row: CommentRow): Comment {
     authorId: row.author_id,
     body: row.body,
     parentId: row.parent_id,
+    guestName: row.guest_name,
     createdAt: row.created_at,
   };
 }

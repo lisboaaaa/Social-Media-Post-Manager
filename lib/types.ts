@@ -70,6 +70,7 @@ export interface Comment {
   authorId: string;
   body: string;
   parentId: string | null; // the comment this one is replying to, if any
+  guestName: string | null; // set when authorId is the "shared link" pseudo-profile — the name a public-link visitor typed in
   createdAt: string; // ISO datetime
 }
 

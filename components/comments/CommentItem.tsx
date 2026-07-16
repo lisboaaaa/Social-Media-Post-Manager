@@ -28,6 +28,11 @@ export function CommentItem({
   const author = profiles.find((p) => p.id === comment.authorId);
   const isUnread = unreadSince !== undefined && isCommentUnread(comment, currentUser.id, unreadSince);
   const isOwn = comment.authorId === currentUser.id;
+  const displayName = comment.guestName
+    ? `${comment.guestName} (shared link)`
+    : isOwn
+      ? "You"
+      : (author?.fullName ?? "Unknown");
 
   const handleDelete = () => {
     if (!confirm("Delete this note? This can't be undone.")) return;
@@ -53,7 +58,7 @@ export function CommentItem({
         )}
         <div className="flex items-baseline gap-2">
           {isUnread && <span className="size-1.5 shrink-0 rounded-full bg-destructive" aria-label="Unread" />}
-          <span className="text-sm font-medium">{isOwn ? "You" : (author?.fullName ?? "Unknown")}</span>
+          <span className="text-sm font-medium">{displayName}</span>
           <span className="font-mono text-[11px] text-muted-foreground">{formatWhen(comment.createdAt)}</span>
           <div className="ml-auto flex items-center gap-1">
             {onReply && (

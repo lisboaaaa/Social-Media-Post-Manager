@@ -742,6 +742,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       authorId: currentUser!.id,
       body,
       parentId,
+      guestName: null,
       createdAt: new Date().toISOString(),
     };
     setComments((prev) => [...prev, comment]);

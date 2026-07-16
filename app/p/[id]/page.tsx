@@ -16,6 +16,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { CharacterCounter } from "@/components/posts/CharacterCounter";
 import { PlatformBadge } from "@/components/posts/PlatformBadge";
 import { PublicCategoryPicker } from "@/components/posts/PublicCategoryPicker";
+import { PublicCommentSection } from "@/components/posts/PublicCommentSection";
 import { PublicImageUploader } from "@/components/posts/PublicImageUploader";
 import { PlatformMockup } from "@/components/posts/mockups/PlatformMockup";
 import { PLATFORMS, PLATFORM_LABELS, type Platform, type Post, type PostImage } from "@/lib/types";
@@ -156,6 +157,8 @@ export default function PublicPostPage() {
             Edit post
           </Button>
         </div>
+
+        <PublicCommentSection postId={params.id} />
       </div>
     );
   }

@@ -33,6 +33,7 @@ export function CommentThread({ postId }: { postId: string }) {
   const groups = groupByDay(topLevel);
 
   const authorName = (comment: Comment) => {
+    if (comment.guestName) return `${comment.guestName} (shared link)`;
     const author = profiles.find((p) => p.id === comment.authorId);
     return comment.authorId === currentUser.id ? "you" : (author?.fullName ?? "Unknown");
   };
