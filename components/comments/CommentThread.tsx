@@ -1,9 +1,11 @@
 "use client";
 
 import { useState } from "react";
+import { ChevronDown } from "lucide-react";
 import { findRootId, groupByDay } from "@/lib/commentGroups";
 import { useStore } from "@/lib/store";
 import type { Comment } from "@/lib/types";
+import { cn } from "@/lib/utils";
 import { CommentForm } from "./CommentForm";
 import { CommentItem } from "./CommentItem";
 import { DateSeparator } from "./DateSeparator";
@@ -11,6 +13,7 @@ import { DateSeparator } from "./DateSeparator";
 export function CommentThread({ postId }: { postId: string }) {
   const { comments, profiles, currentUser, addComment } = useStore();
   const [replyingTo, setReplyingTo] = useState<Comment | null>(null);
+  const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
 
   const threadComments = comments
     .filter((c) => c.postId === postId)
@@ -34,6 +37,15 @@ export function CommentThread({ postId }: { postId: string }) {
     return comment.authorId === currentUser.id ? "you" : (author?.fullName ?? "Unknown");
   };
 
+  const toggleExpanded = (id: string) => {
+    setExpandedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
   return (
     <div className="flex flex-col gap-4">
       <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
@@ -45,10 +57,21 @@ export function CommentThread({ postId }: { postId: string }) {
             <DateSeparator label={group.label} />
             {group.items.map((comment) => {
               const replies = repliesByRoot.get(comment.id) ?? [];
+              const isExpanded = expandedIds.has(comment.id);
               return (
                 <div key={comment.id} className="flex flex-col gap-2">
                   <CommentItem comment={comment} onReply={setReplyingTo} />
                   {replies.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => toggleExpanded(comment.id)}
+                      className="ml-9 flex w-fit items-center gap-1 rounded px-1 text-xs font-medium text-primary hover:underline"
+                    >
+                      <ChevronDown className={cn("size-3 transition-transform", isExpanded && "-rotate-180")} />
+                      {replies.length} {replies.length === 1 ? "reply" : "replies"}
+                    </button>
+                  )}
+                  {isExpanded && replies.length > 0 && (
                     <div className="ml-8 flex flex-col gap-2 border-l-2 border-muted pl-3">
                       {replies.map((reply) => {
                         const parent = reply.parentId ? byId.get(reply.parentId) : undefined;

@@ -138,7 +138,7 @@ export function PostPreviewModal() {
 
             <PlatformMockup post={post} />
 
-            {postCategories.length > 0 && (
+            <div className="flex flex-wrap items-start justify-between gap-3 border-t pt-3 text-sm">
               <div className="flex flex-wrap gap-1.5">
                 {postCategories.map((c) => (
                   <Badge key={c.id} variant="outline" className="text-xs font-normal">
@@ -146,57 +146,57 @@ export function PostPreviewModal() {
                   </Badge>
                 ))}
               </div>
-            )}
-
-            <div className="grid grid-cols-2 gap-3 border-t pt-3 text-sm">
-              <div>
-                <div className="text-xs text-muted-foreground">Assignee</div>
-                <div className="flex items-center gap-1.5 mt-1">
-                  {assignee ? (
-                    <>
-                      <Avatar className="h-5 w-5"><AvatarFallback className="text-[9px]">{assignee.initials}</AvatarFallback></Avatar>
-                      {assignee.fullName}
-                    </>
-                  ) : (
-                    <span className="text-muted-foreground">Unassigned</span>
-                  )}
-                </div>
-              </div>
-              <div>
-                <div className="text-xs text-muted-foreground">Target date</div>
-                <div className="mt-1 font-medium">
-                  {post.targetDate ? (
-                    format(new Date(`${post.targetDate}T00:00:00`), "MMM d, yyyy")
-                  ) : (
-                    <span className="font-normal text-muted-foreground">No date</span>
-                  )}
-                </div>
-              </div>
-              {post.platforms.some((p) => post.publishedUrls[p]) && (
-                <div className="col-span-2">
-                  <div className="text-xs text-muted-foreground">
-                    {post.platforms.filter((p) => post.publishedUrls[p]).length > 1 ? "Published URLs" : "Published URL"}
-                  </div>
-                  <div className="mt-1 flex flex-col gap-1">
-                    {post.platforms
-                      .filter((p) => post.publishedUrls[p])
-                      .map((p) => (
-                        <div key={p} className="flex min-w-0 items-center gap-1.5">
-                          {post.platforms.length > 1 && <PlatformBadge platform={p} className="shrink-0" />}
-                          <a
-                            href={post.publishedUrls[p]!}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="truncate text-primary underline underline-offset-2"
-                          >
-                            {post.publishedUrls[p]}
-                          </a>
-                        </div>
-                      ))}
+              <div className="flex shrink-0 items-start gap-4">
+                <div>
+                  <div className="text-xs text-muted-foreground">Assignee</div>
+                  <div className="flex items-center gap-1.5 mt-1">
+                    {assignee ? (
+                      <>
+                        <Avatar className="h-5 w-5"><AvatarFallback className="text-[9px]">{assignee.initials}</AvatarFallback></Avatar>
+                        {assignee.fullName}
+                      </>
+                    ) : (
+                      <span className="text-muted-foreground">Unassigned</span>
+                    )}
                   </div>
                 </div>
-              )}
+                <div>
+                  <div className="text-xs text-muted-foreground">Target date</div>
+                  <div className="mt-1 font-medium">
+                    {post.targetDate ? (
+                      format(new Date(`${post.targetDate}T00:00:00`), "MMM d, yyyy")
+                    ) : (
+                      <span className="font-normal text-muted-foreground">No date</span>
+                    )}
+                  </div>
+                </div>
+              </div>
             </div>
+
+            {post.platforms.some((p) => post.publishedUrls[p]) && (
+              <div className="text-sm">
+                <div className="text-xs text-muted-foreground">
+                  {post.platforms.filter((p) => post.publishedUrls[p]).length > 1 ? "Published URLs" : "Published URL"}
+                </div>
+                <div className="mt-1 flex flex-col gap-1">
+                  {post.platforms
+                    .filter((p) => post.publishedUrls[p])
+                    .map((p) => (
+                      <div key={p} className="flex min-w-0 items-center gap-1.5">
+                        {post.platforms.length > 1 && <PlatformBadge platform={p} className="shrink-0" />}
+                        <a
+                          href={post.publishedUrls[p]!}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="truncate text-primary underline underline-offset-2"
+                        >
+                          {post.publishedUrls[p]}
+                        </a>
+                      </div>
+                    ))}
+                </div>
+              </div>
+            )}
 
             <Separator />
 
