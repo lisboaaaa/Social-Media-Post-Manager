@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { format } from "date-fns";
 import { toast } from "sonner";
-import { CalendarIcon } from "lucide-react";
+import { CalendarIcon, ChevronLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -18,6 +18,7 @@ import { PublicCategoryPicker } from "@/components/posts/PublicCategoryPicker";
 import { PublicImageUploader } from "@/components/posts/PublicImageUploader";
 import { PlatformMockup } from "@/components/posts/mockups/PlatformMockup";
 import { PLATFORMS, PLATFORM_LABELS, type Platform, type Post, type PostImage } from "@/lib/types";
+import { cn } from "@/lib/utils";
 
 interface PublicPost {
   title: string;
@@ -36,6 +37,7 @@ export default function PublicPostPage() {
   const [categories, setCategories] = useState<{ id: string; name: string }[]>([]);
   const [post, setPost] = useState<PublicPost | null>(null);
   const [dateOpen, setDateOpen] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -217,10 +219,34 @@ export default function PublicPostPage() {
         </Button>
       </div>
 
-      <div className="border-t pt-6">
-        <h2 className="mb-3 text-lg font-semibold">Preview</h2>
-        {post.platforms.length > 0 && <PlatformMockup post={previewPost} />}
-      </div>
+      {post.platforms.length > 0 && (
+        <>
+          <button
+            type="button"
+            onClick={() => setPreviewOpen((v) => !v)}
+            aria-label={previewOpen ? "Hide preview" : "Show preview"}
+            title={previewOpen ? "Hide preview" : "Show preview"}
+            className="fixed right-0 top-1/2 z-40 flex -translate-y-1/2 flex-col items-center gap-2 rounded-l-xl bg-primary px-2 py-5 text-primary-foreground shadow-lg transition-colors hover:bg-primary/90"
+          >
+            <ChevronLeft className={cn("size-5 transition-transform", previewOpen && "rotate-180")} />
+            <span className="text-xs font-semibold tracking-wide [writing-mode:vertical-rl]">Preview</span>
+          </button>
+          <div
+            className={cn(
+              "fixed right-0 top-0 z-30 flex h-screen w-[420px] max-w-[90vw] flex-col overflow-y-auto border-l bg-background shadow-2xl transition-transform duration-300 ease-out",
+              previewOpen ? "translate-x-0" : "translate-x-full",
+            )}
+          >
+            <div className="border-b px-5 py-4">
+              <h3 className="text-lg font-semibold">Preview</h3>
+              <p className="text-xs text-muted-foreground">Updates live as you edit — leave it open while you work.</p>
+            </div>
+            <div className="flex-1 p-4">
+              <PlatformMockup post={previewPost} />
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }

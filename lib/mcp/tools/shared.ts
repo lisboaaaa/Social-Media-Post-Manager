@@ -1,6 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { mapPostRow, mapStageRow, POST_SELECT } from "@/lib/supabase/mappers";
-import { storagePathFromPublicUrl } from "@/lib/supabase/storagePath";
+import { sanitizeFilename, storagePathFromPublicUrl } from "@/lib/supabase/storagePath";
 import type { HistoryContext } from "@/lib/postHistory";
 import type { Platform, Post, Profile, Stage } from "@/lib/types";
 
@@ -174,7 +174,7 @@ export async function uploadPostMedia(
     filename = input.filename;
   }
 
-  const path = `${rowId}-${filename}`;
+  const path = `${rowId}-${sanitizeFilename(filename)}`;
   const { error } = await supabase.storage.from("post-media").upload(path, buffer, contentType ? { contentType } : undefined);
   if (error) throw new McpToolError(`Couldn't upload media: ${error.message}`);
 

@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { ImagePlus, Play, X } from "lucide-react";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
+import { sanitizeFilename } from "@/lib/supabase/storagePath";
 import type { PostImage } from "@/lib/types";
 
 export function ImageUploader({
@@ -40,7 +41,7 @@ export function ImageUploader({
 
     added.forEach(async (item, i) => {
       const file = Array.from(files)[i];
-      const path = `${item.id}-${file.name}`;
+      const path = `${item.id}-${sanitizeFilename(file.name)}`;
       const { error } = await supabase.storage.from("post-media").upload(path, file);
 
       setUploadingIds((prev) => {
