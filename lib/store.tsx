@@ -4,9 +4,10 @@ import { createContext, useContext, useEffect, useMemo, useState, type ReactNode
 import { toast } from "sonner";
 import { createClient } from "./supabase/client";
 import { mentionsProfile } from "./mentions";
-import { mapCategoryRow, mapCommentReactionRow, mapCommentRow, mapPostRow, mapProfileRow, mapStageRow, mapSuggestionRow, POST_SELECT } from "./supabase/mappers";
+import { mapCategoryRow, mapCommentReactionRow, mapCommentRow, mapPostHistoryRow, mapPostRow, mapProfileRow, mapStageRow, mapSuggestionRow, POST_SELECT } from "./supabase/mappers";
 import { storagePathFromPublicUrl } from "./supabase/storagePath";
-import type { Category, Comment, CommentReaction, Platform, Post, PostStatus, Profile, Stage, Suggestion } from "./types";
+import { summarizePostChanges } from "./postHistory";
+import type { Category, Comment, CommentReaction, Platform, Post, PostHistoryEntry, PostStatus, Profile, Stage, Suggestion } from "./types";
 
 // Mirrors the SQL side (handle_new_user() in auth-setup.sql) — company
 // emails are firstname.lastname@daredata.engineering. Used as a client-side
@@ -58,6 +59,7 @@ interface StoreValue {
   profiles: Profile[];
   comments: Comment[];
   commentReactions: CommentReaction[];
+  postHistory: PostHistoryEntry[];
   suggestions: Suggestion[];
   currentUser: Profile;
   filters: Filters;
@@ -107,6 +109,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [comments, setComments] = useState<Comment[]>([]);
   const [commentReactions, setCommentReactions] = useState<CommentReaction[]>([]);
+  const [postHistory, setPostHistory] = useState<PostHistoryEntry[]>([]);
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [filters, setFiltersState] = useState<Filters>(EMPTY_FILTERS);
   const [previewPostId, setPreviewPostId] = useState<string | null>(null);
@@ -130,7 +133,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     let cancelled = false;
 
     async function load() {
-      const [userRes, profilesRes, categoriesRes, stagesRes, postsRes, commentsRes, reactionsRes, suggestionsRes] = await Promise.all([
+      const [userRes, profilesRes, categoriesRes, stagesRes, postsRes, commentsRes, reactionsRes, historyRes, suggestionsRes] = await Promise.all([
         supabase.auth.getUser(),
         supabase.from("profiles").select("*"),
         supabase.from("categories").select("*"),
@@ -138,6 +141,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         supabase.from("posts").select(POST_SELECT).order("created_at", { ascending: true }),
         supabase.from("comments").select("*").order("created_at", { ascending: true }),
         supabase.from("comment_reactions").select("*"),
+        supabase.from("post_history").select("*").order("created_at", { ascending: true }),
         supabase.from("suggestions").select("*").order("created_at", { ascending: false }),
       ]);
 
@@ -193,6 +197,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       setPosts((postsRes.data ?? []).map(mapPostRow));
       setComments((commentsRes.data ?? []).map(mapCommentRow));
       setCommentReactions((reactionsRes.data ?? []).map(mapCommentReactionRow));
+      setPostHistory((historyRes.data ?? []).map(mapPostHistoryRow));
       setSuggestions((suggestionsRes.data ?? []).map(mapSuggestionRow));
       setLoading(false);
     }
@@ -297,6 +302,12 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         const deletedId = (payload.old as { id: string }).id;
         setCommentReactions((prev) => prev.filter((r) => r.id !== deletedId));
       })
+      // Entries are append-only — inserted once by the app, never edited or
+      // removed — so only INSERT needs handling here.
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "post_history" }, (payload) => {
+        const incoming = mapPostHistoryRow(payload.new as Parameters<typeof mapPostHistoryRow>[0]);
+        setPostHistory((prev) => (prev.some((h) => h.id === incoming.id) ? prev : [...prev, incoming]));
+      })
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "suggestions" }, (payload) => {
         const incoming = mapSuggestionRow(payload.new as Parameters<typeof mapSuggestionRow>[0]);
         setSuggestions((prev) => (prev.some((s) => s.id === incoming.id) ? prev : [incoming, ...prev]));
@@ -376,6 +387,13 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   // waits on the network) and fires the matching Supabase write in the
   // background — a failure surfaces as a toast rather than blocking anything.
 
+  const logHistory = async (postId: string, summaries: string[]) => {
+    if (!summaries.length) return;
+    const rows = summaries.map((summary) => ({ post_id: postId, actor_id: currentUser!.id, summary }));
+    const { error } = await supabase.from("post_history").insert(rows);
+    if (error) toast.error(`Couldn't save activity log: ${error.message}`);
+  };
+
   const syncPostChildren = async (postId: string, patch: Partial<Post>, merged: Post) => {
     if ("platforms" in patch || "descriptions" in patch || "publishedUrls" in patch) {
       await supabase.from("post_platforms").delete().eq("post_id", postId);
@@ -447,6 +465,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       });
       if (error) return toast.error(`Couldn't save the post: ${error.message}`);
       await syncPostChildren(post.id, { platforms: post.platforms, descriptions: post.descriptions, images: post.images, categoryIds: post.categoryIds }, post);
+      await logHistory(post.id, ["post created"]);
     })();
 
     return post;
@@ -466,6 +485,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     const { error } = await supabase.from("posts").update(columns).eq("id", id);
     if (error) return toast.error(`Couldn't save changes: ${error.message}`);
     await syncPostChildren(id, patch, merged);
+    await logHistory(id, summarizePostChanges(current, patch, { profiles, categories, stages }));
   };
 
   const updatePost = (id: string, patch: Partial<Post>) => {
@@ -532,7 +552,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         .from("posts")
         .update({ deleted_at: now, deleted_by: currentUser!.id, delete_reason: reason })
         .eq("id", id);
-      if (error) toast.error(`Couldn't delete the post: ${error.message}`);
+      if (error) return toast.error(`Couldn't delete the post: ${error.message}`);
+      await logHistory(id, [`moved to Trash: ${reason}`]);
     })();
   };
 
@@ -544,7 +565,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         .from("posts")
         .update({ deleted_at: null, deleted_by: null, delete_reason: null })
         .eq("id", id);
-      if (error) toast.error(`Couldn't restore the post: ${error.message}`);
+      if (error) return toast.error(`Couldn't restore the post: ${error.message}`);
+      await logHistory(id, ["restored from Trash"]);
     })();
   };
 
@@ -855,6 +877,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     profiles,
     comments,
     commentReactions,
+    postHistory,
     suggestions,
     currentUser: currentUser!,
     filters,

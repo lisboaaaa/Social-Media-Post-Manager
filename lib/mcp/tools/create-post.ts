@@ -3,7 +3,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { mapPostRow, POST_SELECT } from "@/lib/supabase/mappers";
 import { PLATFORMS } from "@/lib/types";
 import type { Profile } from "@/lib/types";
-import { fetchStages, resolveCategoryIds, resolveProfileIdByEmail, syncPostChildren, uploadPostMedia, McpToolError } from "./shared";
+import { fetchStages, logHistory, resolveCategoryIds, resolveProfileIdByEmail, syncPostChildren, uploadPostMedia, McpToolError } from "./shared";
 
 export const createPostSchema = z.object({
   title: z.string().default(""),
@@ -60,6 +60,8 @@ export async function createPostTool(input: CreatePostInput, profile: Profile, s
 
   const { data } = await supabase.from("posts").select(POST_SELECT).eq("id", id).single();
   const post = mapPostRow(data);
+
+  await logHistory(supabase, post.id, profile.id, ["post created"]);
 
   return { postNumber: post.postNumber, id: post.id, status: post.status, title: post.title };
 }

@@ -81,6 +81,17 @@ export interface CommentReaction {
   createdAt: string; // ISO datetime
 }
 
+// One row per changed field per save — written by the app, never typed by a
+// person (contrast with Comment). `summary` never includes caption/description
+// text itself, only that it changed — see lib/postHistory.ts.
+export interface PostHistoryEntry {
+  id: string;
+  postId: string;
+  actorId: string;
+  summary: string;
+  createdAt: string; // ISO datetime
+}
+
 export type SuggestionStatus = "new" | "accepted" | "dismissed";
 
 export interface Suggestion {

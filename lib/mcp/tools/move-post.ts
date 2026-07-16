@@ -1,6 +1,16 @@
 import { z } from "zod";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { fetchPostByNumberOrId, fetchStages, needsChangesPatch, syncPostChildren, McpToolError } from "./shared";
+import type { Post, Profile } from "@/lib/types";
+import {
+  fetchHistoryContext,
+  fetchPostByNumberOrId,
+  fetchStages,
+  logHistory,
+  needsChangesPatch,
+  summarizePostChanges,
+  syncPostChildren,
+  McpToolError,
+} from "./shared";
 
 export const movePostSchema = z.object({
   postNumber: z.number().int(),
@@ -17,7 +27,7 @@ export type MovePostInput = z.infer<typeof movePostSchema>;
 // Mirrors the board's drag-and-drop rules (components/board/Board.tsx): a
 // stage flagged requiresTargetDate/requiresPublishedUrl needs one supplied
 // here too, since MCP calls skip the UI dialogs that would otherwise prompt.
-export async function movePostTool(input: MovePostInput, supabase: SupabaseClient) {
+export async function movePostTool(input: MovePostInput, profile: Profile, supabase: SupabaseClient) {
   const current = await fetchPostByNumberOrId(supabase, { postNumber: input.postNumber });
   const stages = await fetchStages(supabase);
   const oldStage = stages.find((s) => s.id === current.status);
@@ -58,6 +68,13 @@ export async function movePostTool(input: MovePostInput, supabase: SupabaseClien
       publishedUrls: { ...current.publishedUrls, ...input.publishedUrls },
     });
   }
+
+  const patch: Partial<Post> = { status: input.status };
+  if (input.targetDate) patch.targetDate = input.targetDate;
+  if (input.publishedUrls) patch.publishedUrls = { ...current.publishedUrls, ...input.publishedUrls };
+
+  const historyContext = await fetchHistoryContext(supabase);
+  await logHistory(supabase, current.id, profile.id, summarizePostChanges(current, patch, historyContext));
 
   return { postNumber: input.postNumber, status: input.status };
 }

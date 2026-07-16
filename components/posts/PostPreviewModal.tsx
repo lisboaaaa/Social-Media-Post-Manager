@@ -15,13 +15,14 @@ import { useStore } from "@/lib/store";
 import { getShareTemplate, renderShareTemplate } from "@/lib/shareTemplate";
 import { CommentThread } from "@/components/comments/CommentThread";
 import { DeleteReasonDialog } from "./DeleteReasonDialog";
+import { PostHistoryList } from "./PostHistoryList";
 import { ShareDialog } from "./ShareDialog";
 import { PlatformBadge, PlatformBadgeGroup } from "./PlatformBadge";
 import { PlatformMockup } from "./mockups/PlatformMockup";
 
 export function PostPreviewModal() {
   const router = useRouter();
-  const { previewPostId, openPreview, closePreview, getPostById, addPost, deletePost, profiles, categories, stages } = useStore();
+  const { previewPostId, openPreview, closePreview, getPostById, addPost, deletePost, profiles, categories, stages, postHistory } = useStore();
   const post = previewPostId ? getPostById(previewPostId) : undefined;
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
@@ -200,6 +201,13 @@ export function PostPreviewModal() {
             <Separator />
 
             <CommentThread postId={post.id} />
+
+            {postHistory.some((h) => h.postId === post.id) && (
+              <>
+                <Separator />
+                <PostHistoryList postId={post.id} />
+              </>
+            )}
           </>
         )}
       </DialogContent>

@@ -1,9 +1,11 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { mapPostRow, mapStageRow, POST_SELECT } from "@/lib/supabase/mappers";
 import { storagePathFromPublicUrl } from "@/lib/supabase/storagePath";
+import type { HistoryContext } from "@/lib/postHistory";
 import type { Platform, Post, Profile, Stage } from "@/lib/types";
 
 export { needsChangesPatch } from "@/lib/stageRules";
+export { summarizePostChanges } from "@/lib/postHistory";
 
 export class McpToolError extends Error {}
 
@@ -14,6 +16,28 @@ export async function fetchStages(supabase: SupabaseClient): Promise<Stage[]> {
   const { data, error } = await supabase.from("board_stages").select("*").order("position", { ascending: true });
   if (error) throw new McpToolError(`Couldn't load stages: ${error.message}`);
   return (data ?? []).map(mapStageRow);
+}
+
+// Just enough context for summarizePostChanges to turn ids into names —
+// fetched fresh per call, same reasoning as fetchStages above.
+export async function fetchHistoryContext(supabase: SupabaseClient): Promise<HistoryContext> {
+  const [{ data: profiles }, { data: categories }, stages] = await Promise.all([
+    supabase.from("profiles").select("id, full_name"),
+    supabase.from("categories").select("id, name"),
+    fetchStages(supabase),
+  ]);
+  return {
+    profiles: (profiles ?? []).map((p: { id: string; full_name: string }) => ({ id: p.id, fullName: p.full_name })),
+    categories: categories ?? [],
+    stages,
+  };
+}
+
+export async function logHistory(supabase: SupabaseClient, postId: string, actorId: string, summaries: string[]): Promise<void> {
+  if (!summaries.length) return;
+  const rows = summaries.map((summary) => ({ post_id: postId, actor_id: actorId, summary }));
+  const { error } = await supabase.from("post_history").insert(rows);
+  if (error) throw new McpToolError(`Couldn't save activity log: ${error.message}`);
 }
 
 // Board-touching tools are limited to the marketing team — everyone else's

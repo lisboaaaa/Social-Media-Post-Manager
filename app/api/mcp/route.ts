@@ -85,7 +85,7 @@ const handler = createMcpHandler(
         const supabase = createServiceClient();
         try {
           assertMarketing(profile);
-          return textResult(await updatePostTool(input, supabase));
+          return textResult(await updatePostTool(input, profile, supabase));
         } catch (error) {
           return errorResult(error);
         }
@@ -104,7 +104,7 @@ const handler = createMcpHandler(
         const supabase = createServiceClient();
         try {
           assertMarketing(profile);
-          return textResult(await movePostTool(input, supabase));
+          return textResult(await movePostTool(input, profile, supabase));
         } catch (error) {
           return errorResult(error);
         }
