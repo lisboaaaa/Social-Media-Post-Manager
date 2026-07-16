@@ -146,30 +146,22 @@ export function PostPreviewModal() {
                   </Badge>
                 ))}
               </div>
-              <div className="flex shrink-0 items-start gap-4">
-                <div>
-                  <div className="text-xs text-muted-foreground">Assignee</div>
-                  <div className="flex items-center gap-1.5 mt-1">
-                    {assignee ? (
-                      <>
-                        <Avatar className="h-5 w-5"><AvatarFallback className="text-[9px]">{assignee.initials}</AvatarFallback></Avatar>
-                        {assignee.fullName}
-                      </>
-                    ) : (
-                      <span className="text-muted-foreground">Unassigned</span>
-                    )}
-                  </div>
+              <div className="flex shrink-0 items-center gap-3">
+                <div className="flex items-center gap-1.5">
+                  {assignee ? (
+                    <>
+                      <Avatar className="h-5 w-5"><AvatarFallback className="text-[9px]">{assignee.initials}</AvatarFallback></Avatar>
+                      {assignee.fullName}
+                    </>
+                  ) : (
+                    <span className="text-muted-foreground">Unassigned</span>
+                  )}
                 </div>
-                <div>
-                  <div className="text-xs text-muted-foreground">Target date</div>
-                  <div className="mt-1 font-medium">
-                    {post.targetDate ? (
-                      format(new Date(`${post.targetDate}T00:00:00`), "MMM d, yyyy")
-                    ) : (
-                      <span className="font-normal text-muted-foreground">No date</span>
-                    )}
-                  </div>
-                </div>
+                {post.targetDate ? (
+                  <span className="font-medium">{format(new Date(`${post.targetDate}T00:00:00`), "MMM d, yyyy")}</span>
+                ) : (
+                  <span className="text-muted-foreground">No date</span>
+                )}
               </div>
             </div>
 
