@@ -17,7 +17,7 @@ export function CommentThread({ postId }: { postId: string }) {
 
   const threadComments = comments
     .filter((c) => c.postId === postId)
-    .sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 
   const byId = new Map(threadComments.map((c) => [c.id, c]));
   const topLevel = threadComments.filter((c) => !c.parentId);
