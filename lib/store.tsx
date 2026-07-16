@@ -389,8 +389,23 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   const logHistory = async (postId: string, summaries: string[]) => {
     if (!summaries.length) return;
-    const rows = summaries.map((summary) => ({ post_id: postId, actor_id: currentUser!.id, summary }));
-    const { error } = await supabase.from("post_history").insert(rows);
+    // Generate the id/timestamp here (not left to the DB) so this can go
+    // straight into local state — otherwise these entries would only ever
+    // appear once the realtime echo comes back, unlike every other mutation
+    // in this file.
+    const createdAt = new Date().toISOString();
+    const entries = summaries.map((summary) => ({
+      id: crypto.randomUUID(),
+      postId,
+      actorId: currentUser!.id,
+      summary,
+      createdAt,
+    }));
+    setPostHistory((prev) => [...prev, ...entries]);
+
+    const { error } = await supabase.from("post_history").insert(
+      entries.map((e) => ({ id: e.id, post_id: e.postId, actor_id: e.actorId, summary: e.summary, created_at: e.createdAt })),
+    );
     if (error) toast.error(`Couldn't save activity log: ${error.message}`);
   };
 
