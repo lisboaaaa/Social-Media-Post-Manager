@@ -33,7 +33,7 @@ export async function getPostTool(input: GetPostInput, supabase: SupabaseClient)
     descriptions: post.descriptions,
     targetDate: post.targetDate,
     needsChanges: post.needsChanges,
-    publishedUrl: post.publishedUrl,
+    publishedUrls: post.publishedUrls,
     assignee: post.assigneeId ? nameById.get(post.assigneeId) ?? null : null,
     requestedBy: post.requestedById ? nameById.get(post.requestedById) ?? null : null,
     createdBy: nameById.get(post.createdBy) ?? null,

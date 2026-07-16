@@ -377,9 +377,14 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   // background — a failure surfaces as a toast rather than blocking anything.
 
   const syncPostChildren = async (postId: string, patch: Partial<Post>, merged: Post) => {
-    if ("platforms" in patch || "descriptions" in patch) {
+    if ("platforms" in patch || "descriptions" in patch || "publishedUrls" in patch) {
       await supabase.from("post_platforms").delete().eq("post_id", postId);
-      const rows = merged.platforms.map((p) => ({ post_id: postId, platform: p, description: merged.descriptions[p] ?? "" }));
+      const rows = merged.platforms.map((p) => ({
+        post_id: postId,
+        platform: p,
+        description: merged.descriptions[p] ?? "",
+        published_url: merged.publishedUrls[p] ?? null,
+      }));
       if (rows.length) await supabase.from("post_platforms").insert(rows);
     }
     if ("images" in patch) {
@@ -434,7 +439,6 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         target_date: post.targetDate,
         needs_changes: post.needsChanges,
         keep_media: post.keepMedia,
-        published_url: post.publishedUrl,
         assignee_id: post.assigneeId,
         requested_by_id: post.requestedById,
         created_by: post.createdBy,
@@ -456,7 +460,6 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     if ("targetDate" in patch) columns.target_date = patch.targetDate;
     if ("needsChanges" in patch) columns.needs_changes = patch.needsChanges;
     if ("keepMedia" in patch) columns.keep_media = patch.keepMedia;
-    if ("publishedUrl" in patch) columns.published_url = patch.publishedUrl;
     if ("assigneeId" in patch) columns.assignee_id = patch.assigneeId;
     if ("requestedById" in patch) columns.requested_by_id = patch.requestedById;
 
@@ -774,7 +777,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       targetDate: null,
       needsChanges: false,
       keepMedia: false,
-      publishedUrl: null,
+      publishedUrls: { linkedin: null, instagram: null, x: null },
       assigneeId: null,
       requestedById: suggestion.submittedBy,
       categoryIds: [],

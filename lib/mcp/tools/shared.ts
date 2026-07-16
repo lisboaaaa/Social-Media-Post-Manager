@@ -80,15 +80,22 @@ export async function syncPostChildren(
   patch: {
     platforms?: Platform[];
     descriptions?: Record<Platform, string>;
+    publishedUrls?: Partial<Record<Platform, string | null>>;
     images?: { imageUrl: string; mediaType: "image" | "video" }[];
     categoryIds?: string[];
   },
 ): Promise<void> {
-  if (patch.platforms || patch.descriptions) {
+  if (patch.platforms || patch.descriptions || patch.publishedUrls) {
     await supabase.from("post_platforms").delete().eq("post_id", postId);
     const platforms = patch.platforms ?? [];
     const descriptions = patch.descriptions ?? ({} as Record<Platform, string>);
-    const rows = platforms.map((p) => ({ post_id: postId, platform: p, description: descriptions[p] ?? "" }));
+    const publishedUrls = patch.publishedUrls ?? {};
+    const rows = platforms.map((p) => ({
+      post_id: postId,
+      platform: p,
+      description: descriptions[p] ?? "",
+      published_url: publishedUrls[p] ?? null,
+    }));
     if (rows.length) await supabase.from("post_platforms").insert(rows);
   }
   if (patch.images) {

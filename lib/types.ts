@@ -104,7 +104,7 @@ export interface Post {
   status: PostStatus;
   targetDate: string | null; // ISO date (yyyy-mm-dd)
   needsChanges: boolean;
-  publishedUrl: string | null;
+  publishedUrls: Record<Platform, string | null>; // the live link per platform, once that platform's copy actually goes out
   assigneeId: string | null;
   requestedById: string | null;
   createdBy: string;

@@ -16,7 +16,7 @@ import { getShareTemplate, renderShareTemplate } from "@/lib/shareTemplate";
 import { CommentThread } from "@/components/comments/CommentThread";
 import { DeleteReasonDialog } from "./DeleteReasonDialog";
 import { ShareDialog } from "./ShareDialog";
-import { PlatformBadgeGroup } from "./PlatformBadge";
+import { PlatformBadge, PlatformBadgeGroup } from "./PlatformBadge";
 import { PlatformMockup } from "./mockups/PlatformMockup";
 
 export function PostPreviewModal() {
@@ -53,7 +53,7 @@ export function PostPreviewModal() {
       targetDate: null,
       needsChanges: false,
       keepMedia: post.keepMedia,
-      publishedUrl: null,
+      publishedUrls: { linkedin: null, instagram: null, x: null },
       assigneeId: null,
       requestedById: null,
       categoryIds: post.categoryIds,
@@ -171,13 +171,27 @@ export function PostPreviewModal() {
                   )}
                 </div>
               </div>
-              {post.publishedUrl && (
+              {post.platforms.some((p) => post.publishedUrls[p]) && (
                 <div className="col-span-2">
-                  <div className="text-xs text-muted-foreground">Published URL</div>
-                  <div className="mt-1 truncate">
-                    <a href={post.publishedUrl} target="_blank" rel="noreferrer" className="text-primary underline underline-offset-2">
-                      {post.publishedUrl}
-                    </a>
+                  <div className="text-xs text-muted-foreground">
+                    {post.platforms.filter((p) => post.publishedUrls[p]).length > 1 ? "Published URLs" : "Published URL"}
+                  </div>
+                  <div className="mt-1 flex flex-col gap-1">
+                    {post.platforms
+                      .filter((p) => post.publishedUrls[p])
+                      .map((p) => (
+                        <div key={p} className="flex min-w-0 items-center gap-1.5">
+                          {post.platforms.length > 1 && <PlatformBadge platform={p} className="shrink-0" />}
+                          <a
+                            href={post.publishedUrls[p]!}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="truncate text-primary underline underline-offset-2"
+                          >
+                            {post.publishedUrls[p]}
+                          </a>
+                        </div>
+                      ))}
                   </div>
                 </div>
               )}

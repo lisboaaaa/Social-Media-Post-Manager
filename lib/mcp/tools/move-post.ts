@@ -1,12 +1,15 @@
 import { z } from "zod";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { fetchPostByNumberOrId, fetchStages, needsChangesPatch, McpToolError } from "./shared";
+import { fetchPostByNumberOrId, fetchStages, needsChangesPatch, syncPostChildren, McpToolError } from "./shared";
 
 export const movePostSchema = z.object({
   postNumber: z.number().int(),
   status: z.string().min(1).describe("Target stage id — call list_stages first to see current valid ids/labels"),
   targetDate: z.string().date().optional().describe("Required if the target stage requires a target date and the post has no date yet"),
-  publishedUrl: z.string().url().optional().describe("Required if the target stage requires a published link and the post has no link yet"),
+  publishedUrls: z
+    .record(z.string(), z.string().url())
+    .optional()
+    .describe("Published link per platform, keyed by platform name — required for any platform on this post that doesn't have one yet, if the target stage requires it"),
 });
 
 export type MovePostInput = z.infer<typeof movePostSchema>;
@@ -28,8 +31,13 @@ export async function movePostTool(input: MovePostInput, supabase: SupabaseClien
   if (newStage.requiresTargetDate && !current.targetDate && !input.targetDate) {
     throw new McpToolError(`Post #${input.postNumber} needs a target date before it can move to ${newStage.label} — pass targetDate.`);
   }
-  if (newStage.requiresPublishedUrl && !current.publishedUrl && !input.publishedUrl) {
-    throw new McpToolError(`Post #${input.postNumber} needs a published link before it can move to ${newStage.label} — pass publishedUrl.`);
+  if (newStage.requiresPublishedUrl) {
+    const missing = current.platforms.filter((p) => !current.publishedUrls[p] && !input.publishedUrls?.[p]);
+    if (missing.length) {
+      throw new McpToolError(
+        `Post #${input.postNumber} needs a published link for ${missing.join(", ")} before it can move to ${newStage.label} — pass publishedUrls.`,
+      );
+    }
   }
 
   const changesPatch = oldStage ? needsChangesPatch(oldStage, newStage) : {};
@@ -39,10 +47,17 @@ export async function movePostTool(input: MovePostInput, supabase: SupabaseClien
   };
   if (changesPatch.needsChanges !== undefined) columns.needs_changes = changesPatch.needsChanges;
   if (input.targetDate) columns.target_date = input.targetDate;
-  if (input.publishedUrl) columns.published_url = input.publishedUrl;
 
   const { error } = await supabase.from("posts").update(columns).eq("id", current.id);
   if (error) throw new McpToolError(`Couldn't move post #${input.postNumber}: ${error.message}`);
+
+  if (input.publishedUrls) {
+    await syncPostChildren(supabase, current.id, {
+      platforms: current.platforms,
+      descriptions: current.descriptions,
+      publishedUrls: { ...current.publishedUrls, ...input.publishedUrls },
+    });
+  }
 
   return { postNumber: input.postNumber, status: input.status };
 }

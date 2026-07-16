@@ -65,6 +65,7 @@ interface CommentReactionRow {
 interface PostPlatformRow {
   platform: Platform;
   description: string | null;
+  published_url: string | null;
 }
 
 interface PostImageRow {
@@ -86,7 +87,6 @@ interface PostRow {
   target_date: string | null;
   needs_changes: boolean;
   keep_media: boolean;
-  published_url: string | null;
   assignee_id: string | null;
   requested_by_id: string | null;
   created_by: string;
@@ -163,10 +163,12 @@ export function mapCommentReactionRow(row: CommentReactionRow): CommentReaction 
 
 export function mapPostRow(row: PostRow): Post {
   const descriptions: Record<Platform, string> = { linkedin: "", instagram: "", x: "" };
+  const publishedUrls: Record<Platform, string | null> = { linkedin: null, instagram: null, x: null };
   const platforms: Platform[] = [];
   for (const p of row.post_platforms ?? []) {
     platforms.push(p.platform);
     descriptions[p.platform] = p.description ?? "";
+    publishedUrls[p.platform] = p.published_url ?? null;
   }
 
   const images: PostImage[] = [...(row.post_images ?? [])]
@@ -191,7 +193,7 @@ export function mapPostRow(row: PostRow): Post {
     targetDate: row.target_date,
     needsChanges: row.needs_changes,
     keepMedia: row.keep_media,
-    publishedUrl: row.published_url,
+    publishedUrls,
     assigneeId: row.assignee_id,
     requestedById: row.requested_by_id,
     createdBy: row.created_by,
@@ -205,4 +207,4 @@ export function mapPostRow(row: PostRow): Post {
   };
 }
 
-export const POST_SELECT = "*, post_platforms(platform, description), post_images(id, image_url, position, media_type), post_categories(category_id)";
+export const POST_SELECT = "*, post_platforms(platform, description, published_url), post_images(id, image_url, position, media_type), post_categories(category_id)";

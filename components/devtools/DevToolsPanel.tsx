@@ -125,7 +125,7 @@ export function DevToolsPanel({ open, onOpenChange }: DevToolsPanelProps) {
       targetDate: null,
       needsChanges: false,
       keepMedia: false,
-      publishedUrl: null,
+      publishedUrls: { linkedin: null, instagram: null, x: null },
       assigneeId: null,
       requestedById: null,
       categoryIds: [],
@@ -163,7 +163,7 @@ export function DevToolsPanel({ open, onOpenChange }: DevToolsPanelProps) {
       p.targetDate ?? "",
       profiles.find((pr) => pr.id === p.assigneeId)?.fullName ?? "",
       p.categoryIds.map((id) => categories.find((c) => c.id === id)?.name).filter(Boolean).join(", "),
-      p.publishedUrl ?? "",
+      p.platforms.map((platform) => p.publishedUrls[platform]).filter(Boolean).join(" | "),
     ]);
     const csv = [headers, ...rows].map((row) => row.map((value) => escape(String(value))).join(",")).join("\n");
 

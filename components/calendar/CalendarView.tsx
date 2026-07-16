@@ -76,7 +76,7 @@ export function CalendarView() {
       targetDate: format(selectedDay, "yyyy-MM-dd"),
       needsChanges: false,
       keepMedia: false,
-      publishedUrl: null,
+      publishedUrls: { linkedin: null, instagram: null, x: null },
       assigneeId: null,
       requestedById: null,
       categoryIds: [],

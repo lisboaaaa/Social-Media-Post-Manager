@@ -41,7 +41,6 @@ export async function createPostTool(input: CreatePostInput, profile: Profile, s
     status: defaultStageId,
     target_date: input.targetDate ?? null,
     needs_changes: false,
-    published_url: null,
     assignee_id: assigneeId,
     requested_by_id: null,
     created_by: profile.id,

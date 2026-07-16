@@ -50,7 +50,7 @@ export function Board() {
       return;
     }
 
-    if (targetStage.requiresPublishedUrl && !post.publishedUrl) {
+    if (targetStage.requiresPublishedUrl && post.platforms.some((p) => !post.publishedUrls[p])) {
       setPendingPublish({ postId: draggableId, status: newStatus, index: destination.index });
       return;
     }
@@ -115,6 +115,8 @@ export function Board() {
 
       <PublishedUrlDialog
         open={pendingPublish !== null}
+        platforms={(pendingPublish && getPostById(pendingPublish.postId)?.platforms) ?? []}
+        initialUrls={(pendingPublish && getPostById(pendingPublish.postId)?.publishedUrls) ?? {}}
         onCancel={() => setPendingPublish(null)}
         onSkip={() => {
           if (!pendingPublish) return;
@@ -126,13 +128,13 @@ export function Board() {
           });
           setPendingPublish(null);
         }}
-        onConfirm={(url) => {
+        onConfirm={(urls) => {
           if (!pendingPublish) return;
           const post = getPostById(pendingPublish.postId);
           const oldStage = post ? stageById(post.status) : undefined;
           const newStage = stageById(pendingPublish.status);
           movePost(pendingPublish.postId, pendingPublish.status, pendingPublish.index, {
-            publishedUrl: url,
+            publishedUrls: { ...(post?.publishedUrls ?? { linkedin: null, instagram: null, x: null }), ...urls },
             ...(oldStage && newStage ? needsChangesPatch(oldStage, newStage) : {}),
           });
           setPendingPublish(null);

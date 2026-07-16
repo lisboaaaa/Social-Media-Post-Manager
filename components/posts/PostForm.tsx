@@ -35,6 +35,7 @@ import { findFirstUrl } from "@/lib/links";
 
 const NONE = "__none__";
 const EMPTY_DESCRIPTIONS: Record<Platform, string> = { linkedin: "", instagram: "", x: "" };
+const EMPTY_PUBLISHED_URLS: Record<Platform, string | null> = { linkedin: null, instagram: null, x: null };
 
 export function PostForm({ post }: { post?: Post }) {
   const router = useRouter();
@@ -52,7 +53,7 @@ export function PostForm({ post }: { post?: Post }) {
   // No longer user-editable here — preserved as-is; it's set automatically
   // when a post gets sent back from In Review (see Board's needsChangesPatch).
   const needsChanges = post?.needsChanges ?? false;
-  const [publishedUrl, setPublishedUrl] = useState(post?.publishedUrl ?? "");
+  const [publishedUrls, setPublishedUrls] = useState<Record<Platform, string | null>>(post?.publishedUrls ?? EMPTY_PUBLISHED_URLS);
   const [assigneeId, setAssigneeId] = useState(post?.assigneeId ?? NONE);
   const [requestedById, setRequestedById] = useState(post?.requestedById ?? NONE);
   const [categoryIds, setCategoryIds] = useState<string[]>(post?.categoryIds ?? []);
@@ -68,7 +69,7 @@ export function PostForm({ post }: { post?: Post }) {
     descriptions,
     status,
     targetDate,
-    publishedUrl,
+    publishedUrls,
     assigneeId,
     requestedById,
     categoryIds,
@@ -105,6 +106,11 @@ export function PostForm({ post }: { post?: Post }) {
   const hasVideo = images.some((img) => img.mediaType === "video");
   const hasMixedMedia = hasVideo && images.length > 1;
   const isArchived = Boolean(stages.find((s) => s.id === post?.status)?.locksEditing);
+  const trimmedPublishedUrls: Record<Platform, string | null> = {
+    linkedin: publishedUrls.linkedin?.trim() || null,
+    instagram: publishedUrls.instagram?.trim() || null,
+    x: publishedUrls.x?.trim() || null,
+  };
   // A live stand-in Post built from the form's own state — lets the preview
   // below update as you type instead of only showing what was last saved.
   const draftPost: Post = {
@@ -116,7 +122,7 @@ export function PostForm({ post }: { post?: Post }) {
     status,
     targetDate: targetDate || null,
     needsChanges,
-    publishedUrl: publishedUrl.trim() || null,
+    publishedUrls: trimmedPublishedUrls,
     assigneeId: assigneeId === NONE ? null : assigneeId,
     requestedById: requestedById === NONE ? null : requestedById,
     createdBy: post?.createdBy ?? currentUser.id,
@@ -158,7 +164,7 @@ export function PostForm({ post }: { post?: Post }) {
       status,
       targetDate: targetDate || null,
       needsChanges,
-      publishedUrl: publishedUrl.trim() || null,
+      publishedUrls: trimmedPublishedUrls,
       assigneeId: assigneeId === NONE ? null : assigneeId,
       requestedById: requestedById === NONE ? null : requestedById,
       categoryIds,
@@ -439,15 +445,22 @@ export function PostForm({ post }: { post?: Post }) {
           </div>
 
           {showPublishedUrl && (
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="published-url" className="text-[10.5px] font-semibold uppercase tracking-wide text-muted-foreground">Published URL</Label>
-              <Input
-                id="published-url"
-                type="url"
-                value={publishedUrl}
-                onChange={(e) => setPublishedUrl(e.target.value)}
-                placeholder="Paste the link once it's live…"
-              />
+            <div className="flex flex-col gap-3">
+              <Label className="text-[10.5px] font-semibold uppercase tracking-wide text-muted-foreground">
+                {platforms.length > 1 ? "Published URLs" : "Published URL"}
+              </Label>
+              {platforms.map((p) => (
+                <div key={p} className="flex flex-col gap-1.5">
+                  {platforms.length > 1 && <span className="text-xs text-muted-foreground">{PLATFORM_LABELS[p]}</span>}
+                  <Input
+                    id={`published-url-${p}`}
+                    type="url"
+                    value={publishedUrls[p] ?? ""}
+                    onChange={(e) => setPublishedUrls((prev) => ({ ...prev, [p]: e.target.value }))}
+                    placeholder="Paste the link once it's live…"
+                  />
+                </div>
+              ))}
             </div>
           )}
         </div>

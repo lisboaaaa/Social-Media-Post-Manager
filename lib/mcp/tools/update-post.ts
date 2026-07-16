@@ -12,7 +12,10 @@ export const updatePostSchema = z.object({
   targetDate: z.string().date().nullable().optional(),
   assigneeEmail: z.string().email().nullable().optional(),
   needsChanges: z.boolean().optional(),
-  publishedUrl: z.string().url().nullable().optional(),
+  publishedUrls: z
+    .record(z.string(), z.string().url())
+    .optional()
+    .describe("Published link per platform, keyed by platform name (e.g. { linkedin: \"...\" }) — merges with, rather than replacing, any links already saved"),
 });
 
 export type UpdatePostInput = z.infer<typeof updatePostSchema>;
@@ -26,7 +29,6 @@ export async function updatePostTool(input: UpdatePostInput, supabase: SupabaseC
   if (input.title !== undefined) columns.title = input.title;
   if (input.targetDate !== undefined) columns.target_date = input.targetDate;
   if (input.needsChanges !== undefined) columns.needs_changes = input.needsChanges;
-  if (input.publishedUrl !== undefined) columns.published_url = input.publishedUrl;
   if (input.assigneeEmail !== undefined) columns.assignee_id = await resolveProfileIdByEmail(supabase, input.assigneeEmail);
 
   const { error } = await supabase.from("posts").update(columns).eq("id", current.id);
@@ -34,15 +36,16 @@ export async function updatePostTool(input: UpdatePostInput, supabase: SupabaseC
 
   const categoryIds = input.categoryNames ? await resolveCategoryIds(supabase, input.categoryNames) : undefined;
 
-  // platforms and descriptions are stored together (one post_platforms row
-  // per platform+its copy) — if only one of the two was patched, merge with
-  // what's already there so the other doesn't get wiped out.
-  const touchesPlatformRows = input.platforms !== undefined || input.descriptions !== undefined;
+  // platforms, descriptions, and published links are stored together (one
+  // post_platforms row per platform) — if only some of these were patched,
+  // merge with what's already there so the rest doesn't get wiped out.
+  const touchesPlatformRows = input.platforms !== undefined || input.descriptions !== undefined || input.publishedUrls !== undefined;
   await syncPostChildren(supabase, current.id, {
     platforms: touchesPlatformRows ? ((input.platforms as (typeof PLATFORMS)[number][] | undefined) ?? current.platforms) : undefined,
     descriptions: touchesPlatformRows
       ? ((input.descriptions as Record<(typeof PLATFORMS)[number], string> | undefined) ?? current.descriptions)
       : undefined,
+    publishedUrls: touchesPlatformRows ? { ...current.publishedUrls, ...input.publishedUrls } : undefined,
     categoryIds,
   });
 

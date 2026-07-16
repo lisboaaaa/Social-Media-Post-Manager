@@ -65,6 +65,9 @@ export function ArchiveView() {
             {group.items.map((post) => {
               const cover = post.images[0];
               const assignee = profiles.find((p) => p.id === post.assigneeId);
+              // Several platforms can each have their own link — the compact
+              // thumbnail only has room for one, so just surface the first.
+              const firstPublishedUrl = post.platforms.map((p) => post.publishedUrls[p]).find(Boolean);
               return (
                 <div
                   key={post.id}
@@ -92,9 +95,9 @@ export function ArchiveView() {
                           <Play className="size-6 fill-white text-white" />
                         </span>
                       )}
-                      {post.publishedUrl && (
+                      {firstPublishedUrl && (
                         <a
-                          href={post.publishedUrl}
+                          href={firstPublishedUrl}
                           target="_blank"
                           rel="noreferrer"
                           onClick={(e) => e.stopPropagation()}
