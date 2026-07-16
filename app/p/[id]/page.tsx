@@ -4,7 +4,8 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { format } from "date-fns";
 import { toast } from "sonner";
-import { CalendarIcon, ChevronLeft } from "lucide-react";
+import { ArrowLeft, CalendarIcon, ChevronLeft } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -38,6 +39,7 @@ export default function PublicPostPage() {
   const [post, setPost] = useState<PublicPost | null>(null);
   const [dateOpen, setDateOpen] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
+  const [mode, setMode] = useState<"preview" | "edit">("preview");
 
   useEffect(() => {
     (async () => {
@@ -92,6 +94,7 @@ export default function PublicPostPage() {
       return;
     }
     toast.success("Saved");
+    setMode("preview");
   };
 
   // PlatformMockup expects a full Post — everything not editable here
@@ -120,9 +123,54 @@ export default function PublicPostPage() {
     deleteReason: null,
   };
 
+  if (mode === "preview") {
+    const postCategories = categories.filter((c) => post.categoryIds.includes(c.id));
+    return (
+      <div className="flex flex-col gap-5">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">{post.title || "Untitled post"}</h1>
+          <p className="text-sm text-muted-foreground">Shared link — no account needed to view this post.</p>
+        </div>
+
+        {post.platforms.length > 0 ? (
+          <PlatformMockup post={previewPost} />
+        ) : (
+          <p className="text-sm text-muted-foreground">No platform selected yet.</p>
+        )}
+
+        {postCategories.length > 0 && (
+          <div className="flex flex-wrap gap-1.5">
+            {postCategories.map((c) => (
+              <Badge key={c.id} variant="outline" className="text-xs font-normal">
+                {c.name}
+              </Badge>
+            ))}
+          </div>
+        )}
+
+        <div className="flex items-center justify-between border-t pt-4">
+          <span className="text-sm text-muted-foreground">
+            {post.targetDate ? format(new Date(`${post.targetDate}T00:00:00`), "MMM d, yyyy") : "No date yet"}
+          </span>
+          <Button onClick={() => setMode("edit")} size="lg">
+            Edit post
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col gap-6">
       <div>
+        <button
+          type="button"
+          onClick={() => setMode("preview")}
+          className="mb-2 flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
+        >
+          <ArrowLeft className="size-3.5" />
+          Back to preview
+        </button>
         <h1 className="text-2xl font-bold tracking-tight">Edit post</h1>
         <p className="text-sm text-muted-foreground">Shared link — no account needed to view or edit this post.</p>
       </div>
