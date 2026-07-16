@@ -67,7 +67,9 @@ export function PostPreviewModal() {
 
   const shareMessage = (() => {
     if (!post) return "";
-    const link = `${typeof window !== "undefined" ? window.location.origin : ""}/board?post=${post.id}`;
+    // /p/[id] is the public, no-login link — anyone who receives it can view
+    // and edit this one post without an account, unlike the rest of the app.
+    const link = `${typeof window !== "undefined" ? window.location.origin : ""}/p/${post.id}`;
     return renderShareTemplate(getShareTemplate(), { title: post.title || "Untitled post", link });
   })();
 

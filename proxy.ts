@@ -3,8 +3,11 @@ import { NextResponse, type NextRequest } from "next/server";
 
 // /api/mcp authenticates itself via a bearer token (api_tokens table), not a
 // cookie session; /api/cron is invoked by Vercel's scheduler (no session at
-// all) and checks its own CRON_SECRET bearer token instead.
-const PUBLIC_PATHS = ["/login", "/auth/callback", "/api/mcp", "/api/cron"];
+// all) and checks its own CRON_SECRET bearer token instead. /p and
+// /api/public are the shared, no-login post link — deliberately open to
+// anyone with the URL, scoped server-side to a single post id (see
+// app/api/public/posts/[id]/route.ts).
+const PUBLIC_PATHS = ["/login", "/auth/callback", "/api/mcp", "/api/cron", "/p/", "/api/public"];
 // Open to every signed-in employee regardless of role — everything else is
 // marketing-only by default, so a future new page is safe unless explicitly
 // added here.
