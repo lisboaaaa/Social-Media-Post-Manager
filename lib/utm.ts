@@ -8,17 +8,20 @@ function slugify(text: string): string {
     .replace(/(^-|-$)/g, "");
 }
 
-// Placeholder convention (source = platform name, medium = "social", campaign =
-// slugified post title) until the team confirms how links are already tagged
-// today — swap this out once that's known, so old and new links stay comparable
-// in Google Analytics.
-export function buildTaggedUrl(url: string, platform: Platform, campaign: string): string | null {
+// Convention: source = platform name, medium = "organic_social" (matches a
+// real link the team already uses), campaign = slugified post title. `content`
+// is optional — set it when the same destination is tagged more than once
+// for a single post (e.g. the caption link vs. a link dropped in the first
+// comment vs. one on an Instagram Story), so GA4's sessionManualAdContent can
+// tell those placements apart.
+export function buildTaggedUrl(url: string, platform: Platform, campaign: string, content?: string): string | null {
   try {
     const withScheme = /^https?:\/\//i.test(url) ? url : `https://${url}`;
     const tagged = new URL(withScheme);
     tagged.searchParams.set("utm_source", platform);
-    tagged.searchParams.set("utm_medium", "social");
+    tagged.searchParams.set("utm_medium", "organic_social");
     tagged.searchParams.set("utm_campaign", slugify(campaign) || "post");
+    if (content) tagged.searchParams.set("utm_content", slugify(content));
     return tagged.toString();
   } catch {
     return null;

@@ -312,22 +312,23 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         const incoming = mapPostHistoryRow(payload.new as Parameters<typeof mapPostHistoryRow>[0]);
         setPostHistory((prev) => (prev.some((h) => h.id === incoming.id) ? prev : [...prev, incoming]));
       })
-      // No single id column here (post_id+platform+date is the primary
-      // key), and the sync job upserts — match on all three to replace or append.
+      // No single id column here (post_id+platform+date+content is the
+      // primary key), and the sync job upserts — match on all four to replace or append.
       .on("postgres_changes", { event: "*", schema: "public", table: "post_analytics" }, (payload) => {
-        const sameRow = (a: { postId: string; platform: Platform; date: string }, b: { post_id: string; platform: Platform; date: string }) =>
-          a.postId === b.post_id && a.platform === b.platform && a.date === b.date;
+        const sameRow = (
+          a: { postId: string; platform: Platform; date: string; content: string },
+          b: { post_id: string; platform: Platform; date: string; content: string },
+        ) => a.postId === b.post_id && a.platform === b.platform && a.date === b.date && a.content === b.content;
         if (payload.eventType === "DELETE") {
-          const removed = payload.old as { post_id: string; platform: Platform; date: string };
+          const removed = payload.old as { post_id: string; platform: Platform; date: string; content: string };
           setPostAnalytics((prev) => prev.filter((a) => !sameRow(a, removed)));
           return;
         }
         const incoming = mapPostAnalyticsRow(payload.new as Parameters<typeof mapPostAnalyticsRow>[0]);
+        const incomingKey = { post_id: incoming.postId, platform: incoming.platform, date: incoming.date, content: incoming.content };
         setPostAnalytics((prev) => {
-          const exists = prev.some((a) => sameRow(a, { post_id: incoming.postId, platform: incoming.platform, date: incoming.date }));
-          return exists
-            ? prev.map((a) => (sameRow(a, { post_id: incoming.postId, platform: incoming.platform, date: incoming.date }) ? incoming : a))
-            : [...prev, incoming];
+          const exists = prev.some((a) => sameRow(a, incomingKey));
+          return exists ? prev.map((a) => (sameRow(a, incomingKey) ? incoming : a)) : [...prev, incoming];
         });
       })
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "suggestions" }, (payload) => {

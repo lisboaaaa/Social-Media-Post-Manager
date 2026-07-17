@@ -39,20 +39,26 @@ function summarize(rows: PostAnalytics[], label: string): PeriodTotals {
   };
 }
 
+// A date can now carry more than one row (one per utm_content placement) —
+// this view is content-agnostic, so same-date rows are merged together; the
+// "By placement" breakdown further down is where content is broken out.
 function groupRows(rows: PostAnalytics[], grouping: Grouping): PeriodTotals[] {
-  if (grouping === "day") {
-    return [...rows].sort((a, b) => b.date.localeCompare(a.date)).map((r) => summarize([r], r.date));
-  }
-  const byWeek = new Map<string, PostAnalytics[]>();
+  const keyFn = grouping === "day" ? (r: PostAnalytics) => r.date : (r: PostAnalytics) => weekStart(r.date);
+  const byPeriod = new Map<string, PostAnalytics[]>();
   for (const row of rows) {
-    const key = weekStart(row.date);
-    const list = byWeek.get(key) ?? [];
+    const key = keyFn(row);
+    const list = byPeriod.get(key) ?? [];
     list.push(row);
-    byWeek.set(key, list);
+    byPeriod.set(key, list);
   }
-  return [...byWeek.entries()]
+  return [...byPeriod.entries()]
     .sort((a, b) => b[0].localeCompare(a[0]))
-    .map(([week, weekRows]) => summarize(weekRows, `Week of ${week}`));
+    .map(([period, periodRows]) => summarize(periodRows, grouping === "day" ? period : `Week of ${period}`));
+}
+
+// "" means no utm_content was set — the plain link in the caption itself.
+function contentLabel(content: string): string {
+  return content ? content.replace(/_/g, " ") : "Caption link";
 }
 
 function formatPercent(value: number | null): string {
@@ -109,6 +115,17 @@ export function PostAnalyticsPanel({ postId, platforms }: { postId: string; plat
           {byPlatform.map(({ platform, rows }) => {
             const total = summarize(rows, "Total");
             const periods = groupRows(rows, grouping);
+
+            const byContent = new Map<string, PostAnalytics[]>();
+            for (const row of rows) {
+              const list = byContent.get(row.content) ?? [];
+              list.push(row);
+              byContent.set(row.content, list);
+            }
+            const placements = [...byContent.entries()]
+              .map(([content, contentRows]) => ({ content, total: summarize(contentRows, contentLabel(content)) }))
+              .sort((a, b) => b.total.sessions - a.total.sessions);
+
             return (
               <div key={platform} className="flex flex-col gap-2">
                 {byPlatform.length > 1 && <span className="text-sm font-medium">{PLATFORM_LABELS[platform]}</span>}
@@ -127,6 +144,18 @@ export function PostAnalyticsPanel({ postId, platforms }: { postId: string; plat
                     <div className="text-[10px] text-muted-foreground">Page views</div>
                   </div>
                 </div>
+
+                {placements.length > 1 && (
+                  <div className="flex flex-col gap-1 rounded-lg border p-2">
+                    <span className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">By placement</span>
+                    {placements.map(({ content, total: t }) => (
+                      <div key={content} className="flex items-center justify-between text-xs">
+                        <span className="capitalize">{t.label}</span>
+                        <span className="font-medium tabular-nums">{t.sessions} sessions</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
 
                 <div className="overflow-x-auto">
                   <table className="w-full whitespace-nowrap text-left text-xs">

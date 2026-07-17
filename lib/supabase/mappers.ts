@@ -75,6 +75,7 @@ interface PostAnalyticsRow {
   post_id: string;
   platform: Platform;
   date: string;
+  content: string;
   sessions: number;
   users: number;
   page_views: number;
@@ -194,6 +195,7 @@ export function mapPostAnalyticsRow(row: PostAnalyticsRow): PostAnalytics {
     postId: row.post_id,
     platform: row.platform,
     date: row.date,
+    content: row.content,
     sessions: row.sessions,
     users: row.users,
     pageViews: row.page_views,

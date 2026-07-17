@@ -98,6 +98,7 @@ export interface PostAnalytics {
   postId: string;
   platform: Platform;
   date: string; // ISO date (yyyy-mm-dd)
+  content: string; // utm_content value; "" = the plain caption link, no placement tag set
   sessions: number;
   users: number;
   pageViews: number;

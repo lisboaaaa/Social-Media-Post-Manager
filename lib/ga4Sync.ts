@@ -31,10 +31,19 @@ function formatGa4Date(raw: string): string {
   return `${raw.slice(0, 4)}-${raw.slice(4, 6)}-${raw.slice(6, 8)}`;
 }
 
-// Pulls day-by-day GA4 metrics for every post+platform that has a tagged
-// link (one that carries a utm_campaign) sitting in its description, and
-// caches them in post_analytics. Called from the daily cron route and from
-// the dev tools panel's manual "Sync now" button — same shape as purgeOldMedia.
+// GA4 reports "(not set)" for a dimension no hit ever populated — that's the
+// plain caption link (no utm_content set when it was tagged), matching the
+// "" default in post_analytics.content.
+function normalizeContent(raw: string | undefined): string {
+  return !raw || raw === "(not set)" ? "" : raw;
+}
+
+// Pulls day-by-day GA4 metrics, broken out by utm_content (so a link in the
+// caption, one dropped in a comment, and one on an Instagram Story — all the
+// same campaign — show up as separate rows), for every post+platform that
+// has a tagged link sitting in its description, and caches them in
+// post_analytics. Called from the daily cron route and from the dev tools
+// panel's manual "Sync now" button — same shape as purgeOldMedia.
 export async function syncGa4Analytics(supabase: SupabaseClient): Promise<Ga4SyncResult> {
   const errors: string[] = [];
 
@@ -75,8 +84,8 @@ export async function syncGa4Analytics(supabase: SupabaseClient): Promise<Ga4Syn
     return { postsChecked, campaignsQueried: campaigns.length, updated: 0, errors: [e instanceof Error ? e.message : "Couldn't get a Google access token"] };
   }
 
-  // keyed by "date|campaign"
-  const metricsByDateCampaign = new Map<string, DailyMetrics>();
+  // keyed by "date|campaign|content"
+  const metricsByKey = new Map<string, DailyMetrics>();
 
   for (const propertyId of propertyIds) {
     const reportRes = await fetch(`https://analyticsdata.googleapis.com/v1beta/properties/${propertyId}:runReport`, {
@@ -84,7 +93,7 @@ export async function syncGa4Analytics(supabase: SupabaseClient): Promise<Ga4Syn
       headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" },
       body: JSON.stringify({
         dateRanges: [{ startDate: "90daysAgo", endDate: "today" }],
-        dimensions: [{ name: "date" }, { name: "sessionCampaignName" }],
+        dimensions: [{ name: "date" }, { name: "sessionCampaignName" }, { name: "sessionManualAdContent" }],
         metrics: [
           { name: "sessions" },
           { name: "activeUsers" },
@@ -108,15 +117,16 @@ export async function syncGa4Analytics(supabase: SupabaseClient): Promise<Ga4Syn
     for (const row of report.rows ?? []) {
       const rawDate = row.dimensionValues?.[0]?.value;
       const campaign = row.dimensionValues?.[1]?.value;
+      const content = normalizeContent(row.dimensionValues?.[2]?.value);
       if (!rawDate || !campaign) continue;
       const date = formatGa4Date(rawDate);
       const [sessions, users, pageViews, engagedSessions, engagementRate, avgEngagementTime, bounceRate] = (row.metricValues ?? []).map(
         (m: { value: string }) => Number(m.value ?? 0),
       );
 
-      const key = `${date}|${campaign}`;
-      const existing = metricsByDateCampaign.get(key);
-      metricsByDateCampaign.set(key, {
+      const key = `${date}|${campaign}|${content}`;
+      const existing = metricsByKey.get(key);
+      metricsByKey.set(key, {
         sessions: (existing?.sessions ?? 0) + (sessions || 0),
         users: (existing?.users ?? 0) + (users || 0),
         pageViews: (existing?.pageViews ?? 0) + (pageViews || 0),
@@ -131,12 +141,13 @@ export async function syncGa4Analytics(supabase: SupabaseClient): Promise<Ga4Syn
   // A campaign GA4 never returned a single row for (no traffic recorded
   // yet, or still processing) would otherwise end up with zero rows in
   // post_analytics — the UI can't tell "not synced" from "synced, no
-  // clicks yet" apart. Write an explicit zero row (dated today) so it can.
-  const queriedCampaigns = new Set([...metricsByDateCampaign.keys()].map((key) => key.split("|")[1]));
+  // clicks yet" apart. Write an explicit zero row (dated today, no content
+  // tag) so it can.
+  const queriedCampaigns = new Set([...metricsByKey.keys()].map((key) => key.split("|")[1]));
   const today = new Date().toISOString().slice(0, 10);
   for (const campaign of campaigns) {
     if (queriedCampaigns.has(campaign)) continue;
-    metricsByDateCampaign.set(`${today}|${campaign}`, {
+    metricsByKey.set(`${today}|${campaign}|`, {
       sessions: 0,
       users: 0,
       pageViews: 0,
@@ -148,8 +159,8 @@ export async function syncGa4Analytics(supabase: SupabaseClient): Promise<Ga4Syn
   }
 
   let updated = 0;
-  for (const [key, metrics] of metricsByDateCampaign) {
-    const [date, campaign] = key.split("|");
+  for (const [key, metrics] of metricsByKey) {
+    const [date, campaign, content] = key.split("|");
     const targets = targetsByCampaign.get(campaign) ?? [];
     for (const { postId, platform } of targets) {
       const { error: upsertError } = await supabase.from("post_analytics").upsert(
@@ -157,6 +168,7 @@ export async function syncGa4Analytics(supabase: SupabaseClient): Promise<Ga4Syn
           post_id: postId,
           platform,
           date,
+          content,
           sessions: metrics.sessions,
           users: metrics.users,
           page_views: metrics.pageViews,
@@ -166,9 +178,9 @@ export async function syncGa4Analytics(supabase: SupabaseClient): Promise<Ga4Syn
           bounce_rate: metrics.bounceRate,
           updated_at: new Date().toISOString(),
         },
-        { onConflict: "post_id,platform,date" },
+        { onConflict: "post_id,platform,date,content" },
       );
-      if (upsertError) errors.push(`post ${postId}/${platform}/${date}: ${upsertError.message}`);
+      if (upsertError) errors.push(`post ${postId}/${platform}/${date}/${content}: ${upsertError.message}`);
       else updated++;
     }
   }
