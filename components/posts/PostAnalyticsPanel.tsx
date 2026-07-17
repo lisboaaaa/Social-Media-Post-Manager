@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { ChevronDown } from "lucide-react";
 import { useStore } from "@/lib/store";
+import { weightedAverage } from "@/lib/postAnalyticsMath";
 import { PLATFORM_LABELS, type Platform, type PostAnalytics } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -26,30 +27,15 @@ function weekStart(dateStr: string): string {
   return date.toISOString().slice(0, 10);
 }
 
-// Rate metrics can't just be averaged plainly across days — weight by
-// sessions so a 100%-engagement day with 1 session doesn't count the same
-// as a 50% day with 1,000.
-function weightedAverage(rows: PostAnalytics[], pick: (r: PostAnalytics) => number | null): number | null {
-  let weightedSum = 0;
-  let weight = 0;
-  for (const row of rows) {
-    const value = pick(row);
-    if (value === null || row.sessions === 0) continue;
-    weightedSum += value * row.sessions;
-    weight += row.sessions;
-  }
-  return weight === 0 ? null : weightedSum / weight;
-}
-
 function summarize(rows: PostAnalytics[], label: string): PeriodTotals {
   return {
     label,
     sessions: rows.reduce((sum, r) => sum + r.sessions, 0),
     users: rows.reduce((sum, r) => sum + r.users, 0),
     pageViews: rows.reduce((sum, r) => sum + r.pageViews, 0),
-    engagementRate: weightedAverage(rows, (r) => r.engagementRate),
-    avgEngagementTime: weightedAverage(rows, (r) => r.avgEngagementTime),
-    bounceRate: weightedAverage(rows, (r) => r.bounceRate),
+    engagementRate: weightedAverage(rows, (r) => r.sessions, (r) => r.engagementRate),
+    avgEngagementTime: weightedAverage(rows, (r) => r.sessions, (r) => r.avgEngagementTime),
+    bounceRate: weightedAverage(rows, (r) => r.sessions, (r) => r.bounceRate),
   };
 }
 

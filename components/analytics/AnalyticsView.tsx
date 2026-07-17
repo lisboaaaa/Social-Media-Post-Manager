@@ -5,18 +5,32 @@ import { ArrowUpDown } from "lucide-react";
 import { PlatformBadge } from "@/components/posts/PlatformBadge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useStore } from "@/lib/store";
-import type { PostAnalytics } from "@/lib/types";
+import { weightedAverage } from "@/lib/postAnalyticsMath";
+import { PLATFORM_LABELS, type PostAnalytics } from "@/lib/types";
+import { Sparkline } from "./Sparkline";
 import { TrendIndicator } from "./TrendIndicator";
 
 interface Row {
   postId: string;
   platform: PostAnalytics["platform"];
+  categoryIds: string[];
   title: string;
   sessions: number;
   users: number;
   pageViews: number;
+  engagementRate: number | null;
+  bounceRate: number | null;
   currentWeekSessions: number;
   previousWeekSessions: number;
+  dailySessions: number[];
+}
+
+interface GroupTotal {
+  key: string;
+  label: string;
+  sessions: number;
+  users: number;
+  pageViews: number;
 }
 
 const SORT_OPTIONS = [
@@ -32,8 +46,29 @@ function daysAgo(n: number): string {
   return d.toISOString().slice(0, 10);
 }
 
+function formatPercent(value: number | null): string {
+  return value === null ? "—" : `${(value * 100).toFixed(1)}%`;
+}
+
+function GroupTotalsCard({ title, groups }: { title: string; groups: GroupTotal[] }) {
+  if (groups.length === 0) return null;
+  return (
+    <div className="flex flex-1 flex-col gap-2 rounded-xl border p-3">
+      <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{title}</h3>
+      <div className="flex flex-col gap-1.5">
+        {groups.map((g) => (
+          <div key={g.key} className="flex items-center justify-between text-sm">
+            <span className="truncate">{g.label}</span>
+            <span className="shrink-0 font-medium tabular-nums">{g.sessions} sessions</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export function AnalyticsView() {
-  const { filteredPosts, filters, postAnalytics, openPreview } = useStore();
+  const { filteredPosts, filters, categories, postAnalytics, openPreview } = useStore();
   const [sortKey, setSortKey] = useState<SortKey>("sessions");
 
   const rows = useMemo<Row[]>(() => {
@@ -58,18 +93,23 @@ export function AnalyticsView() {
       const post = filteredPosts.find((p) => p.id === postId);
       if (!post) continue;
 
+      const sorted = [...entries].sort((a, b) => a.date.localeCompare(b.date));
       const currentWeek = entries.filter((e) => e.date >= weekStart);
       const previousWeek = entries.filter((e) => e.date >= twoWeeksStart && e.date < weekStart);
 
       result.push({
         postId,
         platform,
+        categoryIds: post.categoryIds,
         title: post.title || "Untitled post",
         sessions: entries.reduce((sum, e) => sum + e.sessions, 0),
         users: entries.reduce((sum, e) => sum + e.users, 0),
         pageViews: entries.reduce((sum, e) => sum + e.pageViews, 0),
+        engagementRate: weightedAverage(entries, (e) => e.sessions, (e) => e.engagementRate),
+        bounceRate: weightedAverage(entries, (e) => e.sessions, (e) => e.bounceRate),
         currentWeekSessions: currentWeek.reduce((sum, e) => sum + e.sessions, 0),
         previousWeekSessions: previousWeek.reduce((sum, e) => sum + e.sessions, 0),
+        dailySessions: sorted.map((e) => e.sessions),
       });
     }
 
@@ -84,6 +124,34 @@ export function AnalyticsView() {
     }),
     [rows],
   );
+
+  const byPlatform = useMemo<GroupTotal[]>(() => {
+    const map = new Map<string, GroupTotal>();
+    for (const row of rows) {
+      const existing = map.get(row.platform) ?? { key: row.platform, label: PLATFORM_LABELS[row.platform], sessions: 0, users: 0, pageViews: 0 };
+      existing.sessions += row.sessions;
+      existing.users += row.users;
+      existing.pageViews += row.pageViews;
+      map.set(row.platform, existing);
+    }
+    return [...map.values()].sort((a, b) => b.sessions - a.sessions);
+  }, [rows]);
+
+  const byCategory = useMemo<GroupTotal[]>(() => {
+    const map = new Map<string, GroupTotal>();
+    for (const row of rows) {
+      const ids = row.categoryIds.length > 0 ? row.categoryIds : ["__none__"];
+      for (const id of ids) {
+        const label = id === "__none__" ? "No category" : (categories.find((c) => c.id === id)?.name ?? "Unknown");
+        const existing = map.get(id) ?? { key: id, label, sessions: 0, users: 0, pageViews: 0 };
+        existing.sessions += row.sessions;
+        existing.users += row.users;
+        existing.pageViews += row.pageViews;
+        map.set(id, existing);
+      }
+    }
+    return [...map.values()].sort((a, b) => b.sessions - a.sessions);
+  }, [rows, categories]);
 
   if (rows.length === 0) {
     const hasAnyData = postAnalytics.length > 0;
@@ -100,7 +168,7 @@ export function AnalyticsView() {
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-4xl flex-col gap-4">
+    <div className="mx-auto flex w-full max-w-5xl flex-col gap-4">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold tracking-tight">Analytics</h1>
         <div className="flex items-center gap-2">
@@ -135,6 +203,11 @@ export function AnalyticsView() {
         </div>
       </div>
 
+      <div className="flex flex-col gap-3 sm:flex-row">
+        <GroupTotalsCard title="By platform" groups={byPlatform} />
+        <GroupTotalsCard title="By category" groups={byCategory} />
+      </div>
+
       <div className="overflow-x-auto rounded-xl border">
         <table className="w-full whitespace-nowrap text-left text-sm">
           <thead className="bg-muted/40 text-xs text-muted-foreground">
@@ -144,6 +217,9 @@ export function AnalyticsView() {
               <th className="px-3 py-2 font-normal">Sessions</th>
               <th className="px-3 py-2 font-normal">Users</th>
               <th className="px-3 py-2 font-normal">Page views</th>
+              <th className="px-3 py-2 font-normal">Engagement</th>
+              <th className="px-3 py-2 font-normal">Bounce</th>
+              <th className="px-3 py-2 font-normal">Trend</th>
               <th className="px-3 py-2 font-normal">This week</th>
             </tr>
           </thead>
@@ -154,13 +230,18 @@ export function AnalyticsView() {
                 onClick={() => openPreview(row.postId)}
                 className="cursor-pointer border-t hover:bg-muted/30"
               >
-                <td className="max-w-64 truncate px-3 py-2 font-medium">{row.title}</td>
+                <td className="max-w-56 truncate px-3 py-2 font-medium">{row.title}</td>
                 <td className="px-3 py-2">
                   <PlatformBadge platform={row.platform} />
                 </td>
                 <td className="px-3 py-2">{row.sessions}</td>
                 <td className="px-3 py-2">{row.users}</td>
                 <td className="px-3 py-2">{row.pageViews}</td>
+                <td className="px-3 py-2">{formatPercent(row.engagementRate)}</td>
+                <td className="px-3 py-2">{formatPercent(row.bounceRate)}</td>
+                <td className="px-3 py-2">
+                  <Sparkline values={row.dailySessions} />
+                </td>
                 <td className="px-3 py-2">
                   <TrendIndicator current={row.currentWeekSessions} previous={row.previousWeekSessions} />
                 </td>
