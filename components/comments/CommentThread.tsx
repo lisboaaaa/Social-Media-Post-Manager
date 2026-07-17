@@ -48,19 +48,16 @@ export function CommentThread({ postId }: { postId: string }) {
   };
 
   return (
-    <div className="flex flex-col gap-4">
-      <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-        Comments {threadComments.length > 0 && `(${threadComments.length})`}
-      </h3>
-      <div className="flex flex-col gap-3">
+    <div className="flex flex-col gap-3">
+      <div className="flex flex-col gap-2">
         {groups.map((group) => (
-          <div key={group.label} className="flex flex-col gap-3">
+          <div key={group.label} className="flex flex-col gap-2">
             <DateSeparator label={group.label} />
             {group.items.map((comment) => {
               const replies = repliesByRoot.get(comment.id) ?? [];
               const isExpanded = expandedIds.has(comment.id);
               return (
-                <div key={comment.id} className="flex flex-col gap-2">
+                <div key={comment.id} className="flex flex-col gap-1.5">
                   <CommentItem comment={comment} onReply={setReplyingTo} />
                   {replies.length > 0 && (
                     <button

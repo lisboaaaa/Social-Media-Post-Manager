@@ -42,11 +42,11 @@ export function CommentItem({
   return (
     <div
       className={cn(
-        "group flex gap-2.5 rounded-lg p-1.5",
+        "group flex gap-2 rounded-lg px-1.5 py-1",
         isOwn && "bg-primary/[0.04] ring-1 ring-primary/10",
       )}
     >
-      <Avatar className="h-7 w-7 shrink-0">
+      <Avatar className="h-6 w-6 shrink-0">
         <AvatarFallback className="text-[10px]">{author?.initials ?? "?"}</AvatarFallback>
       </Avatar>
       <div className="min-w-0 flex-1">
