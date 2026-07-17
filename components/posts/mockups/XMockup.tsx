@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 import { ImageCarousel } from "./ImageCarousel";
 import { ImageGrid } from "./ImageGrid";
 import { Lightbox } from "./Lightbox";
-import { renderLinkedText } from "./linkify";
+import { renderLinkedCaption } from "./linkify";
 import type { Device } from "./device";
 
 export function XMockup({
@@ -22,6 +22,7 @@ export function XMockup({
   const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
   const desktop = device === "desktop";
   const video = post.images.find((img) => img.mediaType === "video");
+  const { node } = renderLinkedCaption(description, null);
 
   return (
     <div className={cn("relative mx-auto w-full overflow-hidden rounded-lg border bg-white", desktop ? "max-w-xl" : "max-w-sm")}>
@@ -43,7 +44,7 @@ export function XMockup({
         </div>
 
         <p className="mt-1.5 whitespace-pre-wrap break-words pb-2.5 text-[14px] leading-snug">
-          {description ? renderLinkedText(description) : "No text yet."}
+          {description ? node : "No text yet."}
         </p>
       </div>
 
