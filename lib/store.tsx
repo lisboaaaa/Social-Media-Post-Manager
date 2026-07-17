@@ -312,18 +312,22 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         const incoming = mapPostHistoryRow(payload.new as Parameters<typeof mapPostHistoryRow>[0]);
         setPostHistory((prev) => (prev.some((h) => h.id === incoming.id) ? prev : [...prev, incoming]));
       })
-      // No single id column here (post_id+platform is the primary key), and
-      // the sync job upserts — match on both to replace or append.
+      // No single id column here (post_id+platform+date is the primary
+      // key), and the sync job upserts — match on all three to replace or append.
       .on("postgres_changes", { event: "*", schema: "public", table: "post_analytics" }, (payload) => {
+        const sameRow = (a: { postId: string; platform: Platform; date: string }, b: { post_id: string; platform: Platform; date: string }) =>
+          a.postId === b.post_id && a.platform === b.platform && a.date === b.date;
         if (payload.eventType === "DELETE") {
-          const removed = payload.old as { post_id: string; platform: Platform };
-          setPostAnalytics((prev) => prev.filter((a) => !(a.postId === removed.post_id && a.platform === removed.platform)));
+          const removed = payload.old as { post_id: string; platform: Platform; date: string };
+          setPostAnalytics((prev) => prev.filter((a) => !sameRow(a, removed)));
           return;
         }
         const incoming = mapPostAnalyticsRow(payload.new as Parameters<typeof mapPostAnalyticsRow>[0]);
         setPostAnalytics((prev) => {
-          const exists = prev.some((a) => a.postId === incoming.postId && a.platform === incoming.platform);
-          return exists ? prev.map((a) => (a.postId === incoming.postId && a.platform === incoming.platform ? incoming : a)) : [...prev, incoming];
+          const exists = prev.some((a) => sameRow(a, { post_id: incoming.postId, platform: incoming.platform, date: incoming.date }));
+          return exists
+            ? prev.map((a) => (sameRow(a, { post_id: incoming.postId, platform: incoming.platform, date: incoming.date }) ? incoming : a))
+            : [...prev, incoming];
         });
       })
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "suggestions" }, (payload) => {

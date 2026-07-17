@@ -93,12 +93,19 @@ export interface PostHistoryEntry {
   createdAt: string; // ISO datetime
 }
 
-// A cached GA4 session count for one post+platform — see supabase/post-analytics.sql
+// A cached GA4 metrics row for one post+platform+day — see supabase/post-analytics-daily.sql
 export interface PostAnalytics {
   postId: string;
   platform: Platform;
+  date: string; // ISO date (yyyy-mm-dd)
   sessions: number;
-  updatedAt: string; // ISO datetime — when this number was last synced from GA4
+  users: number;
+  pageViews: number;
+  engagedSessions: number;
+  engagementRate: number | null; // 0-1 fraction, as GA4 returns it
+  avgEngagementTime: number | null; // seconds
+  bounceRate: number | null; // 0-1 fraction
+  updatedAt: string; // ISO datetime — when this row was last synced from GA4
 }
 
 export type SuggestionStatus = "new" | "accepted" | "dismissed";

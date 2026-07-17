@@ -15,6 +15,7 @@ import { useStore } from "@/lib/store";
 import { getShareTemplate, renderShareTemplate } from "@/lib/shareTemplate";
 import { CommentThread } from "@/components/comments/CommentThread";
 import { DeleteReasonDialog } from "./DeleteReasonDialog";
+import { PostAnalyticsPanel } from "./PostAnalyticsPanel";
 import { PostHistoryList } from "./PostHistoryList";
 import { ShareDialog } from "./ShareDialog";
 import { PlatformBadge, PlatformBadgeGroup } from "./PlatformBadge";
@@ -22,7 +23,7 @@ import { PlatformMockup } from "./mockups/PlatformMockup";
 
 export function PostPreviewModal() {
   const router = useRouter();
-  const { previewPostId, openPreview, closePreview, getPostById, addPost, deletePost, profiles, categories, stages, postHistory, postAnalytics } = useStore();
+  const { previewPostId, openPreview, closePreview, getPostById, addPost, deletePost, profiles, categories, stages, postHistory } = useStore();
   const post = previewPostId ? getPostById(previewPostId) : undefined;
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
@@ -175,30 +176,24 @@ export function PostPreviewModal() {
                 <div className="mt-1 flex flex-col gap-1">
                   {post.platforms
                     .filter((p) => post.publishedUrls[p])
-                    .map((p) => {
-                      const sessions = postAnalytics.find((a) => a.postId === post.id && a.platform === p)?.sessions;
-                      return (
-                        <div key={p} className="flex min-w-0 items-center gap-1.5">
-                          {post.platforms.length > 1 && <PlatformBadge platform={p} className="shrink-0" />}
-                          <a
-                            href={post.publishedUrls[p]!}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="truncate text-primary underline underline-offset-2"
-                          >
-                            {post.publishedUrls[p]}
-                          </a>
-                          {sessions !== undefined && (
-                            <span className="shrink-0 text-xs text-muted-foreground" title="Sessions from GA4, last 90 days">
-                              · {sessions} session{sessions === 1 ? "" : "s"}
-                            </span>
-                          )}
-                        </div>
-                      );
-                    })}
+                    .map((p) => (
+                      <div key={p} className="flex min-w-0 items-center gap-1.5">
+                        {post.platforms.length > 1 && <PlatformBadge platform={p} className="shrink-0" />}
+                        <a
+                          href={post.publishedUrls[p]!}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="truncate text-primary underline underline-offset-2"
+                        >
+                          {post.publishedUrls[p]}
+                        </a>
+                      </div>
+                    ))}
                 </div>
               </div>
             )}
+
+            <PostAnalyticsPanel postId={post.id} platforms={post.platforms} />
 
             <Separator />
 

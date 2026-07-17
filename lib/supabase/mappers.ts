@@ -74,7 +74,14 @@ interface PostHistoryRow {
 interface PostAnalyticsRow {
   post_id: string;
   platform: Platform;
+  date: string;
   sessions: number;
+  users: number;
+  page_views: number;
+  engaged_sessions: number;
+  engagement_rate: number | null;
+  avg_engagement_time: number | null;
+  bounce_rate: number | null;
   updated_at: string;
 }
 
@@ -183,7 +190,19 @@ export function mapPostHistoryRow(row: PostHistoryRow): PostHistoryEntry {
 }
 
 export function mapPostAnalyticsRow(row: PostAnalyticsRow): PostAnalytics {
-  return { postId: row.post_id, platform: row.platform, sessions: row.sessions, updatedAt: row.updated_at };
+  return {
+    postId: row.post_id,
+    platform: row.platform,
+    date: row.date,
+    sessions: row.sessions,
+    users: row.users,
+    pageViews: row.page_views,
+    engagedSessions: row.engaged_sessions,
+    engagementRate: row.engagement_rate,
+    avgEngagementTime: row.avg_engagement_time,
+    bounceRate: row.bounce_rate,
+    updatedAt: row.updated_at,
+  };
 }
 
 export function mapPostRow(row: PostRow): Post {
