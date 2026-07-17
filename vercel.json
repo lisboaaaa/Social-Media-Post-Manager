@@ -3,6 +3,10 @@
     {
       "path": "/api/cron/purge-old-media",
       "schedule": "0 3 * * *"
+    },
+    {
+      "path": "/api/cron/sync-ga4-analytics",
+      "schedule": "0 4 * * *"
     }
   ]
 }

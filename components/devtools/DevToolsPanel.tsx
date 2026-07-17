@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import {
   ChevronDown,
   AlertTriangle,
+  BarChart2,
   ExternalLink,
   Compass,
   Download,
@@ -77,6 +78,8 @@ export function DevToolsPanel({ open, onOpenChange }: DevToolsPanelProps) {
   const [loadingStats, setLoadingStats] = useState(false);
   const [purging, setPurging] = useState(false);
   const [purgeResult, setPurgeResult] = useState<string | null>(null);
+  const [syncingGa4, setSyncingGa4] = useState(false);
+  const [ga4Result, setGa4Result] = useState<string | null>(null);
   const [shareTemplate, setShareTemplate] = useState(DEFAULT_SHARE_TEMPLATE);
 
   useEffect(() => {
@@ -114,6 +117,21 @@ export function DevToolsPanel({ open, onOpenChange }: DevToolsPanelProps) {
     }
     setPurgeResult(`Checked ${json.postsChecked} posts, purged ${json.purgedImages} image(s)${json.errors.length ? `, ${json.errors.length} error(s)` : ""}.`);
     loadStats();
+  };
+
+  const handleSyncGa4 = async () => {
+    setSyncingGa4(true);
+    setGa4Result(null);
+    const res = await fetch("/api/dev-tools/sync-ga4-analytics", { method: "POST" });
+    const json = await res.json();
+    setSyncingGa4(false);
+    if (!res.ok) {
+      setGa4Result("Failed — check you're still signed in as marketing.");
+      return;
+    }
+    setGa4Result(
+      `Checked ${json.postsChecked} posts, found ${json.campaignsQueried} tagged campaign(s), updated ${json.updated}${json.errors.length ? `, ${json.errors.length} error(s): ${json.errors[0]}` : ""}.`,
+    );
   };
 
   const handleCreateTestPost = () => {
@@ -284,6 +302,17 @@ export function DevToolsPanel({ open, onOpenChange }: DevToolsPanelProps) {
               </Button>
               {purgeResult && <p className="mt-2 text-xs text-muted-foreground">{purgeResult}</p>}
             </div>
+          </Section>
+
+          <Section title="Google Analytics sync" icon={BarChart2}>
+            <p className="text-xs text-muted-foreground">
+              Pulls session counts from GA4 for every tagged link found in a post&apos;s description, and caches them. Runs
+              automatically once a day — this button is just for testing without waiting.
+            </p>
+            <Button type="button" size="sm" variant="outline" onClick={handleSyncGa4} disabled={syncingGa4}>
+              {syncingGa4 ? "Syncing…" : "Sync GA4 analytics now"}
+            </Button>
+            {ga4Result && <p className="mt-2 text-xs text-muted-foreground">{ga4Result}</p>}
           </Section>
         </div>
       </SheetContent>

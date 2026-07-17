@@ -4,10 +4,10 @@ import { createContext, useContext, useEffect, useMemo, useState, type ReactNode
 import { toast } from "sonner";
 import { createClient } from "./supabase/client";
 import { mentionsProfile } from "./mentions";
-import { mapCategoryRow, mapCommentReactionRow, mapCommentRow, mapPostHistoryRow, mapPostRow, mapProfileRow, mapStageRow, mapSuggestionRow, POST_SELECT } from "./supabase/mappers";
+import { mapCategoryRow, mapCommentReactionRow, mapCommentRow, mapPostAnalyticsRow, mapPostHistoryRow, mapPostRow, mapProfileRow, mapStageRow, mapSuggestionRow, POST_SELECT } from "./supabase/mappers";
 import { storagePathFromPublicUrl } from "./supabase/storagePath";
 import { summarizePostChanges } from "./postHistory";
-import type { Category, Comment, CommentReaction, Platform, Post, PostHistoryEntry, PostStatus, Profile, Stage, Suggestion } from "./types";
+import type { Category, Comment, CommentReaction, Platform, Post, PostAnalytics, PostHistoryEntry, PostStatus, Profile, Stage, Suggestion } from "./types";
 
 // Mirrors the SQL side (handle_new_user() in auth-setup.sql) — company
 // emails are firstname.lastname@daredata.engineering. Used as a client-side
@@ -60,6 +60,7 @@ interface StoreValue {
   comments: Comment[];
   commentReactions: CommentReaction[];
   postHistory: PostHistoryEntry[];
+  postAnalytics: PostAnalytics[];
   suggestions: Suggestion[];
   currentUser: Profile;
   filters: Filters;
@@ -110,6 +111,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [comments, setComments] = useState<Comment[]>([]);
   const [commentReactions, setCommentReactions] = useState<CommentReaction[]>([]);
   const [postHistory, setPostHistory] = useState<PostHistoryEntry[]>([]);
+  const [postAnalytics, setPostAnalytics] = useState<PostAnalytics[]>([]);
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [filters, setFiltersState] = useState<Filters>(EMPTY_FILTERS);
   const [previewPostId, setPreviewPostId] = useState<string | null>(null);
@@ -133,7 +135,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     let cancelled = false;
 
     async function load() {
-      const [userRes, profilesRes, categoriesRes, stagesRes, postsRes, commentsRes, reactionsRes, historyRes, suggestionsRes] = await Promise.all([
+      const [userRes, profilesRes, categoriesRes, stagesRes, postsRes, commentsRes, reactionsRes, historyRes, analyticsRes, suggestionsRes] = await Promise.all([
         supabase.auth.getUser(),
         supabase.from("profiles").select("*"),
         supabase.from("categories").select("*"),
@@ -142,6 +144,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         supabase.from("comments").select("*").order("created_at", { ascending: true }),
         supabase.from("comment_reactions").select("*"),
         supabase.from("post_history").select("*").order("created_at", { ascending: true }),
+        supabase.from("post_analytics").select("*"),
         supabase.from("suggestions").select("*").order("created_at", { ascending: false }),
       ]);
 
@@ -198,6 +201,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       setComments((commentsRes.data ?? []).map(mapCommentRow));
       setCommentReactions((reactionsRes.data ?? []).map(mapCommentReactionRow));
       setPostHistory((historyRes.data ?? []).map(mapPostHistoryRow));
+      setPostAnalytics((analyticsRes.data ?? []).map(mapPostAnalyticsRow));
       setSuggestions((suggestionsRes.data ?? []).map(mapSuggestionRow));
       setLoading(false);
     }
@@ -307,6 +311,20 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "post_history" }, (payload) => {
         const incoming = mapPostHistoryRow(payload.new as Parameters<typeof mapPostHistoryRow>[0]);
         setPostHistory((prev) => (prev.some((h) => h.id === incoming.id) ? prev : [...prev, incoming]));
+      })
+      // No single id column here (post_id+platform is the primary key), and
+      // the sync job upserts — match on both to replace or append.
+      .on("postgres_changes", { event: "*", schema: "public", table: "post_analytics" }, (payload) => {
+        if (payload.eventType === "DELETE") {
+          const removed = payload.old as { post_id: string; platform: Platform };
+          setPostAnalytics((prev) => prev.filter((a) => !(a.postId === removed.post_id && a.platform === removed.platform)));
+          return;
+        }
+        const incoming = mapPostAnalyticsRow(payload.new as Parameters<typeof mapPostAnalyticsRow>[0]);
+        setPostAnalytics((prev) => {
+          const exists = prev.some((a) => a.postId === incoming.postId && a.platform === incoming.platform);
+          return exists ? prev.map((a) => (a.postId === incoming.postId && a.platform === incoming.platform ? incoming : a)) : [...prev, incoming];
+        });
       })
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "suggestions" }, (payload) => {
         const incoming = mapSuggestionRow(payload.new as Parameters<typeof mapSuggestionRow>[0]);
@@ -894,6 +912,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     comments,
     commentReactions,
     postHistory,
+    postAnalytics,
     suggestions,
     currentUser: currentUser!,
     filters,

@@ -93,6 +93,14 @@ export interface PostHistoryEntry {
   createdAt: string; // ISO datetime
 }
 
+// A cached GA4 session count for one post+platform — see supabase/post-analytics.sql
+export interface PostAnalytics {
+  postId: string;
+  platform: Platform;
+  sessions: number;
+  updatedAt: string; // ISO datetime — when this number was last synced from GA4
+}
+
 export type SuggestionStatus = "new" | "accepted" | "dismissed";
 
 export interface Suggestion {
