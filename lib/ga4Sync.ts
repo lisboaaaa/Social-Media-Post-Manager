@@ -46,8 +46,11 @@ export async function syncGa4Analytics(supabase: SupabaseClient): Promise<Ga4Syn
   const postsChecked = posts?.length ?? 0;
   if (campaigns.length === 0) return { postsChecked, campaignsQueried: 0, updated: 0, errors };
 
-  const propertyId = process.env.GA4_PROPERTY_ID;
-  if (!propertyId) return { postsChecked, campaignsQueried: campaigns.length, updated: 0, errors: ["GA4_PROPERTY_ID isn't set"] };
+  // Posts link out to more than one site (e.g. daredata.ai and GenOS's own
+  // site), each tracked as its own GA4 property — a campaign could show up
+  // in either, so every property gets queried and results are summed.
+  const propertyIds = (process.env.GA4_PROPERTY_IDS ?? "").split(",").map((id) => id.trim()).filter(Boolean);
+  if (propertyIds.length === 0) return { postsChecked, campaignsQueried: campaigns.length, updated: 0, errors: ["GA4_PROPERTY_IDS isn't set"] };
 
   let accessToken: string;
   try {
@@ -56,29 +59,31 @@ export async function syncGa4Analytics(supabase: SupabaseClient): Promise<Ga4Syn
     return { postsChecked, campaignsQueried: campaigns.length, updated: 0, errors: [e instanceof Error ? e.message : "Couldn't get a Google access token"] };
   }
 
-  const reportRes = await fetch(`https://analyticsdata.googleapis.com/v1beta/properties/${propertyId}:runReport`, {
-    method: "POST",
-    headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" },
-    body: JSON.stringify({
-      dateRanges: [{ startDate: "90daysAgo", endDate: "today" }],
-      dimensions: [{ name: "sessionCampaignName" }],
-      metrics: [{ name: "sessions" }],
-      dimensionFilter: { filter: { fieldName: "sessionCampaignName", inListFilter: { values: campaigns } } },
-      limit: campaigns.length,
-    }),
-  });
-
-  if (!reportRes.ok) {
-    errors.push(`GA4 report request failed: ${await reportRes.text()}`);
-    return { postsChecked, campaignsQueried: campaigns.length, updated: 0, errors };
-  }
-
-  const report = await reportRes.json();
   const sessionsByCampaign = new Map<string, number>();
-  for (const row of report.rows ?? []) {
-    const campaign = row.dimensionValues?.[0]?.value;
-    const sessions = Number(row.metricValues?.[0]?.value ?? 0);
-    if (campaign) sessionsByCampaign.set(campaign, sessions);
+  for (const propertyId of propertyIds) {
+    const reportRes = await fetch(`https://analyticsdata.googleapis.com/v1beta/properties/${propertyId}:runReport`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        dateRanges: [{ startDate: "90daysAgo", endDate: "today" }],
+        dimensions: [{ name: "sessionCampaignName" }],
+        metrics: [{ name: "sessions" }],
+        dimensionFilter: { filter: { fieldName: "sessionCampaignName", inListFilter: { values: campaigns } } },
+        limit: campaigns.length,
+      }),
+    });
+
+    if (!reportRes.ok) {
+      errors.push(`GA4 report request failed for property ${propertyId}: ${await reportRes.text()}`);
+      continue;
+    }
+
+    const report = await reportRes.json();
+    for (const row of report.rows ?? []) {
+      const campaign = row.dimensionValues?.[0]?.value;
+      const sessions = Number(row.metricValues?.[0]?.value ?? 0);
+      if (campaign) sessionsByCampaign.set(campaign, (sessionsByCampaign.get(campaign) ?? 0) + sessions);
+    }
   }
 
   let updated = 0;
