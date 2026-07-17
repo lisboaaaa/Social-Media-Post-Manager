@@ -33,12 +33,16 @@ function daysAgo(n: number): string {
 }
 
 export function AnalyticsView() {
-  const { posts, postAnalytics, openPreview } = useStore();
+  const { filteredPosts, filters, postAnalytics, openPreview } = useStore();
   const [sortKey, setSortKey] = useState<SortKey>("sessions");
 
   const rows = useMemo<Row[]>(() => {
+    const eligiblePostIds = new Set(filteredPosts.map((p) => p.id));
+
     const byPostPlatform = new Map<string, PostAnalytics[]>();
     for (const a of postAnalytics) {
+      if (!eligiblePostIds.has(a.postId)) continue;
+      if (filters.platform !== "all" && a.platform !== filters.platform) continue;
       const key = `${a.postId}|${a.platform}`;
       const list = byPostPlatform.get(key) ?? [];
       list.push(a);
@@ -51,7 +55,7 @@ export function AnalyticsView() {
     const result: Row[] = [];
     for (const [key, entries] of byPostPlatform) {
       const [postId, platform] = key.split("|") as [string, PostAnalytics["platform"]];
-      const post = posts.find((p) => p.id === postId);
+      const post = filteredPosts.find((p) => p.id === postId);
       if (!post) continue;
 
       const currentWeek = entries.filter((e) => e.date >= weekStart);
@@ -70,7 +74,7 @@ export function AnalyticsView() {
     }
 
     return result.sort((a, b) => b[sortKey] - a[sortKey]);
-  }, [posts, postAnalytics, sortKey]);
+  }, [filteredPosts, filters.platform, postAnalytics, sortKey]);
 
   const totals = useMemo(
     () => ({
@@ -82,12 +86,14 @@ export function AnalyticsView() {
   );
 
   if (rows.length === 0) {
+    const hasAnyData = postAnalytics.length > 0;
     return (
       <div className="mx-auto flex max-w-2xl flex-col items-center gap-2 py-16 text-center">
-        <h2 className="text-lg font-semibold">No analytics yet</h2>
+        <h2 className="text-lg font-semibold">{hasAnyData ? "No results for these filters" : "No analytics yet"}</h2>
         <p className="text-sm text-muted-foreground">
-          Tag a link in a post&apos;s description (the &quot;Transform with UTM tags&quot; hint) and run the GA4 sync from Dev Tools —
-          numbers show up here once GA4 has data for it.
+          {hasAnyData
+            ? "There's analytics data, just none for the currently selected platform/category/date filters — try clearing them."
+            : 'Tag a link in a post\'s description (the "Transform with UTM tags" hint) and run the GA4 sync from Dev Tools — numbers show up here once GA4 has data for it.'}
         </p>
       </div>
     );
