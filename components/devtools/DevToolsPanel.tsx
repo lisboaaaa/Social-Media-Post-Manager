@@ -305,14 +305,11 @@ export function DevToolsPanel({ open, onOpenChange }: DevToolsPanelProps) {
           </Section>
 
           <Section title="Google Analytics sync" icon={BarChart2}>
-            <p className="text-xs text-muted-foreground">
-              Pulls session counts from GA4 for every tagged link found in a post&apos;s description, and caches them. Runs
-              automatically once a day — this button is just for testing without waiting.
-            </p>
-            <Button type="button" size="sm" variant="outline" onClick={handleSyncGa4} disabled={syncingGa4}>
+            <p className="text-xs text-muted-foreground">Runs automatically once a day — this is just for testing without waiting.</p>
+            {ga4Result && <p className="text-xs text-muted-foreground">{ga4Result}</p>}
+            <Button type="button" size="sm" onClick={handleSyncGa4} disabled={syncingGa4} className="bg-emerald-600 text-white hover:bg-emerald-700">
               {syncingGa4 ? "Syncing…" : "Sync GA4 analytics now"}
             </Button>
-            {ga4Result && <p className="mt-2 text-xs text-muted-foreground">{ga4Result}</p>}
           </Section>
         </div>
       </SheetContent>
