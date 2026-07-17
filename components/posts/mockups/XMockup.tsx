@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import { ImageCarousel } from "./ImageCarousel";
 import { ImageGrid } from "./ImageGrid";
 import { Lightbox } from "./Lightbox";
+import { renderLinkedText } from "./linkify";
 import type { Device } from "./device";
 
 export function XMockup({
@@ -42,7 +43,7 @@ export function XMockup({
         </div>
 
         <p className="mt-1.5 whitespace-pre-wrap break-words pb-2.5 text-[14px] leading-snug">
-          {description || "No text yet."}
+          {description ? renderLinkedText(description) : "No text yet."}
         </p>
       </div>
 

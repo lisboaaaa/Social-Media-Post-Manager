@@ -8,6 +8,7 @@ import { CAPTION_PREVIEW_LIMIT, truncateCaption } from "./captionPreview";
 import { ImageCarousel } from "./ImageCarousel";
 import { ImageGrid } from "./ImageGrid";
 import { Lightbox } from "./Lightbox";
+import { renderLinkedText } from "./linkify";
 import type { Device } from "./device";
 
 export function LinkedInMockup({
@@ -45,7 +46,7 @@ export function LinkedInMockup({
       </div>
 
       <p className="whitespace-pre-wrap break-words px-3 py-2.5 text-[13px] leading-snug">
-        {shown || "No text yet."}
+        {shown ? renderLinkedText(shown) : "No text yet."}
         {truncated && <span className="text-muted-foreground">…see more</span>}
       </p>
 
