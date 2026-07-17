@@ -128,6 +128,25 @@ export async function syncGa4Analytics(supabase: SupabaseClient): Promise<Ga4Syn
     }
   }
 
+  // A campaign GA4 never returned a single row for (no traffic recorded
+  // yet, or still processing) would otherwise end up with zero rows in
+  // post_analytics — the UI can't tell "not synced" from "synced, no
+  // clicks yet" apart. Write an explicit zero row (dated today) so it can.
+  const queriedCampaigns = new Set([...metricsByDateCampaign.keys()].map((key) => key.split("|")[1]));
+  const today = new Date().toISOString().slice(0, 10);
+  for (const campaign of campaigns) {
+    if (queriedCampaigns.has(campaign)) continue;
+    metricsByDateCampaign.set(`${today}|${campaign}`, {
+      sessions: 0,
+      users: 0,
+      pageViews: 0,
+      engagedSessions: 0,
+      engagementRate: null,
+      avgEngagementTime: null,
+      bounceRate: null,
+    });
+  }
+
   let updated = 0;
   for (const [key, metrics] of metricsByDateCampaign) {
     const [date, campaign] = key.split("|");
