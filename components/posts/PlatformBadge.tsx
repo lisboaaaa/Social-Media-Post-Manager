@@ -15,6 +15,14 @@ export const PLATFORM_BG_CLASSES: Record<Platform, string> = {
   x: "bg-neutral-200",
 };
 
+// The saturated brand hue itself (matches PLATFORM_STYLES' text color above)
+// — for a chart mark, which needs a solid fill rather than the pale badge tint.
+export const PLATFORM_ACCENT_HEX: Record<Platform, string> = {
+  linkedin: "#0A66C2",
+  instagram: "#C2185B",
+  x: "#171717",
+};
+
 export function PlatformBadge({ platform, className }: { platform: Platform; className?: string }) {
   return (
     <span

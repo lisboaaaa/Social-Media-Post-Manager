@@ -2,12 +2,14 @@
 
 import { useMemo, useState } from "react";
 import { ArrowUpDown } from "lucide-react";
-import { PlatformBadge } from "@/components/posts/PlatformBadge";
+import { PlatformBadge, PLATFORM_ACCENT_HEX } from "@/components/posts/PlatformBadge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useStore } from "@/lib/store";
 import { weightedAverage } from "@/lib/postAnalyticsMath";
 import { PLATFORM_LABELS, type PostAnalytics } from "@/lib/types";
+import { BarList } from "./BarList";
 import { Sparkline } from "./Sparkline";
+import { TrendChart } from "./TrendChart";
 import { TrendIndicator } from "./TrendIndicator";
 
 interface Row {
@@ -31,6 +33,7 @@ interface GroupTotal {
   sessions: number;
   users: number;
   pageViews: number;
+  color?: string;
 }
 
 const SORT_OPTIONS = [
@@ -55,14 +58,7 @@ function GroupTotalsCard({ title, groups }: { title: string; groups: GroupTotal[
   return (
     <div className="flex flex-1 flex-col gap-2 rounded-xl border p-3">
       <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{title}</h3>
-      <div className="flex flex-col gap-1.5">
-        {groups.map((g) => (
-          <div key={g.key} className="flex items-center justify-between text-sm">
-            <span className="truncate">{g.label}</span>
-            <span className="shrink-0 font-medium tabular-nums">{g.sessions} sessions</span>
-          </div>
-        ))}
-      </div>
+      <BarList items={groups.map((g) => ({ key: g.key, label: g.label, value: g.sessions, color: g.color }))} />
     </div>
   );
 }
@@ -128,7 +124,14 @@ export function AnalyticsView() {
   const byPlatform = useMemo<GroupTotal[]>(() => {
     const map = new Map<string, GroupTotal>();
     for (const row of rows) {
-      const existing = map.get(row.platform) ?? { key: row.platform, label: PLATFORM_LABELS[row.platform], sessions: 0, users: 0, pageViews: 0 };
+      const existing = map.get(row.platform) ?? {
+        key: row.platform,
+        label: PLATFORM_LABELS[row.platform],
+        sessions: 0,
+        users: 0,
+        pageViews: 0,
+        color: PLATFORM_ACCENT_HEX[row.platform],
+      };
       existing.sessions += row.sessions;
       existing.users += row.users;
       existing.pageViews += row.pageViews;
@@ -136,6 +139,17 @@ export function AnalyticsView() {
     }
     return [...map.values()].sort((a, b) => b.sessions - a.sessions);
   }, [rows]);
+
+  const dailyTotals = useMemo(() => {
+    const eligiblePostIds = new Set(filteredPosts.map((p) => p.id));
+    const byDate = new Map<string, number>();
+    for (const a of postAnalytics) {
+      if (!eligiblePostIds.has(a.postId)) continue;
+      if (filters.platform !== "all" && a.platform !== filters.platform) continue;
+      byDate.set(a.date, (byDate.get(a.date) ?? 0) + a.sessions);
+    }
+    return [...byDate.entries()].sort((a, b) => a[0].localeCompare(b[0])).map(([date, value]) => ({ date, value }));
+  }, [filteredPosts, filters.platform, postAnalytics]);
 
   const byCategory = useMemo<GroupTotal[]>(() => {
     const map = new Map<string, GroupTotal>();
@@ -201,6 +215,10 @@ export function AnalyticsView() {
           <div className="text-xl font-semibold">{totals.pageViews}</div>
           <div className="text-xs text-muted-foreground">Page views</div>
         </div>
+      </div>
+
+      <div className="rounded-xl border p-3">
+        <TrendChart points={dailyTotals} label="Sessions over time" />
       </div>
 
       <div className="flex flex-col gap-3 sm:flex-row">
