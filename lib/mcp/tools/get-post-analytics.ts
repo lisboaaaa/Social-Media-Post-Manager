@@ -18,9 +18,11 @@ function summarize(rows: PostAnalytics[]) {
   return {
     sessions: rows.reduce((sum, r) => sum + r.sessions, 0),
     users: rows.reduce((sum, r) => sum + r.users, 0),
+    newUsers: rows.reduce((sum, r) => sum + r.newUsers, 0),
     pageViews: rows.reduce((sum, r) => sum + r.pageViews, 0),
     engagementRate: weightedAverage(rows, (r) => r.sessions, (r) => r.engagementRate),
     bounceRate: weightedAverage(rows, (r) => r.sessions, (r) => r.bounceRate),
+    conversions: rows.reduce((sum, r) => sum + r.conversions, 0),
   };
 }
 

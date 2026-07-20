@@ -18,11 +18,13 @@ interface PostPlatformRow {
 interface DailyMetrics {
   sessions: number;
   users: number;
+  newUsers: number;
   pageViews: number;
   engagedSessions: number;
   engagementRate: number | null;
   avgEngagementTime: number | null;
   bounceRate: number | null;
+  conversions: number;
 }
 
 // GA4 dates come back as "20260717" (yyyymmdd) — turn that into "2026-07-17"
@@ -97,11 +99,13 @@ export async function syncGa4Analytics(supabase: SupabaseClient): Promise<Ga4Syn
         metrics: [
           { name: "sessions" },
           { name: "activeUsers" },
+          { name: "newUsers" },
           { name: "screenPageViews" },
           { name: "engagedSessions" },
           { name: "engagementRate" },
           { name: "averageSessionDuration" },
           { name: "bounceRate" },
+          { name: "conversions" },
         ],
         dimensionFilter: { filter: { fieldName: "sessionCampaignName", inListFilter: { values: campaigns } } },
         limit: 100000,
@@ -120,20 +124,22 @@ export async function syncGa4Analytics(supabase: SupabaseClient): Promise<Ga4Syn
       const content = normalizeContent(row.dimensionValues?.[2]?.value);
       if (!rawDate || !campaign) continue;
       const date = formatGa4Date(rawDate);
-      const [sessions, users, pageViews, engagedSessions, engagementRate, avgEngagementTime, bounceRate] = (row.metricValues ?? []).map(
-        (m: { value: string }) => Number(m.value ?? 0),
-      );
+      const [sessions, users, newUsers, pageViews, engagedSessions, engagementRate, avgEngagementTime, bounceRate, conversions] = (
+        row.metricValues ?? []
+      ).map((m: { value: string }) => Number(m.value ?? 0));
 
       const key = `${date}|${campaign}|${content}`;
       const existing = metricsByKey.get(key);
       metricsByKey.set(key, {
         sessions: (existing?.sessions ?? 0) + (sessions || 0),
         users: (existing?.users ?? 0) + (users || 0),
+        newUsers: (existing?.newUsers ?? 0) + (newUsers || 0),
         pageViews: (existing?.pageViews ?? 0) + (pageViews || 0),
         engagedSessions: (existing?.engagedSessions ?? 0) + (engagedSessions || 0),
         engagementRate: engagementRate ?? null,
         avgEngagementTime: avgEngagementTime ?? null,
         bounceRate: bounceRate ?? null,
+        conversions: (existing?.conversions ?? 0) + (conversions || 0),
       });
     }
   }
@@ -150,11 +156,13 @@ export async function syncGa4Analytics(supabase: SupabaseClient): Promise<Ga4Syn
     metricsByKey.set(`${today}|${campaign}|`, {
       sessions: 0,
       users: 0,
+      newUsers: 0,
       pageViews: 0,
       engagedSessions: 0,
       engagementRate: null,
       avgEngagementTime: null,
       bounceRate: null,
+      conversions: 0,
     });
   }
 
@@ -171,11 +179,13 @@ export async function syncGa4Analytics(supabase: SupabaseClient): Promise<Ga4Syn
           content,
           sessions: metrics.sessions,
           users: metrics.users,
+          new_users: metrics.newUsers,
           page_views: metrics.pageViews,
           engaged_sessions: metrics.engagedSessions,
           engagement_rate: metrics.engagementRate,
           avg_engagement_time: metrics.avgEngagementTime,
           bounce_rate: metrics.bounceRate,
+          conversions: metrics.conversions,
           updated_at: new Date().toISOString(),
         },
         { onConflict: "post_id,platform,date,content" },

@@ -78,11 +78,13 @@ interface PostAnalyticsRow {
   content: string;
   sessions: number;
   users: number;
+  new_users: number;
   page_views: number;
   engaged_sessions: number;
   engagement_rate: number | null;
   avg_engagement_time: number | null;
   bounce_rate: number | null;
+  conversions: number;
   updated_at: string;
 }
 
@@ -198,11 +200,13 @@ export function mapPostAnalyticsRow(row: PostAnalyticsRow): PostAnalytics {
     content: row.content,
     sessions: row.sessions,
     users: row.users,
+    newUsers: row.new_users,
     pageViews: row.page_views,
     engagedSessions: row.engaged_sessions,
     engagementRate: row.engagement_rate,
     avgEngagementTime: row.avg_engagement_time,
     bounceRate: row.bounce_rate,
+    conversions: row.conversions,
     updatedAt: row.updated_at,
   };
 }

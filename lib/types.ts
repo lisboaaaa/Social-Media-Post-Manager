@@ -101,11 +101,13 @@ export interface PostAnalytics {
   content: string; // utm_content value; "" = the plain caption link, no placement tag set
   sessions: number;
   users: number;
+  newUsers: number; // GA4 "newUsers" — first-ever session in the date range
   pageViews: number;
   engagedSessions: number;
   engagementRate: number | null; // 0-1 fraction, as GA4 returns it
   avgEngagementTime: number | null; // seconds
   bounceRate: number | null; // 0-1 fraction
+  conversions: number; // GA4 "conversions" — count of key events, if any are configured on the property
   updatedAt: string; // ISO datetime — when this row was last synced from GA4
 }
 

@@ -16,6 +16,11 @@ import { deleteCategorySchema, deleteCategoryTool } from "@/lib/mcp/tools/delete
 import { getPostCommentsSchema, getPostCommentsTool } from "@/lib/mcp/tools/get-post-comments";
 import { getPostHistorySchema, getPostHistoryTool } from "@/lib/mcp/tools/get-post-history";
 import { getPostAnalyticsSchema, getPostAnalyticsTool } from "@/lib/mcp/tools/get-post-analytics";
+import { generateUtmLinkSchema, generateUtmLinkTool } from "@/lib/mcp/tools/generate-utm-link";
+import { duplicatePostSchema, duplicatePostTool } from "@/lib/mcp/tools/duplicate-post";
+import { listSuggestionsSchema, listSuggestionsTool } from "@/lib/mcp/tools/list-suggestions";
+import { reviewSuggestionSchema, reviewSuggestionTool } from "@/lib/mcp/tools/review-suggestion";
+import { getAnalyticsOverviewSchema, getAnalyticsOverviewTool } from "@/lib/mcp/tools/get-analytics-overview";
 import { assertMarketing, McpToolError } from "@/lib/mcp/tools/shared";
 
 function textResult(value: unknown) {
@@ -253,6 +258,96 @@ const handler = createMcpHandler(
         try {
           assertMarketing(profile);
           return textResult(await getPostAnalyticsTool(input, supabase));
+        } catch (error) {
+          return errorResult(error);
+        }
+      },
+    );
+
+    server.registerTool(
+      "generate_utm_link",
+      {
+        title: "Generate UTM link",
+        description: "Tag a URL with UTM parameters for a platform, without saving anything — same convention as the post editor's UTM hint.",
+        inputSchema: generateUtmLinkSchema,
+      },
+      async (input, extra) => {
+        const profile = extra.authInfo!.extra!.profile as Profile;
+        try {
+          assertMarketing(profile);
+          return textResult(generateUtmLinkTool(input));
+        } catch (error) {
+          return errorResult(error);
+        }
+      },
+    );
+
+    server.registerTool(
+      "duplicate_post",
+      {
+        title: "Duplicate post",
+        description: "Copy a post's platforms, copy, images, and categories into a new draft in the default stage. Doesn't copy its date, assignee, or published links.",
+        inputSchema: duplicatePostSchema,
+      },
+      async (input, extra) => {
+        const profile = extra.authInfo!.extra!.profile as Profile;
+        const supabase = createServiceClient();
+        try {
+          assertMarketing(profile);
+          return textResult(await duplicatePostTool(input, profile, supabase));
+        } catch (error) {
+          return errorResult(error);
+        }
+      },
+    );
+
+    server.registerTool(
+      "list_suggestions",
+      { title: "List suggestions", description: "List post ideas submitted via submit_idea or the public suggestion box, filtered by status (defaults to new/unreviewed).", inputSchema: listSuggestionsSchema },
+      async (input, extra) => {
+        const profile = extra.authInfo!.extra!.profile as Profile;
+        const supabase = createServiceClient();
+        try {
+          assertMarketing(profile);
+          return textResult(await listSuggestionsTool(input, supabase));
+        } catch (error) {
+          return errorResult(error);
+        }
+      },
+    );
+
+    server.registerTool(
+      "review_suggestion",
+      {
+        title: "Review suggestion",
+        description: "Accept a suggestion (creates a post from it, in the default stage) or dismiss it. Call list_suggestions first to get the id.",
+        inputSchema: reviewSuggestionSchema,
+      },
+      async (input, extra) => {
+        const profile = extra.authInfo!.extra!.profile as Profile;
+        const supabase = createServiceClient();
+        try {
+          assertMarketing(profile);
+          return textResult(await reviewSuggestionTool(input, profile, supabase));
+        } catch (error) {
+          return errorResult(error);
+        }
+      },
+    );
+
+    server.registerTool(
+      "get_analytics_overview",
+      {
+        title: "Get analytics overview",
+        description: "Chat equivalent of the /analytics page — total sessions/users/page views, broken down by platform and category, plus top-performing posts, optionally scoped to a date range.",
+        inputSchema: getAnalyticsOverviewSchema,
+      },
+      async (input, extra) => {
+        const profile = extra.authInfo!.extra!.profile as Profile;
+        const supabase = createServiceClient();
+        try {
+          assertMarketing(profile);
+          return textResult(await getAnalyticsOverviewTool(input, supabase));
         } catch (error) {
           return errorResult(error);
         }
