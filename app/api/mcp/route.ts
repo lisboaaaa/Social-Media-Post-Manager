@@ -12,6 +12,7 @@ import { addCommentSchema, addCommentTool } from "@/lib/mcp/tools/add-comment";
 import { submitIdeaSchema, submitIdeaTool } from "@/lib/mcp/tools/submit-idea";
 import { listTeamMembersSchema, listTeamMembersTool } from "@/lib/mcp/tools/list-team-members";
 import { listCategoriesSchema, listCategoriesTool } from "@/lib/mcp/tools/list-categories";
+import { deleteCategorySchema, deleteCategoryTool } from "@/lib/mcp/tools/delete-category";
 import { getPostCommentsSchema, getPostCommentsTool } from "@/lib/mcp/tools/get-post-comments";
 import { getPostHistorySchema, getPostHistoryTool } from "@/lib/mcp/tools/get-post-history";
 import { getPostAnalyticsSchema, getPostAnalyticsTool } from "@/lib/mcp/tools/get-post-analytics";
@@ -188,6 +189,25 @@ const handler = createMcpHandler(
         try {
           assertMarketing(profile);
           return textResult(await listCategoriesTool(input, supabase));
+        } catch (error) {
+          return errorResult(error);
+        }
+      },
+    );
+
+    server.registerTool(
+      "delete_category",
+      {
+        title: "Delete category",
+        description: "Delete a category tag by name. Removes it from any posts that have it — doesn't delete the posts themselves.",
+        inputSchema: deleteCategorySchema,
+      },
+      async (input, extra) => {
+        const profile = extra.authInfo!.extra!.profile as Profile;
+        const supabase = createServiceClient();
+        try {
+          assertMarketing(profile);
+          return textResult(await deleteCategoryTool(input, supabase));
         } catch (error) {
           return errorResult(error);
         }
