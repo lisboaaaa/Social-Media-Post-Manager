@@ -49,7 +49,7 @@ export function Column({
       ref={innerRef}
       {...draggableProps}
       className={cn(
-        "group flex min-w-0 flex-col border-r border-border/70 px-3.5 first:pl-0 last:border-r-0 last:pr-0",
+        "group flex min-w-0 flex-col border-r border-border/70 px-2 sm:px-3.5 first:pl-0 last:border-r-0 last:pr-0",
         isDragging && "z-10 rounded-lg bg-background shadow-lg",
       )}
     >

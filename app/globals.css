@@ -158,3 +158,20 @@
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
 }
+
+/* Desktop: narrow fixed columns, all of them fit-or-scroll together.
+   Below 768px: wide columns sized to show ~2 at a time with a peek of the
+   next one, snapping into place on swipe — a deliberate phone-only layout,
+   not just the desktop grid shrunk down. */
+.board-columns {
+  grid-template-columns: repeat(var(--stage-count), minmax(188px, 1fr));
+}
+@media (max-width: 767px) {
+  .board-columns {
+    grid-template-columns: repeat(var(--stage-count), minmax(46vw, 1fr));
+    scroll-snap-type: x proximity;
+  }
+  .board-columns > * {
+    scroll-snap-align: start;
+  }
+}

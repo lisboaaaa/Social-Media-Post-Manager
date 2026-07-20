@@ -30,7 +30,11 @@ export function ViewTabs() {
   }, [activeIndex]);
 
   return (
-    <div role="tablist" aria-label="View" className="relative inline-flex items-center gap-0.5 rounded-lg bg-muted/50 p-1 shadow-sm">
+    <div
+      role="tablist"
+      aria-label="View"
+      className="scrollbar-hide relative flex max-w-full items-center gap-0.5 overflow-x-auto rounded-lg bg-muted/50 p-1 shadow-sm"
+    >
       {indicator && (
         <div
           className="absolute inset-y-1 rounded-md bg-primary transition-[left,width] duration-300 ease-out"
@@ -49,7 +53,7 @@ export function ViewTabs() {
             role="tab"
             aria-selected={active}
             className={cn(
-              "relative z-10 inline-flex items-center rounded-md px-3.5 py-1.5 text-sm font-medium transition-colors",
+              "relative z-10 inline-flex shrink-0 items-center rounded-md px-3.5 py-1.5 text-sm font-medium transition-colors",
               active ? "text-primary-foreground" : "text-muted-foreground hover:text-foreground",
             )}
           >

@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useRef, useState, type CSSProperties } from "react";
 import { DragDropContext, Draggable, Droppable, type DropResult } from "@hello-pangea/dnd";
 import { Column } from "./Column";
 import { PublishedUrlDialog } from "./PublishedUrlDialog";
@@ -70,8 +70,8 @@ export function Board() {
                 columnsProvided.innerRef(el);
               }}
               {...columnsProvided.droppableProps}
-              className="scrollbar-hide grid flex-1 items-stretch overflow-x-auto pb-2 mx-auto w-full max-w-[1780px]"
-              style={{ gridTemplateColumns: `repeat(${stages.length}, minmax(188px, 1fr))` }}
+              className="board-columns scrollbar-hide grid flex-1 items-stretch overflow-x-auto pb-2 mx-auto w-full max-w-[1780px]"
+              style={{ "--stage-count": stages.length } as CSSProperties}
             >
               {stages.map((stage, index) => (
                 <Draggable key={stage.id} draggableId={`column-${stage.id}`} index={index}>
