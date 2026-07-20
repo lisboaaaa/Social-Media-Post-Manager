@@ -147,7 +147,8 @@ export function ListView() {
         </Select>
       </div>
 
-      <div className={cn("grid px-4 text-[11px] font-semibold uppercase tracking-wide text-foreground/70", GRID_COLS)}>
+      <div className="-mx-3 overflow-x-auto px-3 sm:mx-0 sm:px-0">
+      <div className={cn("grid min-w-[760px] px-4 text-[11px] font-semibold uppercase tracking-wide text-foreground/70", GRID_COLS)}>
         <span className="col-span-2 flex items-center gap-1"><FileText className="size-3" />Post</span>
         <span className="flex items-center gap-1 border-l px-3"><Radio className="size-3" />Platform</span>
         <span className="flex items-center gap-1 border-l px-3"><UserRound className="size-3" />Assignee</span>
@@ -341,6 +342,7 @@ export function ListView() {
           )}
         </Droppable>
       </DragDropContext>
+      </div>
 
       <ScheduleDateDialog
         open={pendingSchedule !== null}
