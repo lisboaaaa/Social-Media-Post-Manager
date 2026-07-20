@@ -39,6 +39,7 @@
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
+  --color-canvas: var(--canvas);
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
@@ -73,6 +74,10 @@
   --border: oklch(0.922 0 0);
   --input: oklch(0.922 0 0);
   --ring: #2d6bf5;
+  /* Same gray as the muted chip background — the page canvas sits one shade
+     below card white, so cards read as surfaces instead of blending into
+     the page (kept as one flat neutral, not a per-column tint). */
+  --canvas: var(--muted);
   --chart-1: #1a28d2;
   --chart-2: #6b4fff;
   --chart-3: #2d6bf5;
@@ -110,6 +115,9 @@
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
   --ring: #2d6bf5;
+  /* Dark mode already has card/background separation (#14141f vs #0b0b14) —
+     canvas just matches background here, no extra tint needed. */
+  --canvas: var(--background);
   --chart-1: #6b4fff;
   --chart-2: #2d6bf5;
   --chart-3: #1a28d2;

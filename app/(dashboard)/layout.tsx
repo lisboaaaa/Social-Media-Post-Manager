@@ -28,7 +28,7 @@ export default async function DashboardLayout({ children }: { children: ReactNod
 
   return (
     <StoreProvider>
-      <div className="flex min-h-screen flex-col">
+      <div className="flex min-h-screen flex-col bg-canvas">
         <Header />
         <main className="flex flex-1 flex-col px-6 py-6">{children}</main>
         <PostPreviewModal />
