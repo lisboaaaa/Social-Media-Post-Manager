@@ -9,7 +9,7 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-  --font-heading: var(--font-space-grotesk);
+  --font-heading: var(--font-geist-sans);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -55,45 +55,50 @@
   --card-foreground: oklch(0.145 0 0);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.145 0 0);
-  /* Indigo accent — distinct from the LinkedIn blue / Instagram pink used on
-     platform badges, so generic primary actions never look like a
-     platform-specific one. */
-  --primary: #4b4785;
+  /* Brand palette: cobalt 700 primary, electric violet reserved for the
+     accent (used sparingly — ticks, highlights — not a blanket hover color),
+     bright blue for focus rings, near-black for text. */
+  --primary: #1a28d2;
   --primary-foreground: oklch(0.985 0 0);
   --secondary: oklch(0.97 0 0);
   --secondary-foreground: oklch(0.205 0 0);
   --muted: oklch(0.97 0 0);
   --muted-foreground: oklch(0.556 0 0);
+  /* Kept neutral on purpose — this token is the ambient hover/focus wash for
+     every dropdown/select item app-wide, and the brand's violet is meant to
+     stay sparing (ticks, highlights), not a blanket interactive color. */
   --accent: oklch(0.97 0 0);
   --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
+  --destructive: #d64545;
   --border: oklch(0.922 0 0);
   --input: oklch(0.922 0 0);
-  --ring: #4b4785;
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --radius: 0.9rem;
+  --ring: #2d6bf5;
+  --chart-1: #1a28d2;
+  --chart-2: #6b4fff;
+  --chart-3: #2d6bf5;
+  --chart-4: #0f9d76;
+  --chart-5: #c8890a;
+  --radius: 0.5rem;
   --sidebar: oklch(0.985 0 0);
   --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: #4b4785;
+  --sidebar-primary: #1a28d2;
   --sidebar-primary-foreground: oklch(0.985 0 0);
   --sidebar-accent: oklch(0.97 0 0);
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: #4b4785;
+  --sidebar-ring: #2d6bf5;
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
+  --background: #0b0b14;
   --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
+  --card: #14141f;
   --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
+  --popover: #14141f;
   --popover-foreground: oklch(0.985 0 0);
-  --primary: #6b67a8;
+  /* Blue 500 instead of cobalt 700 in dark mode — brighter, stays visible
+     against the brand's near-black background. */
+  --primary: #2d6bf5;
   --primary-foreground: oklch(0.985 0 0);
   --secondary: oklch(0.269 0 0);
   --secondary-foreground: oklch(0.985 0 0);
@@ -101,23 +106,23 @@
   --muted-foreground: oklch(0.708 0 0);
   --accent: oklch(0.269 0 0);
   --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
+  --destructive: #e57373;
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
-  --ring: #6b67a8;
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --sidebar: oklch(0.205 0 0);
+  --ring: #2d6bf5;
+  --chart-1: #6b4fff;
+  --chart-2: #2d6bf5;
+  --chart-3: #1a28d2;
+  --chart-4: #0f9d76;
+  --chart-5: #c8890a;
+  --sidebar: #0f0f18;
   --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: #6b67a8;
+  --sidebar-primary: #2d6bf5;
   --sidebar-primary-foreground: oklch(0.985 0 0);
   --sidebar-accent: oklch(0.269 0 0);
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: #6b67a8;
+  --sidebar-ring: #2d6bf5;
 }
 
 @layer base {

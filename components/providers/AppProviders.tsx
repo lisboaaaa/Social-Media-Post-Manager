@@ -1,6 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
+import { LucideProvider } from "lucide-react";
 import { Toaster } from "@/components/ui/sonner";
 
 // StoreProvider (board/calendar/comments/etc.) lives inside the
@@ -8,9 +9,9 @@ import { Toaster } from "@/components/ui/sonner";
 // has no business fetching that payload at all.
 export function AppProviders({ children }: { children: ReactNode }) {
   return (
-    <>
+    <LucideProvider strokeWidth={1.5}>
       {children}
       <Toaster position="bottom-right" richColors />
-    </>
+    </LucideProvider>
   );
 }
