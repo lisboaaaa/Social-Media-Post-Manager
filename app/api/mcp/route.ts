@@ -10,6 +10,11 @@ import { movePostSchema, movePostTool } from "@/lib/mcp/tools/move-post";
 import { listStagesSchema, listStagesTool } from "@/lib/mcp/tools/list-stages";
 import { addCommentSchema, addCommentTool } from "@/lib/mcp/tools/add-comment";
 import { submitIdeaSchema, submitIdeaTool } from "@/lib/mcp/tools/submit-idea";
+import { listTeamMembersSchema, listTeamMembersTool } from "@/lib/mcp/tools/list-team-members";
+import { listCategoriesSchema, listCategoriesTool } from "@/lib/mcp/tools/list-categories";
+import { getPostCommentsSchema, getPostCommentsTool } from "@/lib/mcp/tools/get-post-comments";
+import { getPostHistorySchema, getPostHistoryTool } from "@/lib/mcp/tools/get-post-history";
+import { getPostAnalyticsSchema, getPostAnalyticsTool } from "@/lib/mcp/tools/get-post-analytics";
 import { assertMarketing, McpToolError } from "@/lib/mcp/tools/shared";
 
 function textResult(value: unknown) {
@@ -153,6 +158,81 @@ const handler = createMcpHandler(
         const supabase = createServiceClient();
         try {
           return textResult(await submitIdeaTool(input, profile, supabase));
+        } catch (error) {
+          return errorResult(error);
+        }
+      },
+    );
+
+    server.registerTool(
+      "list_team_members",
+      { title: "List team members", description: "List marketing team members (name, email, whether they're marketing) — use to resolve a name before assigning a post, or to look up who's on the team.", inputSchema: listTeamMembersSchema },
+      async (input, extra) => {
+        const profile = extra.authInfo!.extra!.profile as Profile;
+        const supabase = createServiceClient();
+        try {
+          assertMarketing(profile);
+          return textResult(await listTeamMembersTool(input, supabase));
+        } catch (error) {
+          return errorResult(error);
+        }
+      },
+    );
+
+    server.registerTool(
+      "list_categories",
+      { title: "List categories", description: "List existing category tags — check before creating a post with a new category name, to avoid near-duplicates.", inputSchema: listCategoriesSchema },
+      async (input, extra) => {
+        const profile = extra.authInfo!.extra!.profile as Profile;
+        const supabase = createServiceClient();
+        try {
+          assertMarketing(profile);
+          return textResult(await listCategoriesTool(input, supabase));
+        } catch (error) {
+          return errorResult(error);
+        }
+      },
+    );
+
+    server.registerTool(
+      "get_post_comments",
+      { title: "Get post comments", description: "Read the comments left on a post (what people actually typed) — not the automated audit log, see get_post_history for that.", inputSchema: getPostCommentsSchema },
+      async (input, extra) => {
+        const profile = extra.authInfo!.extra!.profile as Profile;
+        const supabase = createServiceClient();
+        try {
+          assertMarketing(profile);
+          return textResult(await getPostCommentsTool(input, supabase));
+        } catch (error) {
+          return errorResult(error);
+        }
+      },
+    );
+
+    server.registerTool(
+      "get_post_history",
+      { title: "Get post history", description: "Read the automated audit log for a post — who changed what field and when. Never includes the caption/description text itself, only that it changed.", inputSchema: getPostHistorySchema },
+      async (input, extra) => {
+        const profile = extra.authInfo!.extra!.profile as Profile;
+        const supabase = createServiceClient();
+        try {
+          assertMarketing(profile);
+          return textResult(await getPostHistoryTool(input, supabase));
+        } catch (error) {
+          return errorResult(error);
+        }
+      },
+    );
+
+    server.registerTool(
+      "get_post_analytics",
+      { title: "Get post analytics", description: "Read synced GA4 performance for a post — sessions, users, page views, engagement/bounce rate, per platform and per link placement (caption/comment/story).", inputSchema: getPostAnalyticsSchema },
+      async (input, extra) => {
+        const profile = extra.authInfo!.extra!.profile as Profile;
+        const supabase = createServiceClient();
+        try {
+          assertMarketing(profile);
+          return textResult(await getPostAnalyticsTool(input, supabase));
         } catch (error) {
           return errorResult(error);
         }
