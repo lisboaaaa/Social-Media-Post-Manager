@@ -1,4 +1,4 @@
-import type { Category, Comment, CommentReaction, Platform, Post, PostAnalytics, PostHistoryEntry, PostImage, Profile, Stage, Suggestion } from "@/lib/types";
+import type { Category, Comment, CommentReaction, Platform, Post, PostAnalytics, PostAnalyticsGeo, PostHistoryEntry, PostImage, Profile, Stage, Suggestion } from "@/lib/types";
 
 // Shapes coming back from Supabase are snake_case and (for posts) nest their
 // related rows via PostgREST's embedded-resource syntax — these turn that
@@ -85,6 +85,17 @@ interface PostAnalyticsRow {
   avg_engagement_time: number | null;
   bounce_rate: number | null;
   conversions: number;
+  updated_at: string;
+}
+
+interface PostAnalyticsGeoRow {
+  post_id: string;
+  platform: Platform;
+  date: string;
+  device_category: string;
+  country: string;
+  sessions: number;
+  users: number;
   updated_at: string;
 }
 
@@ -207,6 +218,19 @@ export function mapPostAnalyticsRow(row: PostAnalyticsRow): PostAnalytics {
     avgEngagementTime: row.avg_engagement_time,
     bounceRate: row.bounce_rate,
     conversions: row.conversions,
+    updatedAt: row.updated_at,
+  };
+}
+
+export function mapPostAnalyticsGeoRow(row: PostAnalyticsGeoRow): PostAnalyticsGeo {
+  return {
+    postId: row.post_id,
+    platform: row.platform,
+    date: row.date,
+    deviceCategory: row.device_category,
+    country: row.country,
+    sessions: row.sessions,
+    users: row.users,
     updatedAt: row.updated_at,
   };
 }

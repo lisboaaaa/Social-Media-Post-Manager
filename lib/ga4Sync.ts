@@ -27,6 +27,11 @@ interface DailyMetrics {
   conversions: number;
 }
 
+interface GeoMetrics {
+  sessions: number;
+  users: number;
+}
+
 // GA4 dates come back as "20260717" (yyyymmdd) — turn that into "2026-07-17"
 // to match the date column's format.
 function formatGa4Date(raw: string): string {
@@ -88,6 +93,8 @@ export async function syncGa4Analytics(supabase: SupabaseClient): Promise<Ga4Syn
 
   // keyed by "date|campaign|content"
   const metricsByKey = new Map<string, DailyMetrics>();
+  // keyed by "date|campaign|device|country" (raw country, before top-5 capping)
+  const geoByKey = new Map<string, GeoMetrics>();
 
   for (const propertyId of propertyIds) {
     const reportRes = await fetch(`https://analyticsdata.googleapis.com/v1beta/properties/${propertyId}:runReport`, {
@@ -114,32 +121,69 @@ export async function syncGa4Analytics(supabase: SupabaseClient): Promise<Ga4Syn
 
     if (!reportRes.ok) {
       errors.push(`GA4 report request failed for property ${propertyId}: ${await reportRes.text()}`);
+    } else {
+      const report = await reportRes.json();
+      for (const row of report.rows ?? []) {
+        const rawDate = row.dimensionValues?.[0]?.value;
+        const campaign = row.dimensionValues?.[1]?.value;
+        const content = normalizeContent(row.dimensionValues?.[2]?.value);
+        if (!rawDate || !campaign) continue;
+        const date = formatGa4Date(rawDate);
+        const [sessions, users, newUsers, pageViews, engagedSessions, engagementRate, avgEngagementTime, bounceRate, conversions] = (
+          row.metricValues ?? []
+        ).map((m: { value: string }) => Number(m.value ?? 0));
+
+        const key = `${date}|${campaign}|${content}`;
+        const existing = metricsByKey.get(key);
+        metricsByKey.set(key, {
+          sessions: (existing?.sessions ?? 0) + (sessions || 0),
+          users: (existing?.users ?? 0) + (users || 0),
+          newUsers: (existing?.newUsers ?? 0) + (newUsers || 0),
+          pageViews: (existing?.pageViews ?? 0) + (pageViews || 0),
+          engagedSessions: (existing?.engagedSessions ?? 0) + (engagedSessions || 0),
+          engagementRate: engagementRate ?? null,
+          avgEngagementTime: avgEngagementTime ?? null,
+          bounceRate: bounceRate ?? null,
+          conversions: (existing?.conversions ?? 0) + (conversions || 0),
+        });
+      }
+    }
+
+    // Separate report: device/country instead of content — mixing all three
+    // into one query would multiply rows by device x country x content, so
+    // this is deliberately its own, coarser breakdown (see post-analytics-geo.sql).
+    const geoRes = await fetch(`https://analyticsdata.googleapis.com/v1beta/properties/${propertyId}:runReport`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        dateRanges: [{ startDate: "90daysAgo", endDate: "today" }],
+        dimensions: [{ name: "date" }, { name: "sessionCampaignName" }, { name: "deviceCategory" }, { name: "country" }],
+        metrics: [{ name: "sessions" }, { name: "activeUsers" }],
+        dimensionFilter: { filter: { fieldName: "sessionCampaignName", inListFilter: { values: campaigns } } },
+        limit: 100000,
+      }),
+    });
+
+    if (!geoRes.ok) {
+      errors.push(`GA4 geo report request failed for property ${propertyId}: ${await geoRes.text()}`);
       continue;
     }
 
-    const report = await reportRes.json();
-    for (const row of report.rows ?? []) {
+    const geoReport = await geoRes.json();
+    for (const row of geoReport.rows ?? []) {
       const rawDate = row.dimensionValues?.[0]?.value;
       const campaign = row.dimensionValues?.[1]?.value;
-      const content = normalizeContent(row.dimensionValues?.[2]?.value);
+      const device = row.dimensionValues?.[2]?.value || "(not set)";
+      const country = row.dimensionValues?.[3]?.value || "(not set)";
       if (!rawDate || !campaign) continue;
       const date = formatGa4Date(rawDate);
-      const [sessions, users, newUsers, pageViews, engagedSessions, engagementRate, avgEngagementTime, bounceRate, conversions] = (
-        row.metricValues ?? []
-      ).map((m: { value: string }) => Number(m.value ?? 0));
+      const [sessions, users] = (row.metricValues ?? []).map((m: { value: string }) => Number(m.value ?? 0));
 
-      const key = `${date}|${campaign}|${content}`;
-      const existing = metricsByKey.get(key);
-      metricsByKey.set(key, {
-        sessions: (existing?.sessions ?? 0) + (sessions || 0),
-        users: (existing?.users ?? 0) + (users || 0),
-        newUsers: (existing?.newUsers ?? 0) + (newUsers || 0),
-        pageViews: (existing?.pageViews ?? 0) + (pageViews || 0),
-        engagedSessions: (existing?.engagedSessions ?? 0) + (engagedSessions || 0),
-        engagementRate: engagementRate ?? null,
-        avgEngagementTime: avgEngagementTime ?? null,
-        bounceRate: bounceRate ?? null,
-        conversions: (existing?.conversions ?? 0) + (conversions || 0),
+      const geoKey = `${date}|${campaign}|${device}|${country}`;
+      const existingGeo = geoByKey.get(geoKey);
+      geoByKey.set(geoKey, {
+        sessions: (existingGeo?.sessions ?? 0) + (sessions || 0),
+        users: (existingGeo?.users ?? 0) + (users || 0),
       });
     }
   }
@@ -191,6 +235,61 @@ export async function syncGa4Analytics(supabase: SupabaseClient): Promise<Ga4Syn
         { onConflict: "post_id,platform,date,content" },
       );
       if (upsertError) errors.push(`post ${postId}/${platform}/${date}/${content}: ${upsertError.message}`);
+      else updated++;
+    }
+  }
+
+  // Total sessions per campaign+country across the whole window, to find
+  // each campaign's top 5 — an unbounded country list would grow
+  // post_analytics_geo forever, most of it long-tail noise.
+  const totalsByCampaignCountry = new Map<string, Map<string, number>>();
+  for (const [key, metrics] of geoByKey) {
+    const [, campaign, , country] = key.split("|");
+    const countryTotals = totalsByCampaignCountry.get(campaign) ?? new Map<string, number>();
+    countryTotals.set(country, (countryTotals.get(country) ?? 0) + metrics.sessions);
+    totalsByCampaignCountry.set(campaign, countryTotals);
+  }
+  const topCountriesByCampaign = new Map<string, Set<string>>();
+  for (const [campaign, countryTotals] of totalsByCampaignCountry) {
+    const top = [...countryTotals.entries()]
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5)
+      .map(([country]) => country);
+    topCountriesByCampaign.set(campaign, new Set(top));
+  }
+
+  // Re-key with any country outside its campaign's top 5 folded into "Other".
+  const finalGeoByKey = new Map<string, GeoMetrics>();
+  for (const [key, metrics] of geoByKey) {
+    const [date, campaign, device, country] = key.split("|");
+    const top = topCountriesByCampaign.get(campaign);
+    const bucketed = top?.has(country) ? country : "Other";
+    const finalKey = `${date}|${campaign}|${device}|${bucketed}`;
+    const existing = finalGeoByKey.get(finalKey);
+    finalGeoByKey.set(finalKey, {
+      sessions: (existing?.sessions ?? 0) + metrics.sessions,
+      users: (existing?.users ?? 0) + metrics.users,
+    });
+  }
+
+  for (const [key, metrics] of finalGeoByKey) {
+    const [date, campaign, device, country] = key.split("|");
+    const targets = targetsByCampaign.get(campaign) ?? [];
+    for (const { postId, platform } of targets) {
+      const { error: upsertError } = await supabase.from("post_analytics_geo").upsert(
+        {
+          post_id: postId,
+          platform,
+          date,
+          device_category: device,
+          country,
+          sessions: metrics.sessions,
+          users: metrics.users,
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: "post_id,platform,date,device_category,country" },
+      );
+      if (upsertError) errors.push(`geo ${postId}/${platform}/${date}/${device}/${country}: ${upsertError.message}`);
       else updated++;
     }
   }

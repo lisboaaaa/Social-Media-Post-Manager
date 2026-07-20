@@ -111,6 +111,20 @@ export interface PostAnalytics {
   updatedAt: string; // ISO datetime — when this row was last synced from GA4
 }
 
+// Device/country breakdown for one post+platform+day — see
+// supabase/post-analytics-geo.sql. Kept separate from PostAnalytics
+// (per-placement rows) so this dimension doesn't multiply that table.
+export interface PostAnalyticsGeo {
+  postId: string;
+  platform: Platform;
+  date: string; // ISO date (yyyy-mm-dd)
+  deviceCategory: string; // "mobile" | "desktop" | "tablet" | "(not set)"
+  country: string; // country name, or "Other" once past the campaign's top 5
+  sessions: number;
+  users: number;
+  updatedAt: string; // ISO datetime — when this row was last synced from GA4
+}
+
 export type SuggestionStatus = "new" | "accepted" | "dismissed";
 
 export interface Suggestion {

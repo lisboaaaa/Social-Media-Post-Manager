@@ -83,8 +83,14 @@ function GroupTotalsCard({ title, groups }: { title: string; groups: GroupTotal[
   );
 }
 
+// GA4 mostly returns lowercase device names ("mobile", "desktop") — just
+// capitalize for display, no need for a full label lookup table like platforms.
+function titleCase(value: string): string {
+  return value ? value[0].toUpperCase() + value.slice(1) : value;
+}
+
 export function AnalyticsView() {
-  const { filteredPosts, filters, categories, postAnalytics, openPreview } = useStore();
+  const { filteredPosts, filters, categories, postAnalytics, postAnalyticsGeo, openPreview } = useStore();
   const [sortKey, setSortKey] = useState<SortKey>("sessions");
 
   const rows = useMemo<Row[]>(() => {
@@ -190,6 +196,37 @@ export function AnalyticsView() {
     return [...map.values()].sort((a, b) => b.sessions - a.sessions);
   }, [rows, categories]);
 
+  // Device/country come from a separate, coarser sync (post_analytics_geo,
+  // not broken out by placement) — see lib/ga4Sync.ts for why they're kept
+  // apart from the per-content rows above.
+  const byDevice = useMemo<GroupTotal[]>(() => {
+    const eligiblePostIds = new Set(filteredPosts.map((p) => p.id));
+    const map = new Map<string, GroupTotal>();
+    for (const g of postAnalyticsGeo) {
+      if (!eligiblePostIds.has(g.postId)) continue;
+      if (filters.platform !== "all" && g.platform !== filters.platform) continue;
+      const existing = map.get(g.deviceCategory) ?? { key: g.deviceCategory, label: titleCase(g.deviceCategory), sessions: 0, users: 0, pageViews: 0 };
+      existing.sessions += g.sessions;
+      existing.users += g.users;
+      map.set(g.deviceCategory, existing);
+    }
+    return [...map.values()].sort((a, b) => b.sessions - a.sessions);
+  }, [filteredPosts, filters.platform, postAnalyticsGeo]);
+
+  const byCountry = useMemo<GroupTotal[]>(() => {
+    const eligiblePostIds = new Set(filteredPosts.map((p) => p.id));
+    const map = new Map<string, GroupTotal>();
+    for (const g of postAnalyticsGeo) {
+      if (!eligiblePostIds.has(g.postId)) continue;
+      if (filters.platform !== "all" && g.platform !== filters.platform) continue;
+      const existing = map.get(g.country) ?? { key: g.country, label: g.country, sessions: 0, users: 0, pageViews: 0 };
+      existing.sessions += g.sessions;
+      existing.users += g.users;
+      map.set(g.country, existing);
+    }
+    return [...map.values()].sort((a, b) => b.sessions - a.sessions);
+  }, [filteredPosts, filters.platform, postAnalyticsGeo]);
+
   if (rows.length === 0) {
     const hasAnyData = postAnalytics.length > 0;
     return (
@@ -264,6 +301,13 @@ export function AnalyticsView() {
         <GroupTotalsCard title="By platform" groups={byPlatform} />
         <GroupTotalsCard title="By category" groups={byCategory} />
       </div>
+
+      {(byDevice.length > 0 || byCountry.length > 0) && (
+        <div className="flex flex-col gap-3 sm:flex-row">
+          <GroupTotalsCard title="By device" groups={byDevice} />
+          <GroupTotalsCard title="By country" groups={byCountry} />
+        </div>
+      )}
 
       <div className="overflow-x-auto rounded-xl border">
         <table className="w-full whitespace-nowrap text-left text-sm">

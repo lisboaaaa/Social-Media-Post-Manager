@@ -1,8 +1,8 @@
 import { z } from "zod";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { mapPostAnalyticsRow, mapPostRow, POST_SELECT } from "@/lib/supabase/mappers";
+import { mapPostAnalyticsGeoRow, mapPostAnalyticsRow, mapPostRow, POST_SELECT } from "@/lib/supabase/mappers";
 import { weightedAverage } from "@/lib/postAnalyticsMath";
-import { PLATFORM_LABELS, type Platform, type PostAnalytics } from "@/lib/types";
+import { PLATFORM_LABELS, type Platform, type PostAnalytics, type PostAnalyticsGeo } from "@/lib/types";
 import { McpToolError } from "./shared";
 
 export const getAnalyticsOverviewSchema = z.object({
@@ -24,10 +24,14 @@ function summarize(rows: PostAnalytics[]) {
   };
 }
 
-function pushTo<K>(map: Map<K, PostAnalytics[]>, key: K, row: PostAnalytics) {
+function pushTo<K, T>(map: Map<K, T[]>, key: K, row: T) {
   const list = map.get(key);
   if (list) list.push(row);
   else map.set(key, [row]);
+}
+
+function summarizeGeo(rows: PostAnalyticsGeo[]) {
+  return { sessions: rows.reduce((sum, r) => sum + r.sessions, 0), users: rows.reduce((sum, r) => sum + r.users, 0) };
 }
 
 // The chat equivalent of the /analytics page — same totals/by-platform/
@@ -42,6 +46,13 @@ export async function getAnalyticsOverviewTool(input: GetAnalyticsOverviewInput,
 
   const rows = (data ?? []).map(mapPostAnalyticsRow);
   if (rows.length === 0) return { hasData: false, message: "No GA4 data synced for this range." };
+
+  let geoQuery = supabase.from("post_analytics_geo").select("*");
+  if (input.dateFrom) geoQuery = geoQuery.gte("date", input.dateFrom);
+  if (input.dateTo) geoQuery = geoQuery.lte("date", input.dateTo);
+  const { data: geoData, error: geoError } = await geoQuery;
+  if (geoError) throw new McpToolError(`Couldn't load device/country breakdown: ${geoError.message}`);
+  const geoRows = (geoData ?? []).map(mapPostAnalyticsGeoRow);
 
   const postIds = [...new Set(rows.map((r) => r.postId))];
   const { data: postRows } = await supabase.from("posts").select(POST_SELECT).in("id", postIds);
@@ -79,5 +90,22 @@ export async function getAnalyticsOverviewTool(input: GetAnalyticsOverviewInput,
     .sort((a, b) => b.sessions - a.sessions)
     .slice(0, 10);
 
-  return { hasData: true, totals: summarize(rows), byPlatform: platformBreakdown, byCategory: categoryBreakdown, topPosts };
+  const byDevice = new Map<string, PostAnalyticsGeo[]>();
+  const byCountry = new Map<string, PostAnalyticsGeo[]>();
+  for (const row of geoRows) {
+    pushTo(byDevice, row.deviceCategory, row);
+    pushTo(byCountry, row.country, row);
+  }
+  const deviceBreakdown = [...byDevice.entries()].map(([device, rs]) => ({ device, ...summarizeGeo(rs) })).sort((a, b) => b.sessions - a.sessions);
+  const countryBreakdown = [...byCountry.entries()].map(([country, rs]) => ({ country, ...summarizeGeo(rs) })).sort((a, b) => b.sessions - a.sessions);
+
+  return {
+    hasData: true,
+    totals: summarize(rows),
+    byPlatform: platformBreakdown,
+    byCategory: categoryBreakdown,
+    byDevice: deviceBreakdown.length > 0 ? deviceBreakdown : undefined,
+    byCountry: countryBreakdown.length > 0 ? countryBreakdown : undefined,
+    topPosts,
+  };
 }

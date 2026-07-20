@@ -4,10 +4,10 @@ import { createContext, useContext, useEffect, useMemo, useState, type ReactNode
 import { toast } from "sonner";
 import { createClient } from "./supabase/client";
 import { mentionsProfile } from "./mentions";
-import { mapCategoryRow, mapCommentReactionRow, mapCommentRow, mapPostAnalyticsRow, mapPostHistoryRow, mapPostRow, mapProfileRow, mapStageRow, mapSuggestionRow, POST_SELECT } from "./supabase/mappers";
+import { mapCategoryRow, mapCommentReactionRow, mapCommentRow, mapPostAnalyticsGeoRow, mapPostAnalyticsRow, mapPostHistoryRow, mapPostRow, mapProfileRow, mapStageRow, mapSuggestionRow, POST_SELECT } from "./supabase/mappers";
 import { storagePathFromPublicUrl } from "./supabase/storagePath";
 import { summarizePostChanges } from "./postHistory";
-import type { Category, Comment, CommentReaction, Platform, Post, PostAnalytics, PostHistoryEntry, PostStatus, Profile, Stage, Suggestion } from "./types";
+import type { Category, Comment, CommentReaction, Platform, Post, PostAnalytics, PostAnalyticsGeo, PostHistoryEntry, PostStatus, Profile, Stage, Suggestion } from "./types";
 
 // Mirrors the SQL side (handle_new_user() in auth-setup.sql) — company
 // emails are firstname.lastname@daredata.engineering. Used as a client-side
@@ -61,6 +61,7 @@ interface StoreValue {
   commentReactions: CommentReaction[];
   postHistory: PostHistoryEntry[];
   postAnalytics: PostAnalytics[];
+  postAnalyticsGeo: PostAnalyticsGeo[];
   suggestions: Suggestion[];
   currentUser: Profile;
   filters: Filters;
@@ -112,6 +113,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [commentReactions, setCommentReactions] = useState<CommentReaction[]>([]);
   const [postHistory, setPostHistory] = useState<PostHistoryEntry[]>([]);
   const [postAnalytics, setPostAnalytics] = useState<PostAnalytics[]>([]);
+  const [postAnalyticsGeo, setPostAnalyticsGeo] = useState<PostAnalyticsGeo[]>([]);
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [filters, setFiltersState] = useState<Filters>(EMPTY_FILTERS);
   const [previewPostId, setPreviewPostId] = useState<string | null>(null);
@@ -135,18 +137,20 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     let cancelled = false;
 
     async function load() {
-      const [userRes, profilesRes, categoriesRes, stagesRes, postsRes, commentsRes, reactionsRes, historyRes, analyticsRes, suggestionsRes] = await Promise.all([
-        supabase.auth.getUser(),
-        supabase.from("profiles").select("*"),
-        supabase.from("categories").select("*"),
-        supabase.from("board_stages").select("*").order("position", { ascending: true }),
-        supabase.from("posts").select(POST_SELECT).order("created_at", { ascending: true }),
-        supabase.from("comments").select("*").order("created_at", { ascending: true }),
-        supabase.from("comment_reactions").select("*"),
-        supabase.from("post_history").select("*").order("created_at", { ascending: true }),
-        supabase.from("post_analytics").select("*"),
-        supabase.from("suggestions").select("*").order("created_at", { ascending: false }),
-      ]);
+      const [userRes, profilesRes, categoriesRes, stagesRes, postsRes, commentsRes, reactionsRes, historyRes, analyticsRes, geoRes, suggestionsRes] =
+        await Promise.all([
+          supabase.auth.getUser(),
+          supabase.from("profiles").select("*"),
+          supabase.from("categories").select("*"),
+          supabase.from("board_stages").select("*").order("position", { ascending: true }),
+          supabase.from("posts").select(POST_SELECT).order("created_at", { ascending: true }),
+          supabase.from("comments").select("*").order("created_at", { ascending: true }),
+          supabase.from("comment_reactions").select("*"),
+          supabase.from("post_history").select("*").order("created_at", { ascending: true }),
+          supabase.from("post_analytics").select("*"),
+          supabase.from("post_analytics_geo").select("*"),
+          supabase.from("suggestions").select("*").order("created_at", { ascending: false }),
+        ]);
 
       if (cancelled) return;
 
@@ -202,6 +206,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       setCommentReactions((reactionsRes.data ?? []).map(mapCommentReactionRow));
       setPostHistory((historyRes.data ?? []).map(mapPostHistoryRow));
       setPostAnalytics((analyticsRes.data ?? []).map(mapPostAnalyticsRow));
+      setPostAnalyticsGeo((geoRes.data ?? []).map(mapPostAnalyticsGeoRow));
       setSuggestions((suggestionsRes.data ?? []).map(mapSuggestionRow));
       setLoading(false);
     }
@@ -327,6 +332,31 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         const incoming = mapPostAnalyticsRow(payload.new as Parameters<typeof mapPostAnalyticsRow>[0]);
         const incomingKey = { post_id: incoming.postId, platform: incoming.platform, date: incoming.date, content: incoming.content };
         setPostAnalytics((prev) => {
+          const exists = prev.some((a) => sameRow(a, incomingKey));
+          return exists ? prev.map((a) => (sameRow(a, incomingKey) ? incoming : a)) : [...prev, incoming];
+        });
+      })
+      // Same reasoning as post_analytics above, keyed on all five primary-key columns.
+      .on("postgres_changes", { event: "*", schema: "public", table: "post_analytics_geo" }, (payload) => {
+        const sameRow = (
+          a: { postId: string; platform: Platform; date: string; deviceCategory: string; country: string },
+          b: { post_id: string; platform: Platform; date: string; device_category: string; country: string },
+        ) =>
+          a.postId === b.post_id && a.platform === b.platform && a.date === b.date && a.deviceCategory === b.device_category && a.country === b.country;
+        if (payload.eventType === "DELETE") {
+          const removed = payload.old as { post_id: string; platform: Platform; date: string; device_category: string; country: string };
+          setPostAnalyticsGeo((prev) => prev.filter((a) => !sameRow(a, removed)));
+          return;
+        }
+        const incoming = mapPostAnalyticsGeoRow(payload.new as Parameters<typeof mapPostAnalyticsGeoRow>[0]);
+        const incomingKey = {
+          post_id: incoming.postId,
+          platform: incoming.platform,
+          date: incoming.date,
+          device_category: incoming.deviceCategory,
+          country: incoming.country,
+        };
+        setPostAnalyticsGeo((prev) => {
           const exists = prev.some((a) => sameRow(a, incomingKey));
           return exists ? prev.map((a) => (sameRow(a, incomingKey) ? incoming : a)) : [...prev, incoming];
         });
@@ -918,6 +948,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     commentReactions,
     postHistory,
     postAnalytics,
+    postAnalyticsGeo,
     suggestions,
     currentUser: currentUser!,
     filters,
