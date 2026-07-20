@@ -230,7 +230,7 @@ export function ListView() {
                                   ref={rowsProvided.innerRef}
                                   {...rowsProvided.droppableProps}
                                   className={cn(
-                                    "overflow-hidden rounded-lg bg-background shadow-sm",
+                                    "min-w-[760px] rounded-lg bg-background shadow-sm",
                                     rowsSnapshot.isDraggingOver && "ring-2 ring-primary/30",
                                   )}
                                 >
