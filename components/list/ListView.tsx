@@ -149,7 +149,7 @@ export function ListView() {
 
       <div className="-mx-3 overflow-x-auto px-3 sm:mx-0 sm:px-0">
       <div className={cn("grid min-w-[760px] px-4 text-[11px] font-semibold uppercase tracking-wide text-foreground/70", GRID_COLS)}>
-        <span className="col-span-2 flex items-center gap-1"><FileText className="size-3" />Post</span>
+        <span className="sticky left-0 z-10 col-span-2 flex items-center gap-1 border-r bg-canvas pr-2"><FileText className="size-3" />Post</span>
         <span className="flex items-center gap-1 border-l px-3"><Radio className="size-3" />Platform</span>
         <span className="flex items-center gap-1 border-l px-3"><UserRound className="size-3" />Assignee</span>
         <span className="flex items-center gap-1 border-l px-3"><CalendarDays className="size-3" />Date</span>
@@ -270,25 +270,32 @@ export function ListView() {
                                                 postDragSnapshot.isDragging && "bg-background shadow-lg ring-2 ring-primary/40",
                                               )}
                                             >
-                                              <span className="flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-md bg-muted text-muted-foreground">
-                                                {cover ? (
-                                                  cover.mediaType === "video" ? (
-                                                    <span className="relative flex h-full w-full items-center justify-center bg-black/10">
-                                                      <Play className="size-3.5 fill-foreground/70 text-foreground/70" />
-                                                    </span>
+                                              <span
+                                                className={cn(
+                                                  "sticky left-0 z-10 col-span-2 flex min-w-0 items-center gap-2 border-r pr-3",
+                                                  isOverdue && !postDragSnapshot.isDragging ? "bg-red-50" : "bg-background",
+                                                )}
+                                              >
+                                                <span className="flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-md bg-muted text-muted-foreground">
+                                                  {cover ? (
+                                                    cover.mediaType === "video" ? (
+                                                      <span className="relative flex h-full w-full items-center justify-center bg-black/10">
+                                                        <Play className="size-3.5 fill-foreground/70 text-foreground/70" />
+                                                      </span>
+                                                    ) : (
+                                                      // eslint-disable-next-line @next/next/no-img-element
+                                                      <img src={cover.imageUrl} alt="" className="h-full w-full object-cover" />
+                                                    )
                                                   ) : (
-                                                    // eslint-disable-next-line @next/next/no-img-element
-                                                    <img src={cover.imageUrl} alt="" className="h-full w-full object-cover" />
-                                                  )
-                                                ) : (
-                                                  <ImageOff className="size-3.5" />
-                                                )}
-                                              </span>
-                                              <span className="flex min-w-0 items-center gap-2 px-3">
-                                                <span className="truncate font-medium">{post.title || "Untitled post"}</span>
-                                                {post.needsChanges && (
-                                                  <span className="size-2.5 shrink-0 rounded-full bg-amber-500" title="Needs changes" />
-                                                )}
+                                                    <ImageOff className="size-3.5" />
+                                                  )}
+                                                </span>
+                                                <span className="flex min-w-0 items-center gap-2">
+                                                  <span className="truncate font-medium">{post.title || "Untitled post"}</span>
+                                                  {post.needsChanges && (
+                                                    <span className="size-2.5 shrink-0 rounded-full bg-amber-500" title="Needs changes" />
+                                                  )}
+                                                </span>
                                               </span>
                                               <span className="min-w-0 border-l px-3">
                                                 <PlatformBadgeGroup platforms={post.platforms} />
