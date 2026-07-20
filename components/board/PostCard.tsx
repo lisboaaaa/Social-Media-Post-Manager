@@ -53,7 +53,7 @@ export function PostCard({ post, index }: { post: Post; index: number }) {
           {...provided.dragHandleProps}
           onClick={handleClick}
           className={cn(
-            "cursor-pointer rounded-lg bg-background p-3 shadow-md transition-all duration-150 ease-out hover:-translate-y-0.5 hover:shadow-lg",
+            "cursor-pointer rounded-lg bg-background p-3 shadow-[0_1px_2px_rgba(0,0,0,0.06),0_8px_16px_-4px_rgba(0,0,0,0.12)] transition-all duration-150 ease-out hover:-translate-y-0.5 hover:shadow-[0_2px_4px_rgba(0,0,0,0.08),0_16px_28px_-6px_rgba(0,0,0,0.18)]",
             snapshot.isDragging && "ring-2 ring-primary/40",
           )}
         >
