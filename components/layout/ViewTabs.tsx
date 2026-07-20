@@ -3,15 +3,16 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+import { Archive, BarChart3, Calendar, Columns3, Inbox } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useStore } from "@/lib/store";
 
 const TABS = [
-  { href: "/board", label: "Board" },
-  { href: "/calendar", label: "Calendar" },
-  { href: "/archive", label: "Archive" },
-  { href: "/analytics", label: "Analytics" },
-  { href: "/inbox", label: "Suggestions" },
+  { href: "/board", label: "Board", icon: Columns3 },
+  { href: "/calendar", label: "Calendar", icon: Calendar },
+  { href: "/archive", label: "Archive", icon: Archive },
+  { href: "/analytics", label: "Analytics", icon: BarChart3 },
+  { href: "/inbox", label: "Suggestions", icon: Inbox },
 ];
 
 export function ViewTabs() {
@@ -43,6 +44,7 @@ export function ViewTabs() {
       )}
       {TABS.map((tab, index) => {
         const active = index === activeIndex;
+        const Icon = tab.icon;
         return (
           <Link
             key={tab.href}
@@ -52,14 +54,16 @@ export function ViewTabs() {
             }}
             role="tab"
             aria-selected={active}
+            title={tab.label}
             className={cn(
-              "relative z-10 inline-flex shrink-0 items-center rounded-md px-3.5 py-1.5 text-sm font-medium transition-colors",
+              "relative z-10 inline-flex shrink-0 items-center gap-1.5 rounded-md px-2.5 py-1.5 text-sm font-medium transition-colors sm:px-3.5",
               active ? "text-primary-foreground" : "text-muted-foreground hover:text-foreground",
             )}
           >
-            {tab.label}
+            <Icon className="size-4 sm:hidden" />
+            <span className="hidden sm:inline">{tab.label}</span>
             {tab.href === "/inbox" && hasNewSuggestions && (
-              <span className="ml-1.5 size-1.5 shrink-0 rounded-full bg-destructive" aria-label="New suggestions" />
+              <span className="size-1.5 shrink-0 rounded-full bg-destructive" aria-label="New suggestions" />
             )}
           </Link>
         );

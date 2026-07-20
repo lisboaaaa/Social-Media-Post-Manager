@@ -5,7 +5,7 @@ import { MessageSquareText } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerTrigger } from "@/components/ui/drawer";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { RecentPostComments } from "@/components/comments/RecentPostComments";
 import { MyCommentsFeed } from "@/components/comments/MyCommentsFeed";
@@ -35,10 +35,10 @@ export function TeamNotesTab() {
   };
 
   return (
-    <Sheet open={open} onOpenChange={handleOpenChange}>
-      <SheetTrigger render={<Button variant="outline" size="lg" className="relative px-4 text-[0.95rem]" />}>
+    <Drawer open={open} onOpenChange={handleOpenChange} swipeDirection="right" showSwipeHandle>
+      <DrawerTrigger render={<Button variant="outline" size="lg" className="relative px-2.5 text-[0.95rem] sm:px-4" />}>
         <MessageSquareText className="size-4" />
-        Team notes
+        <span className="hidden sm:inline">Team notes</span>
         {unreadCount > 0 && (
           <Badge
             variant="destructive"
@@ -47,12 +47,12 @@ export function TeamNotesTab() {
             {unreadCount > 99 ? "99+" : unreadCount}
           </Badge>
         )}
-      </SheetTrigger>
+      </DrawerTrigger>
 
-      <SheetContent side="right" className="w-full sm:max-w-sm">
-        <SheetHeader>
-          <SheetTitle>Team notes</SheetTitle>
-        </SheetHeader>
+      <DrawerContent className="w-full sm:max-w-sm">
+        <DrawerHeader>
+          <DrawerTitle>Team notes</DrawerTitle>
+        </DrawerHeader>
         <Tabs defaultValue="recent" className="flex flex-1 flex-col overflow-hidden px-4">
           <TabsList className="mb-4 h-10 self-center">
             <TabsTrigger value="recent" className="px-5 text-sm">
@@ -88,7 +88,7 @@ export function TeamNotesTab() {
             </TabsContent>
           </ScrollArea>
         </Tabs>
-      </SheetContent>
-    </Sheet>
+      </DrawerContent>
+    </Drawer>
   );
 }

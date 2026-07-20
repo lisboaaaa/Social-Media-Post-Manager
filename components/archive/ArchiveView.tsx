@@ -61,7 +61,7 @@ export function ArchiveView() {
       {groups.map((group) => (
         <div key={group.label} className="flex flex-col gap-3">
           <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">{group.label}</h2>
-          <div className="grid grid-cols-4 gap-2 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-9">
+          <div className="grid grid-cols-3 gap-2 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-9">
             {group.items.map((post) => {
               const cover = post.images[0];
               const assignee = profiles.find((p) => p.id === post.assigneeId);

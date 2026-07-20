@@ -10,7 +10,7 @@ import { DateRangeFilter } from "./DateRangeFilter";
 
 // Chip style shared by every filter trigger — no border, sits as its own
 // pill inside the tray instead of a bordered form-field-with-label-above.
-const CHIP_CLASS = "gap-1.5 rounded-lg border-0 bg-background shadow-sm";
+const CHIP_CLASS = "shrink-0 gap-1.5 rounded-lg border-0 bg-background shadow-sm";
 const ACTIVE_TRIGGER_CLASS = "bg-primary/10 text-primary";
 
 export function FilterBar() {
@@ -23,13 +23,13 @@ export function FilterBar() {
     Boolean(filters.dateTo);
 
   return (
-    <div className="flex flex-wrap items-center gap-1.5 rounded-xl bg-muted/50 p-1.5 shadow-sm">
+    <div className="scrollbar-hide flex flex-nowrap items-center gap-1.5 overflow-x-auto rounded-xl bg-muted/50 p-1.5 shadow-sm">
       <button
         type="button"
         aria-label={boardViewMode === "board" ? "Switch to List view" : "Switch to Board view"}
         title={boardViewMode === "board" ? "Switch to List view" : "Switch to Board view"}
         onClick={() => setBoardViewMode(boardViewMode === "board" ? "list" : "board")}
-        className="flex size-7 items-center justify-center rounded-lg text-muted-foreground hover:bg-background hover:text-foreground"
+        className="flex size-7 shrink-0 items-center justify-center rounded-lg text-muted-foreground hover:bg-background hover:text-foreground"
       >
         <Eye className="size-3.5" />
       </button>
@@ -95,7 +95,7 @@ export function FilterBar() {
       <DateRangeFilter />
 
       {active && (
-        <Button variant="ghost" size="sm" onClick={clearFilters}>
+        <Button variant="ghost" size="sm" onClick={clearFilters} className="shrink-0">
           <X className="size-3.5" />
           Clear
         </Button>

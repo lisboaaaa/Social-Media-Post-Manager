@@ -9,13 +9,15 @@ import { FilterBar } from "@/components/filters/FilterBar";
 export function Header() {
   return (
     <div className="sticky top-0 z-40 bg-background/70 shadow-sm backdrop-blur-md">
-      <div className="flex flex-wrap items-center justify-between gap-3 px-3 py-3 sm:px-6 sm:py-4">
-        <h1 className="text-xl font-bold tracking-tight sm:text-3xl">Social Media Post Manager</h1>
-        <div className="flex items-center gap-2">
+      <div className="flex flex-nowrap items-center justify-between gap-2 px-3 py-3 sm:gap-3 sm:px-6 sm:py-4">
+        <h1 className="min-w-0 flex-1 truncate text-xl font-bold tracking-tight sm:flex-none sm:text-3xl">
+          Social Media Post Manager
+        </h1>
+        <div className="flex shrink-0 items-center gap-2">
           <TeamNotesTab />
-          <Link href="/posts/new" className={buttonVariants({ size: "lg", className: "px-4 text-[0.95rem]" })}>
+          <Link href="/posts/new" className={buttonVariants({ size: "lg", className: "px-2.5 text-[0.95rem] sm:px-4" })}>
             <Plus className="size-4" />
-            New post
+            <span className="hidden sm:inline">New post</span>
           </Link>
           <UserMenu />
         </div>

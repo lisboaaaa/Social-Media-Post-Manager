@@ -52,7 +52,7 @@ export function DateRangeFilter() {
             variant="outline"
             size="sm"
             className={cn(
-              "gap-1.5 rounded-lg border-0 bg-background shadow-sm",
+              "shrink-0 gap-1.5 rounded-lg border-0 bg-background shadow-sm",
               isActive && "bg-primary/10 text-primary",
             )}
           />

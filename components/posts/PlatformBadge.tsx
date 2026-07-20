@@ -23,7 +23,15 @@ export const PLATFORM_ACCENT_HEX: Record<Platform, string> = {
   x: "#171717",
 };
 
-export function PlatformBadge({ platform, className }: { platform: Platform; className?: string }) {
+export function PlatformBadge({
+  platform,
+  className,
+  labelClassName,
+}: {
+  platform: Platform;
+  className?: string;
+  labelClassName?: string;
+}) {
   return (
     <span
       className={cn(
@@ -33,7 +41,7 @@ export function PlatformBadge({ platform, className }: { platform: Platform; cla
       )}
     >
       <span className="h-1.5 w-1.5 rounded-full bg-current" />
-      {PLATFORM_LABELS[platform]}
+      <span className={labelClassName}>{PLATFORM_LABELS[platform]}</span>
     </span>
   );
 }
