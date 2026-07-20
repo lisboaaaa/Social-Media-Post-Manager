@@ -5,8 +5,8 @@ import {
   fetchHistoryContext,
   fetchPostByNumberOrId,
   logHistory,
+  resolveAssigneeId,
   resolveCategoryIds,
-  resolveProfileIdByEmail,
   summarizePostChanges,
   syncPostChildren,
   McpToolError,
@@ -19,7 +19,7 @@ export const updatePostSchema = z.object({
   platforms: z.enum(PLATFORMS as [string, ...string[]]).array().min(1).optional(),
   categoryNames: z.array(z.string()).optional(),
   targetDate: z.string().date().nullable().optional(),
-  assigneeEmail: z.string().email().nullable().optional(),
+  assignee: z.string().nullable().optional().describe("Full name or company email of the teammate this post is assigned to"),
   needsChanges: z.boolean().optional(),
   publishedUrls: z
     .record(z.string(), z.string().url())
@@ -38,7 +38,7 @@ export async function updatePostTool(input: UpdatePostInput, profile: Profile, s
   if (input.title !== undefined) columns.title = input.title;
   if (input.targetDate !== undefined) columns.target_date = input.targetDate;
   if (input.needsChanges !== undefined) columns.needs_changes = input.needsChanges;
-  const assigneeId = input.assigneeEmail !== undefined ? await resolveProfileIdByEmail(supabase, input.assigneeEmail) : undefined;
+  const assigneeId = input.assignee !== undefined ? await resolveAssigneeId(supabase, input.assignee) : undefined;
   if (assigneeId !== undefined) columns.assignee_id = assigneeId;
 
   const { error } = await supabase.from("posts").update(columns).eq("id", current.id);

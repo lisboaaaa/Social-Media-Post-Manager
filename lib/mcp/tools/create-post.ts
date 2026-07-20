@@ -3,7 +3,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { mapPostRow, POST_SELECT } from "@/lib/supabase/mappers";
 import { PLATFORMS } from "@/lib/types";
 import type { Profile } from "@/lib/types";
-import { fetchStages, logHistory, resolveCategoryIds, resolveProfileIdByEmail, syncPostChildren, uploadPostMedia, McpToolError } from "./shared";
+import { fetchStages, logHistory, resolveAssigneeId, resolveCategoryIds, syncPostChildren, uploadPostMedia, McpToolError } from "./shared";
 
 export const createPostSchema = z.object({
   title: z.string().default(""),
@@ -14,7 +14,7 @@ export const createPostSchema = z.object({
     .describe("Post copy per platform, keyed by platform name (e.g. { linkedin: \"...\" })"),
   categoryNames: z.array(z.string()).default([]).describe("Category tags, e.g. [\"Meet the Team\"] — created if they don't exist yet"),
   targetDate: z.string().date().nullable().optional().describe("ISO date (yyyy-mm-dd) this post is targeted for, if known"),
-  assigneeEmail: z.string().email().nullable().optional().describe("Company email of the teammate this post is assigned to"),
+  assignee: z.string().nullable().optional().describe("Full name or company email of the teammate this post is assigned to"),
   image: z
     .union([
       z.object({ url: z.string().url() }),
@@ -28,7 +28,7 @@ export type CreatePostInput = z.infer<typeof createPostSchema>;
 
 export async function createPostTool(input: CreatePostInput, profile: Profile, supabase: SupabaseClient) {
   const categoryIds = await resolveCategoryIds(supabase, input.categoryNames);
-  const assigneeId = await resolveProfileIdByEmail(supabase, input.assigneeEmail);
+  const assigneeId = await resolveAssigneeId(supabase, input.assignee);
   const stages = await fetchStages(supabase);
   const defaultStageId = stages.find((s) => s.isDefaultNewPostStage)?.id ?? stages[0]?.id ?? "backlog";
 
@@ -42,7 +42,7 @@ export async function createPostTool(input: CreatePostInput, profile: Profile, s
     target_date: input.targetDate ?? null,
     needs_changes: false,
     assignee_id: assigneeId,
-    requested_by_id: null,
+    requested_by_id: profile.id,
     created_by: profile.id,
     created_at: timestamp,
     updated_at: timestamp,

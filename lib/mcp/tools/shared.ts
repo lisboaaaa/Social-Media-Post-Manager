@@ -89,11 +89,28 @@ export async function resolveCategoryIds(supabase: SupabaseClient, categoryNames
   return ids;
 }
 
-export async function resolveProfileIdByEmail(supabase: SupabaseClient, email: string | null | undefined): Promise<string | null> {
-  if (!email) return null;
-  const { data, error } = await supabase.from("profiles").select("id").eq("email", email).single();
-  if (error || !data) throw new McpToolError(`No team member found with email ${email}.`);
-  return data.id;
+// Accepts either a company email or a full name (case-insensitive, partial
+// match) — chat conversations naturally reference teammates by name, and
+// there's no separate lookup tool to resolve one to the other first.
+export async function resolveAssigneeId(supabase: SupabaseClient, value: string | null | undefined): Promise<string | null> {
+  if (!value) return null;
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+
+  if (trimmed.includes("@")) {
+    const { data, error } = await supabase.from("profiles").select("id").ilike("email", trimmed).single();
+    if (error || !data) throw new McpToolError(`No team member found with email ${trimmed}.`);
+    return data.id;
+  }
+
+  const { data, error } = await supabase.from("profiles").select("id, full_name").ilike("full_name", `%${trimmed}%`);
+  if (error) throw new McpToolError(`Couldn't look up team member "${trimmed}": ${error.message}`);
+  if (!data || data.length === 0) throw new McpToolError(`No team member found matching "${trimmed}".`);
+  if (data.length > 1) {
+    const names = data.map((p: { full_name: string }) => p.full_name).join(", ");
+    throw new McpToolError(`"${trimmed}" matches more than one teammate: ${names}. Use their full name or email to disambiguate.`);
+  }
+  return data[0].id;
 }
 
 // Mirrors syncPostChildren in lib/store.tsx: delete-then-reinsert per child
