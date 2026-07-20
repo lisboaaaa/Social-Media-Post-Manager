@@ -241,6 +241,10 @@ export function ListView() {
                                       const assignee = profiles.find((p) => p.id === post.assigneeId);
                                       const postCategories = categories.filter((c) => post.categoryIds.includes(c.id));
                                       const cover = post.images[0];
+                                      // Backlog/Writing posts normally don't have an image yet — same
+                                      // rule the Board cards use, so the thumbnail slot stays blank
+                                      // instead of looking like a missing/broken image this early.
+                                      const showThumbnail = post.status !== "backlog" && post.status !== "writing";
                                       const isOverdue =
                                         post.targetDate !== null &&
                                         post.targetDate < today &&
@@ -277,18 +281,19 @@ export function ListView() {
                                                 )}
                                               >
                                                 <span className="flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-md bg-muted text-muted-foreground">
-                                                  {cover ? (
-                                                    cover.mediaType === "video" ? (
-                                                      <span className="relative flex h-full w-full items-center justify-center bg-black/10">
-                                                        <Play className="size-3.5 fill-foreground/70 text-foreground/70" />
-                                                      </span>
+                                                  {showThumbnail &&
+                                                    (cover ? (
+                                                      cover.mediaType === "video" ? (
+                                                        <span className="relative flex h-full w-full items-center justify-center bg-black/10">
+                                                          <Play className="size-3.5 fill-foreground/70 text-foreground/70" />
+                                                        </span>
+                                                      ) : (
+                                                        // eslint-disable-next-line @next/next/no-img-element
+                                                        <img src={cover.imageUrl} alt="" className="h-full w-full object-cover" />
+                                                      )
                                                     ) : (
-                                                      // eslint-disable-next-line @next/next/no-img-element
-                                                      <img src={cover.imageUrl} alt="" className="h-full w-full object-cover" />
-                                                    )
-                                                  ) : (
-                                                    <ImageOff className="size-3.5" />
-                                                  )}
+                                                      <ImageOff className="size-3.5" />
+                                                    ))}
                                                 </span>
                                                 <span className="flex min-w-0 items-center gap-2">
                                                   <span className="truncate font-medium">{post.title || "Untitled post"}</span>
