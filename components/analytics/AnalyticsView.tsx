@@ -1,8 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { ArrowUpDown } from "lucide-react";
-import { PlatformBadge, PLATFORM_ACCENT_HEX } from "@/components/posts/PlatformBadge";
+import { ArrowUpDown, ImageOff } from "lucide-react";
+import { PlatformBadge, PlatformBadgeGroup, PLATFORM_ACCENT_HEX } from "@/components/posts/PlatformBadge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useStore } from "@/lib/store";
 import { weightedAverage } from "@/lib/postAnalyticsMath";
@@ -12,6 +12,7 @@ import { InfoTooltip } from "./InfoTooltip";
 import { Sparkline } from "./Sparkline";
 import { TrendChart } from "./TrendChart";
 import { TrendIndicator } from "./TrendIndicator";
+import { WorldMap } from "./WorldMap";
 
 // Shared with PostAnalyticsPanel so the same term always gets the same
 // explanation, wherever it shows up.
@@ -34,6 +35,7 @@ interface Row {
   platform: PostAnalytics["platform"];
   categoryIds: string[];
   title: string;
+  coverImageUrl: string | null;
   sessions: number;
   users: number;
   newUsers: number;
@@ -43,6 +45,12 @@ interface Row {
   conversions: number;
   currentWeekSessions: number;
   previousWeekSessions: number;
+  currentWeekUsers: number;
+  previousWeekUsers: number;
+  currentWeekPageViews: number;
+  previousWeekPageViews: number;
+  currentWeekConversions: number;
+  previousWeekConversions: number;
   dailySessions: number[];
 }
 
@@ -124,6 +132,7 @@ export function AnalyticsView() {
         platform,
         categoryIds: post.categoryIds,
         title: post.title || "Untitled post",
+        coverImageUrl: post.images[0]?.imageUrl ?? null,
         sessions: entries.reduce((sum, e) => sum + e.sessions, 0),
         users: entries.reduce((sum, e) => sum + e.users, 0),
         newUsers: entries.reduce((sum, e) => sum + e.newUsers, 0),
@@ -133,6 +142,12 @@ export function AnalyticsView() {
         conversions: entries.reduce((sum, e) => sum + e.conversions, 0),
         currentWeekSessions: currentWeek.reduce((sum, e) => sum + e.sessions, 0),
         previousWeekSessions: previousWeek.reduce((sum, e) => sum + e.sessions, 0),
+        currentWeekUsers: currentWeek.reduce((sum, e) => sum + e.users, 0),
+        previousWeekUsers: previousWeek.reduce((sum, e) => sum + e.users, 0),
+        currentWeekPageViews: currentWeek.reduce((sum, e) => sum + e.pageViews, 0),
+        previousWeekPageViews: previousWeek.reduce((sum, e) => sum + e.pageViews, 0),
+        currentWeekConversions: currentWeek.reduce((sum, e) => sum + e.conversions, 0),
+        previousWeekConversions: previousWeek.reduce((sum, e) => sum + e.conversions, 0),
         dailySessions: sorted.map((e) => e.sessions),
       });
     }
@@ -146,9 +161,32 @@ export function AnalyticsView() {
       users: rows.reduce((sum, r) => sum + r.users, 0),
       pageViews: rows.reduce((sum, r) => sum + r.pageViews, 0),
       conversions: rows.reduce((sum, r) => sum + r.conversions, 0),
+      currentWeekSessions: rows.reduce((sum, r) => sum + r.currentWeekSessions, 0),
+      previousWeekSessions: rows.reduce((sum, r) => sum + r.previousWeekSessions, 0),
+      currentWeekUsers: rows.reduce((sum, r) => sum + r.currentWeekUsers, 0),
+      previousWeekUsers: rows.reduce((sum, r) => sum + r.previousWeekUsers, 0),
+      currentWeekPageViews: rows.reduce((sum, r) => sum + r.currentWeekPageViews, 0),
+      previousWeekPageViews: rows.reduce((sum, r) => sum + r.previousWeekPageViews, 0),
+      currentWeekConversions: rows.reduce((sum, r) => sum + r.currentWeekConversions, 0),
+      previousWeekConversions: rows.reduce((sum, r) => sum + r.previousWeekConversions, 0),
     }),
     [rows],
   );
+
+  const topPost = useMemo(() => {
+    const byPost = new Map<string, { sessions: number; users: number }>();
+    for (const row of rows) {
+      const existing = byPost.get(row.postId) ?? { sessions: 0, users: 0 };
+      existing.sessions += row.sessions;
+      existing.users += row.users;
+      byPost.set(row.postId, existing);
+    }
+    const [topId, topTotals] = [...byPost.entries()].sort((a, b) => b[1].sessions - a[1].sessions)[0] ?? [];
+    if (!topId || topTotals.sessions === 0) return null;
+    const post = filteredPosts.find((p) => p.id === topId);
+    if (!post) return null;
+    return { post, sessions: topTotals.sessions, users: topTotals.users };
+  }, [rows, filteredPosts]);
 
   const byPlatform = useMemo<GroupTotal[]>(() => {
     const map = new Map<string, GroupTotal>();
@@ -269,6 +307,7 @@ export function AnalyticsView() {
             Sessions
             <InfoTooltip text={METRIC_EXPLANATIONS.sessions} />
           </div>
+          <TrendIndicator current={totals.currentWeekSessions} previous={totals.previousWeekSessions} />
         </div>
         <div>
           <div className="text-xl font-semibold">{totals.users}</div>
@@ -276,6 +315,7 @@ export function AnalyticsView() {
             Users
             <InfoTooltip text={METRIC_EXPLANATIONS.users} />
           </div>
+          <TrendIndicator current={totals.currentWeekUsers} previous={totals.previousWeekUsers} />
         </div>
         <div>
           <div className="text-xl font-semibold">{totals.pageViews}</div>
@@ -283,6 +323,7 @@ export function AnalyticsView() {
             Page views
             <InfoTooltip text={METRIC_EXPLANATIONS.pageViews} />
           </div>
+          <TrendIndicator current={totals.currentWeekPageViews} previous={totals.previousWeekPageViews} />
         </div>
         <div>
           <div className="text-xl font-semibold">{totals.conversions}</div>
@@ -290,12 +331,41 @@ export function AnalyticsView() {
             Conversions
             <InfoTooltip text={METRIC_EXPLANATIONS.conversions} />
           </div>
+          <TrendIndicator current={totals.currentWeekConversions} previous={totals.previousWeekConversions} />
         </div>
       </div>
+
+      {topPost && (
+        <button
+          type="button"
+          onClick={() => openPreview(topPost.post.id)}
+          className="flex items-center gap-3 rounded-xl border bg-background p-3 text-left shadow-sm transition-shadow hover:shadow-md"
+        >
+          <span className="flex size-14 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-muted text-muted-foreground">
+            {topPost.post.images[0] ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={topPost.post.images[0].imageUrl} alt="" className="h-full w-full object-cover" />
+            ) : (
+              <ImageOff className="size-4" />
+            )}
+          </span>
+          <div className="flex min-w-0 flex-1 flex-col gap-1">
+            <span className="text-[10px] font-semibold uppercase tracking-wide text-primary">Top performing post</span>
+            <span className="truncate text-sm font-medium">{topPost.post.title || "Untitled post"}</span>
+            <PlatformBadgeGroup platforms={topPost.post.platforms} />
+          </div>
+          <div className="flex shrink-0 flex-col items-end gap-0.5 text-right">
+            <span className="text-lg font-semibold">{topPost.sessions}</span>
+            <span className="text-xs text-muted-foreground">sessions</span>
+          </div>
+        </button>
+      )}
 
       <div className="rounded-xl border p-3">
         <TrendChart points={dailyTotals} label="Sessions over time" />
       </div>
+
+      <WorldMap groups={byCountry} />
 
       <div className="flex flex-col gap-3 sm:flex-row">
         <GroupTotalsCard title="By platform" groups={byPlatform} />
@@ -378,7 +448,19 @@ export function AnalyticsView() {
                 onClick={() => openPreview(row.postId)}
                 className="cursor-pointer border-t hover:bg-muted/30"
               >
-                <td className="max-w-56 truncate px-3 py-2 font-medium">{row.title}</td>
+                <td className="px-3 py-2">
+                  <div className="flex max-w-56 items-center gap-2">
+                    <span className="flex size-7 shrink-0 items-center justify-center overflow-hidden rounded-md bg-muted text-muted-foreground">
+                      {row.coverImageUrl ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={row.coverImageUrl} alt="" className="h-full w-full object-cover" />
+                      ) : (
+                        <ImageOff className="size-3" />
+                      )}
+                    </span>
+                    <span className="truncate font-medium">{row.title}</span>
+                  </div>
+                </td>
                 <td className="px-3 py-2">
                   <PlatformBadge platform={row.platform} />
                 </td>
