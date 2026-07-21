@@ -103,10 +103,17 @@ export function DevToolsPanel({ open, onOpenChange }: DevToolsPanelProps) {
     setLoadingStats(false);
   };
 
-  const handleOpenChange = (next: boolean) => {
-    onOpenChange(next);
-    if (next) loadStats();
-  };
+  // This panel is opened by a menu item elsewhere (UserMenu) flipping the
+  // `open` prop directly — that never fires the Sheet's own onOpenChange
+  // callback (that one only fires for Sheet-internal closes, e.g. Escape),
+  // so loading stats from there never actually ran. Watching `open` itself
+  // covers both cases.
+  useEffect(() => {
+    if (open) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      loadStats();
+    }
+  }, [open]);
 
   const handleRunPurge = async () => {
     setPurging(true);
@@ -201,7 +208,7 @@ export function DevToolsPanel({ open, onOpenChange }: DevToolsPanelProps) {
   const storagePercent = stats ? Math.min(100, (stats.totalBytes / STORAGE_QUOTA_BYTES) * 100) : 0;
 
   return (
-    <Sheet open={open} onOpenChange={handleOpenChange}>
+    <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="right" className="w-full gap-2 overflow-y-auto bg-muted sm:max-w-md">
         <SheetHeader className="pb-0">
           <SheetTitle className="text-xl">Development tools</SheetTitle>
