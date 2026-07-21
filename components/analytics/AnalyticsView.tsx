@@ -8,8 +8,8 @@ import { useStore } from "@/lib/store";
 import { weightedAverage } from "@/lib/postAnalyticsMath";
 import { cn } from "@/lib/utils";
 import { PLATFORM_LABELS, type PostAnalytics } from "@/lib/types";
-import { BarList } from "./BarList";
 import { InfoTooltip } from "./InfoTooltip";
+import { ShareBar } from "./ShareBar";
 import { Sparkline } from "./Sparkline";
 import { TrendChart } from "./TrendChart";
 import { TrendIndicator } from "./TrendIndicator";
@@ -118,7 +118,7 @@ function GroupTotalsCard({
         <span className="h-3 w-0.5 rounded-full bg-[#6b4fff]" />
         {title}
       </h3>
-      <BarList items={capped.map((g) => ({ key: g.key, label: g.label, value: g.sessions, color: g.color, icon: iconFor?.(g.key) }))} />
+      <ShareBar items={capped.map((g) => ({ key: g.key, label: g.label, value: g.sessions, color: g.color, icon: iconFor?.(g.key) }))} />
     </div>
   );
 }
