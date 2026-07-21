@@ -1,6 +1,6 @@
 "use client";
 
-import { formatDistanceToNow } from "date-fns";
+import { format, formatDistanceToNow } from "date-fns";
 import { useStore } from "@/lib/store";
 
 export function PostHistoryList({ postId }: { postId: string }) {
@@ -26,7 +26,8 @@ export function PostHistoryList({ postId }: { postId: string }) {
             <span className="font-medium">{actorName(entry.actorId)}</span>
             <span className="text-muted-foreground">{entry.summary}</span>
             <span className="text-xs text-muted-foreground/70">
-              · {formatDistanceToNow(new Date(entry.createdAt), { addSuffix: true })}
+              · {formatDistanceToNow(new Date(entry.createdAt), { addSuffix: true })} ·{" "}
+              {format(new Date(entry.createdAt), "MMM d, yyyy 'at' h:mm a")}
             </span>
           </div>
         ))}
