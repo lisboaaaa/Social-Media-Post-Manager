@@ -25,8 +25,6 @@ export const METRIC_EXPLANATIONS = {
     "Share of sessions that lasted 10+ seconds, viewed a second page, or triggered a conversion — Google's bar for a \"real\" visit, not just a bounce.",
   bounceRate: "The opposite of engagement — sessions that left without doing any of that.",
   newUsers: "People visiting for the first time ever, out of the users above.",
-  conversions:
-    "Count of GA4 \"key events\" (what used to be called conversions) — form fills, sign-ups, whatever's configured on the property. Reads 0 if the site doesn't have any key events set up.",
   trend: "Daily sessions over the selected period, at a glance.",
   thisWeek: "This week's sessions compared with the 7 days before.",
 };
@@ -44,15 +42,12 @@ interface Row {
   pageViews: number;
   engagementRate: number | null;
   bounceRate: number | null;
-  conversions: number;
   currentWeekSessions: number;
   previousWeekSessions: number;
   currentWeekUsers: number;
   previousWeekUsers: number;
   currentWeekPageViews: number;
   previousWeekPageViews: number;
-  currentWeekConversions: number;
-  previousWeekConversions: number;
   dailySessions: number[];
 }
 
@@ -69,7 +64,6 @@ const SORT_OPTIONS = [
   { value: "sessions", label: "Sessions" },
   { value: "users", label: "Users" },
   { value: "pageViews", label: "Page views" },
-  { value: "conversions", label: "Conversions" },
 ] as const;
 type SortKey = (typeof SORT_OPTIONS)[number]["value"];
 
@@ -181,15 +175,12 @@ export function AnalyticsView() {
         pageViews: entries.reduce((sum, e) => sum + e.pageViews, 0),
         engagementRate: weightedAverage(entries, (e) => e.sessions, (e) => e.engagementRate),
         bounceRate: weightedAverage(entries, (e) => e.sessions, (e) => e.bounceRate),
-        conversions: entries.reduce((sum, e) => sum + e.conversions, 0),
         currentWeekSessions: currentWeek.reduce((sum, e) => sum + e.sessions, 0),
         previousWeekSessions: previousWeek.reduce((sum, e) => sum + e.sessions, 0),
         currentWeekUsers: currentWeek.reduce((sum, e) => sum + e.users, 0),
         previousWeekUsers: previousWeek.reduce((sum, e) => sum + e.users, 0),
         currentWeekPageViews: currentWeek.reduce((sum, e) => sum + e.pageViews, 0),
         previousWeekPageViews: previousWeek.reduce((sum, e) => sum + e.pageViews, 0),
-        currentWeekConversions: currentWeek.reduce((sum, e) => sum + e.conversions, 0),
-        previousWeekConversions: previousWeek.reduce((sum, e) => sum + e.conversions, 0),
         dailySessions: sorted.map((e) => e.sessions),
       });
     }
@@ -202,15 +193,12 @@ export function AnalyticsView() {
       sessions: rows.reduce((sum, r) => sum + r.sessions, 0),
       users: rows.reduce((sum, r) => sum + r.users, 0),
       pageViews: rows.reduce((sum, r) => sum + r.pageViews, 0),
-      conversions: rows.reduce((sum, r) => sum + r.conversions, 0),
       currentWeekSessions: rows.reduce((sum, r) => sum + r.currentWeekSessions, 0),
       previousWeekSessions: rows.reduce((sum, r) => sum + r.previousWeekSessions, 0),
       currentWeekUsers: rows.reduce((sum, r) => sum + r.currentWeekUsers, 0),
       previousWeekUsers: rows.reduce((sum, r) => sum + r.previousWeekUsers, 0),
       currentWeekPageViews: rows.reduce((sum, r) => sum + r.currentWeekPageViews, 0),
       previousWeekPageViews: rows.reduce((sum, r) => sum + r.previousWeekPageViews, 0),
-      currentWeekConversions: rows.reduce((sum, r) => sum + r.currentWeekConversions, 0),
-      previousWeekConversions: rows.reduce((sum, r) => sum + r.previousWeekConversions, 0),
     }),
     [rows],
   );
@@ -355,7 +343,7 @@ export function AnalyticsView() {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         <div className="rounded-xl border bg-background p-3 text-center">
           <div className="text-xl font-semibold">{totals.sessions}</div>
           <div className="flex items-center justify-center gap-1 text-xs text-muted-foreground">
@@ -379,14 +367,6 @@ export function AnalyticsView() {
             <InfoTooltip text={METRIC_EXPLANATIONS.pageViews} />
           </div>
           <TrendIndicator current={totals.currentWeekPageViews} previous={totals.previousWeekPageViews} />
-        </div>
-        <div className="rounded-xl border bg-background p-3 text-center">
-          <div className="text-xl font-semibold">{totals.conversions}</div>
-          <div className="flex items-center justify-center gap-1 text-xs text-muted-foreground">
-            Conversions
-            <InfoTooltip text={METRIC_EXPLANATIONS.conversions} />
-          </div>
-          <TrendIndicator current={totals.currentWeekConversions} previous={totals.previousWeekConversions} />
         </div>
       </div>
 
@@ -486,12 +466,6 @@ export function AnalyticsView() {
               </th>
               <th className="px-3 py-2 font-normal">
                 <span className="inline-flex items-center gap-1">
-                  Conversions
-                  <InfoTooltip text={METRIC_EXPLANATIONS.conversions} />
-                </span>
-              </th>
-              <th className="px-3 py-2 font-normal">
-                <span className="inline-flex items-center gap-1">
                   Trend
                   <InfoTooltip text={METRIC_EXPLANATIONS.trend} />
                 </span>
@@ -533,7 +507,6 @@ export function AnalyticsView() {
                 <td className="px-3 py-2">{row.pageViews}</td>
                 <td className="px-3 py-2">{formatPercent(row.engagementRate)}</td>
                 <td className="px-3 py-2">{formatPercent(row.bounceRate)}</td>
-                <td className="px-3 py-2">{row.conversions}</td>
                 <td className="px-3 py-2">
                   <Sparkline values={row.dailySessions} />
                 </td>

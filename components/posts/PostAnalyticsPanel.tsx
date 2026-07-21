@@ -22,7 +22,6 @@ interface PeriodTotals {
   engagementRate: number | null;
   avgEngagementTime: number | null;
   bounceRate: number | null;
-  conversions: number;
 }
 
 // Monday of the week containing this date — used as the group label/key.
@@ -43,7 +42,6 @@ function summarize(rows: PostAnalytics[], label: string): PeriodTotals {
     engagementRate: weightedAverage(rows, (r) => r.sessions, (r) => r.engagementRate),
     avgEngagementTime: weightedAverage(rows, (r) => r.sessions, (r) => r.avgEngagementTime),
     bounceRate: weightedAverage(rows, (r) => r.sessions, (r) => r.bounceRate),
-    conversions: rows.reduce((sum, r) => sum + r.conversions, 0),
   };
 }
 
@@ -138,7 +136,7 @@ export function PostAnalyticsPanel({ postId, platforms }: { postId: string; plat
               <div key={platform} className="flex flex-col gap-2">
                 {byPlatform.length > 1 && <span className="text-sm font-medium">{PLATFORM_LABELS[platform]}</span>}
 
-                <div className="grid grid-cols-5 gap-2 rounded-lg bg-muted/40 p-2 text-center">
+                <div className="grid grid-cols-4 gap-2 rounded-lg bg-muted/40 p-2 text-center">
                   <div>
                     <div className="text-sm font-semibold">{total.sessions}</div>
                     <div className="flex items-center justify-center gap-1 text-[10px] text-muted-foreground">
@@ -165,13 +163,6 @@ export function PostAnalyticsPanel({ postId, platforms }: { postId: string; plat
                     <div className="flex items-center justify-center gap-1 text-[10px] text-muted-foreground">
                       Page views
                       <InfoTooltip text={METRIC_EXPLANATIONS.pageViews} />
-                    </div>
-                  </div>
-                  <div>
-                    <div className="text-sm font-semibold">{total.conversions}</div>
-                    <div className="flex items-center justify-center gap-1 text-[10px] text-muted-foreground">
-                      Conv.
-                      <InfoTooltip text={METRIC_EXPLANATIONS.conversions} />
                     </div>
                   </div>
                 </div>
@@ -223,16 +214,10 @@ export function PostAnalyticsPanel({ postId, platforms }: { postId: string; plat
                             <InfoTooltip text={AVG_TIME_EXPLANATION} />
                           </span>
                         </th>
-                        <th className="px-2 py-1 font-normal">
+                        <th className="py-1 pl-2 font-normal">
                           <span className="inline-flex items-center gap-1">
                             Bounce
                             <InfoTooltip text={METRIC_EXPLANATIONS.bounceRate} />
-                          </span>
-                        </th>
-                        <th className="py-1 pl-2 font-normal">
-                          <span className="inline-flex items-center gap-1">
-                            Conv.
-                            <InfoTooltip text={METRIC_EXPLANATIONS.conversions} />
                           </span>
                         </th>
                       </tr>
@@ -246,8 +231,7 @@ export function PostAnalyticsPanel({ postId, platforms }: { postId: string; plat
                           <td className="px-2 py-1">{p.pageViews}</td>
                           <td className="px-2 py-1">{formatPercent(p.engagementRate)}</td>
                           <td className="px-2 py-1">{formatDuration(p.avgEngagementTime)}</td>
-                          <td className="px-2 py-1">{formatPercent(p.bounceRate)}</td>
-                          <td className="py-1 pl-2">{p.conversions}</td>
+                          <td className="py-1 pl-2">{formatPercent(p.bounceRate)}</td>
                         </tr>
                       ))}
                     </tbody>
