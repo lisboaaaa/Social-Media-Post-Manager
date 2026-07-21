@@ -13,3 +13,20 @@ export function weightedAverage<T>(rows: T[], sessions: (r: T) => number, pick: 
   }
   return weight === 0 ? null : weightedSum / weight;
 }
+
+// Fills any gap date within the observed range with 0 — without this, a
+// sparse series (e.g. sessions on day 1 and day 5 but nothing between, or
+// simply a day GA4 had zero traffic so no row exists at all) gets drawn as
+// if those days were adjacent, distorting the actual shape of the trend.
+export function fillDateGaps(byDate: Map<string, number>): { date: string; value: number }[] {
+  if (byDate.size === 0) return [];
+  const dates = [...byDate.keys()].sort();
+  const start = new Date(`${dates[0]}T00:00:00`);
+  const end = new Date(`${dates[dates.length - 1]}T00:00:00`);
+  const result: { date: string; value: number }[] = [];
+  for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+    const iso = d.toISOString().slice(0, 10);
+    result.push({ date: iso, value: byDate.get(iso) ?? 0 });
+  }
+  return result;
+}

@@ -5,7 +5,7 @@ import { ArrowUpDown, ImageOff, Monitor, Smartphone, Tablet, HelpCircle } from "
 import { PlatformBadge, PlatformBadgeGroup, PLATFORM_ACCENT_HEX } from "@/components/posts/PlatformBadge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useStore } from "@/lib/store";
-import { weightedAverage } from "@/lib/postAnalyticsMath";
+import { fillDateGaps, weightedAverage } from "@/lib/postAnalyticsMath";
 import { cn } from "@/lib/utils";
 import { PLATFORM_LABELS, type PostAnalytics } from "@/lib/types";
 import { InfoTooltip } from "./InfoTooltip";
@@ -158,9 +158,14 @@ export function AnalyticsView() {
       const post = filteredPosts.find((p) => p.id === postId);
       if (!post) continue;
 
-      const sorted = [...entries].sort((a, b) => a.date.localeCompare(b.date));
       const currentWeek = entries.filter((e) => e.date >= weekStart);
       const previousWeek = entries.filter((e) => e.date >= twoWeeksStart && e.date < weekStart);
+
+      // Merge same-date rows (one post can have several — one per link
+      // placement) before filling gaps, so a day isn't double-counted as
+      // two adjacent points.
+      const sessionsByDate = new Map<string, number>();
+      for (const e of entries) sessionsByDate.set(e.date, (sessionsByDate.get(e.date) ?? 0) + e.sessions);
 
       result.push({
         postId,
@@ -181,7 +186,7 @@ export function AnalyticsView() {
         previousWeekUsers: previousWeek.reduce((sum, e) => sum + e.users, 0),
         currentWeekPageViews: currentWeek.reduce((sum, e) => sum + e.pageViews, 0),
         previousWeekPageViews: previousWeek.reduce((sum, e) => sum + e.pageViews, 0),
-        dailySessions: sorted.map((e) => e.sessions),
+        dailySessions: fillDateGaps(sessionsByDate).map((d) => d.value),
       });
     }
 
@@ -258,7 +263,7 @@ export function AnalyticsView() {
       if (filters.platform !== "all" && a.platform !== filters.platform) continue;
       byDate.set(a.date, (byDate.get(a.date) ?? 0) + a.sessions);
     }
-    return [...byDate.entries()].sort((a, b) => a[0].localeCompare(b[0])).map(([date, value]) => ({ date, value }));
+    return fillDateGaps(byDate);
   }, [filteredPosts, filters.platform, postAnalytics]);
 
   const byCategory = useMemo<GroupTotal[]>(() => {
