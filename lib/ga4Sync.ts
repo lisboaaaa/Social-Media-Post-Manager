@@ -25,7 +25,16 @@ interface DailyMetrics {
   avgEngagementTime: number | null;
   bounceRate: number | null;
   conversions: number;
+  site: string;
 }
+
+// Which site each GA4 property tracks — informational only (see
+// post-analytics-site.sql for why this isn't part of the row's key).
+// An unlisted property id just falls back to itself as the label.
+const PROPERTY_SITE_NAMES: Record<string, string> = {
+  "502229642": "GenOS",
+  "405362406": "Daredata",
+};
 
 interface GeoMetrics {
   sessions: number;
@@ -97,6 +106,7 @@ export async function syncGa4Analytics(supabase: SupabaseClient): Promise<Ga4Syn
   const geoByKey = new Map<string, GeoMetrics>();
 
   for (const propertyId of propertyIds) {
+    const site = PROPERTY_SITE_NAMES[propertyId] ?? propertyId;
     const reportRes = await fetch(`https://analyticsdata.googleapis.com/v1beta/properties/${propertyId}:runReport`, {
       method: "POST",
       headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" },
@@ -145,6 +155,9 @@ export async function syncGa4Analytics(supabase: SupabaseClient): Promise<Ga4Syn
           avgEngagementTime: avgEngagementTime ?? null,
           bounceRate: bounceRate ?? null,
           conversions: (existing?.conversions ?? 0) + (conversions || 0),
+          // A tagged link only lives on one site in practice — this just
+          // takes whichever property actually had traffic for it.
+          site: sessions > 0 || !existing ? site : existing.site,
         });
       }
     }
@@ -207,6 +220,7 @@ export async function syncGa4Analytics(supabase: SupabaseClient): Promise<Ga4Syn
       avgEngagementTime: null,
       bounceRate: null,
       conversions: 0,
+      site: "",
     });
   }
 
@@ -221,6 +235,7 @@ export async function syncGa4Analytics(supabase: SupabaseClient): Promise<Ga4Syn
           platform,
           date,
           content,
+          site: metrics.site,
           sessions: metrics.sessions,
           users: metrics.users,
           new_users: metrics.newUsers,

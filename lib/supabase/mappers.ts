@@ -76,6 +76,7 @@ interface PostAnalyticsRow {
   platform: Platform;
   date: string;
   content: string;
+  site: string;
   sessions: number;
   users: number;
   new_users: number;
@@ -209,6 +210,7 @@ export function mapPostAnalyticsRow(row: PostAnalyticsRow): PostAnalytics {
     platform: row.platform,
     date: row.date,
     content: row.content,
+    site: row.site,
     sessions: row.sessions,
     users: row.users,
     newUsers: row.new_users,

@@ -99,6 +99,7 @@ export interface PostAnalytics {
   platform: Platform;
   date: string; // ISO date (yyyy-mm-dd)
   content: string; // utm_content value; "" = the plain caption link, no placement tag set
+  site: string; // which site's GA4 property this came from (e.g. "Daredata"/"GenOS"); "" if unknown
   sessions: number;
   users: number;
   newUsers: number; // GA4 "newUsers" — first-ever session in the date range

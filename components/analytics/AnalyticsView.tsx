@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState, type ReactNode } from "react";
-import { ArrowUpDown, ImageOff, Monitor, Smartphone, Tablet, Tag, HelpCircle } from "lucide-react";
+import { ArrowUpDown, ImageOff, Monitor, Smartphone, Tablet, HelpCircle } from "lucide-react";
 import { PlatformBadge, PlatformBadgeGroup, PLATFORM_ACCENT_HEX } from "@/components/posts/PlatformBadge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useStore } from "@/lib/store";
@@ -37,6 +37,7 @@ interface Row {
   categoryIds: string[];
   title: string;
   coverImageUrl: string | null;
+  site: string;
   sessions: number;
   users: number;
   newUsers: number;
@@ -156,6 +157,7 @@ export function AnalyticsView() {
         categoryIds: post.categoryIds,
         title: post.title || "Untitled post",
         coverImageUrl: post.images[0]?.imageUrl ?? null,
+        site: entries.find((e) => e.site)?.site ?? "",
         sessions: entries.reduce((sum, e) => sum + e.sessions, 0),
         users: entries.reduce((sum, e) => sum + e.users, 0),
         newUsers: entries.reduce((sum, e) => sum + e.newUsers, 0),
@@ -226,6 +228,19 @@ export function AnalyticsView() {
       existing.users += row.users;
       existing.pageViews += row.pageViews;
       map.set(row.platform, existing);
+    }
+    return [...map.values()].sort((a, b) => b.sessions - a.sessions);
+  }, [rows]);
+
+  const bySite = useMemo<GroupTotal[]>(() => {
+    const map = new Map<string, GroupTotal>();
+    for (const row of rows) {
+      const id = row.site || "Unknown";
+      const existing = map.get(id) ?? { key: id, label: id, sessions: 0, users: 0, pageViews: 0 };
+      existing.sessions += row.sessions;
+      existing.users += row.users;
+      existing.pageViews += row.pageViews;
+      map.set(id, existing);
     }
     return [...map.values()].sort((a, b) => b.sessions - a.sessions);
   }, [rows]);
@@ -400,11 +415,12 @@ export function AnalyticsView() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+      <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-2">
         <WorldMap groups={byCountry} />
         <div className="flex flex-col gap-4">
+          <GroupTotalsCard title="By site" groups={bySite} />
           <GroupTotalsCard title="By platform" groups={byPlatform} />
-          <GroupTotalsCard title="By category" groups={byCategory} iconFor={() => <Tag className="size-3.5" />} />
+          <GroupTotalsCard title="By category" groups={byCategory} />
           <GroupTotalsCard title="By device" groups={byDevice} iconFor={deviceIcon} />
         </div>
       </div>

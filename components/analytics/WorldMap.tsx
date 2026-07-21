@@ -118,12 +118,12 @@ export function WorldMap({ groups }: { groups: CountryGroup[] }) {
   if (markers.length === 0) return null;
 
   return (
-    <div className="flex h-full flex-col rounded-xl border p-3">
+    <div className="flex flex-col rounded-xl border p-3">
       <div className="mb-2 flex items-center justify-between">
         <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Where sessions come from</span>
         <span className="text-[10px] text-muted-foreground">bigger dot = more sessions</span>
       </div>
-      <div className="relative flex-1">
+      <div className="relative">
         <div className="absolute right-2 top-2 z-10 flex flex-col overflow-hidden rounded-md border bg-background shadow-sm">
           <button
             type="button"
