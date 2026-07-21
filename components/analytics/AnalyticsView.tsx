@@ -83,6 +83,22 @@ function formatPercent(value: number | null): string {
   return value === null ? "—" : `${(value * 100).toFixed(1)}%`;
 }
 
+// Caps a card at a fixed number of rows, folding the long tail into "Other"
+// — without this, By category (the one that actually grows over time as the
+// team adds tags) would make the sidebar taller and taller forever. Same
+// top-N-plus-Other pattern already used for country capping in ga4Sync.ts.
+const MAX_VISIBLE_ROWS = 5;
+function capGroups(groups: GroupTotal[]): GroupTotal[] {
+  if (groups.length <= MAX_VISIBLE_ROWS) return groups;
+  const visible = groups.slice(0, MAX_VISIBLE_ROWS - 1);
+  const rest = groups.slice(MAX_VISIBLE_ROWS - 1);
+  const other = rest.reduce(
+    (acc, g) => ({ ...acc, sessions: acc.sessions + g.sessions, users: acc.users + g.users, pageViews: acc.pageViews + g.pageViews }),
+    { key: "__other__", label: "Other", sessions: 0, users: 0, pageViews: 0 } as GroupTotal,
+  );
+  return [...visible, other];
+}
+
 // A small violet tick on each section header — the brand's accent, used
 // sparingly for exactly this (a highlight, not a blanket interactive color).
 function GroupTotalsCard({
@@ -95,13 +111,14 @@ function GroupTotalsCard({
   iconFor?: (key: string) => ReactNode;
 }) {
   if (groups.length === 0) return null;
+  const capped = capGroups(groups);
   return (
     <div className="flex flex-1 flex-col gap-2 rounded-xl border p-3">
       <h3 className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
         <span className="h-3 w-0.5 rounded-full bg-[#6b4fff]" />
         {title}
       </h3>
-      <BarList items={groups.map((g) => ({ key: g.key, label: g.label, value: g.sessions, color: g.color, icon: iconFor?.(g.key) }))} />
+      <BarList items={capped.map((g) => ({ key: g.key, label: g.label, value: g.sessions, color: g.color, icon: iconFor?.(g.key) }))} />
     </div>
   );
 }
