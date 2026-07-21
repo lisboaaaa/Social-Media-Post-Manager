@@ -280,9 +280,9 @@ export function ListView() {
                                                   isOverdue && !postDragSnapshot.isDragging ? "bg-red-50" : "bg-background",
                                                 )}
                                               >
-                                                <span className="flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-md bg-muted text-muted-foreground">
-                                                  {showThumbnail &&
-                                                    (cover ? (
+                                                {showThumbnail && (
+                                                  <span className="flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-md bg-muted text-muted-foreground">
+                                                    {cover ? (
                                                       cover.mediaType === "video" ? (
                                                         <span className="relative flex h-full w-full items-center justify-center bg-black/10">
                                                           <Play className="size-3.5 fill-foreground/70 text-foreground/70" />
@@ -293,8 +293,9 @@ export function ListView() {
                                                       )
                                                     ) : (
                                                       <ImageOff className="size-3.5" />
-                                                    ))}
-                                                </span>
+                                                    )}
+                                                  </span>
+                                                )}
                                                 <span className="flex min-w-0 items-center gap-2">
                                                   <span className="truncate font-medium">{post.title || "Untitled post"}</span>
                                                   {post.needsChanges && (
