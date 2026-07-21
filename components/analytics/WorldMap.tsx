@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { Maximize, ZoomIn, ZoomOut } from "lucide-react";
 import worldDotMap from "@/lib/analytics/worldDotMap.json";
 import { COUNTRY_COORDINATES } from "@/lib/analytics/countryCoordinates";
 
@@ -34,8 +35,13 @@ function radiusFor(sessions: number, maxSessions: number): number {
   return MIN_MARKER_RADIUS + (MAX_MARKER_RADIUS - MIN_MARKER_RADIUS) * Math.sqrt(sessions / maxSessions);
 }
 
+const MIN_ZOOM = 0.4; // furthest in — never smaller than 40% of the auto-fit box
+const MAX_ZOOM = 3; // furthest out — never more than 3x the auto-fit box
+const ZOOM_STEP = 1.4;
+
 export function WorldMap({ groups }: { groups: CountryGroup[] }) {
   const [hovered, setHovered] = useState<{ x: number; y: number; label: string; sessions: number } | null>(null);
+  const [zoom, setZoom] = useState(1);
 
   const markers = useMemo(() => {
     return groups
@@ -50,7 +56,7 @@ export function WorldMap({ groups }: { groups: CountryGroup[] }) {
 
   const maxSessions = Math.max(1, ...markers.map((m) => m.sessions));
 
-  const view = useMemo(() => {
+  const baseView = useMemo(() => {
     if (markers.length === 0) return { x: 0, y: 0, w: MAP_WIDTH, h: MAP_HEIGHT };
 
     const xs = markers.map((m) => m.x);
@@ -88,15 +94,65 @@ export function WorldMap({ groups }: { groups: CountryGroup[] }) {
     return { x: x0, y: y0, w, h };
   }, [markers]);
 
+  // A filter/data change reshuffles which countries have markers at all —
+  // start back at the auto-fit level rather than keeping a stale zoom that
+  // might now be centered on nothing. Legitimate reset-on-prop-change, same
+  // pattern as DateRangeFilter's pendingRange reset.
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setZoom(1);
+  }, [baseView]);
+
+  const view = useMemo(() => {
+    const cx = baseView.x + baseView.w / 2;
+    const cy = baseView.y + baseView.h / 2;
+    const w = Math.min(MAP_WIDTH, baseView.w * zoom);
+    const h = w / 2;
+    let x0 = cx - w / 2;
+    let y0 = cy - h / 2;
+    x0 = Math.max(0, Math.min(x0, MAP_WIDTH - w));
+    y0 = Math.max(0, Math.min(y0, MAP_HEIGHT - h));
+    return { x: x0, y: y0, w, h };
+  }, [baseView, zoom]);
+
   if (markers.length === 0) return null;
 
   return (
-    <div className="rounded-xl border p-3">
+    <div className="flex h-full flex-col rounded-xl border p-3">
       <div className="mb-2 flex items-center justify-between">
         <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Where sessions come from</span>
         <span className="text-[10px] text-muted-foreground">bigger dot = more sessions</span>
       </div>
-      <div className="relative">
+      <div className="relative flex-1">
+        <div className="absolute right-2 top-2 z-10 flex flex-col overflow-hidden rounded-md border bg-background shadow-sm">
+          <button
+            type="button"
+            aria-label="Zoom in"
+            title="Zoom in"
+            onClick={() => setZoom((z) => Math.max(MIN_ZOOM, z / ZOOM_STEP))}
+            className="flex size-6 items-center justify-center text-muted-foreground hover:bg-muted hover:text-foreground"
+          >
+            <ZoomIn className="size-3.5" />
+          </button>
+          <button
+            type="button"
+            aria-label="Zoom out"
+            title="Zoom out"
+            onClick={() => setZoom((z) => Math.min(MAX_ZOOM, z * ZOOM_STEP))}
+            className="flex size-6 items-center justify-center border-t text-muted-foreground hover:bg-muted hover:text-foreground"
+          >
+            <ZoomOut className="size-3.5" />
+          </button>
+          <button
+            type="button"
+            aria-label="Reset zoom"
+            title="Reset zoom"
+            onClick={() => setZoom(1)}
+            className="flex size-6 items-center justify-center border-t text-muted-foreground hover:bg-muted hover:text-foreground"
+          >
+            <Maximize className="size-3" />
+          </button>
+        </div>
         <svg viewBox={`${view.x} ${view.y} ${view.w} ${view.h}`} className="w-full" style={{ aspectRatio: "2 / 1" }}>
           <g className="fill-primary/25">
             {dots.map(([x, y], i) => (

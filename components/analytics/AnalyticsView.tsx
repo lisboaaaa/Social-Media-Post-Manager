@@ -6,6 +6,7 @@ import { PlatformBadge, PlatformBadgeGroup, PLATFORM_ACCENT_HEX } from "@/compon
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useStore } from "@/lib/store";
 import { weightedAverage } from "@/lib/postAnalyticsMath";
+import { cn } from "@/lib/utils";
 import { PLATFORM_LABELS, type PostAnalytics } from "@/lib/types";
 import { BarList } from "./BarList";
 import { InfoTooltip } from "./InfoTooltip";
@@ -280,7 +281,7 @@ export function AnalyticsView() {
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-5xl flex-col gap-4">
+    <div className="mx-auto flex w-full max-w-6xl flex-col gap-4">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold tracking-tight">Analytics</h1>
         <div className="flex items-center gap-2">
@@ -335,49 +336,58 @@ export function AnalyticsView() {
         </div>
       </div>
 
-      {topPost && (
-        <button
-          type="button"
-          onClick={() => openPreview(topPost.post.id)}
-          className="flex items-center gap-3 rounded-xl border bg-background p-3 text-left shadow-sm transition-shadow hover:shadow-md"
-        >
-          <span className="flex size-14 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-muted text-muted-foreground">
-            {topPost.post.images[0] ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={topPost.post.images[0].imageUrl} alt="" className="h-full w-full object-cover" />
-            ) : (
-              <ImageOff className="size-4" />
-            )}
-          </span>
-          <div className="flex min-w-0 flex-1 flex-col gap-1">
-            <span className="text-[10px] font-semibold uppercase tracking-wide text-primary">Top performing post</span>
-            <span className="truncate text-sm font-medium">{topPost.post.title || "Untitled post"}</span>
-            <PlatformBadgeGroup platforms={topPost.post.platforms} />
-          </div>
-          <div className="flex shrink-0 flex-col items-end gap-0.5 text-right">
-            <span className="text-lg font-semibold">{topPost.sessions}</span>
-            <span className="text-xs text-muted-foreground">sessions</span>
-          </div>
-        </button>
-      )}
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+        {topPost && (
+          <button
+            type="button"
+            onClick={() => openPreview(topPost.post.id)}
+            className="flex flex-col overflow-hidden rounded-xl border bg-background text-left shadow-sm transition-shadow hover:shadow-md lg:col-span-1"
+          >
+            <div className="relative aspect-[4/3] w-full overflow-hidden bg-muted">
+              {topPost.post.images[0] ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={topPost.post.images[0].imageUrl} alt="" className="h-full w-full object-cover" />
+              ) : (
+                <div className="flex h-full items-center justify-center text-muted-foreground">
+                  <ImageOff className="size-6" />
+                </div>
+              )}
+              <span className="absolute left-2 top-2 rounded-full bg-primary px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-primary-foreground">
+                Top post
+              </span>
+            </div>
+            <div className="flex flex-1 flex-col gap-2 p-3">
+              <span className="line-clamp-2 text-sm font-medium">{topPost.post.title || "Untitled post"}</span>
+              <PlatformBadgeGroup platforms={topPost.post.platforms} />
+              <div className="mt-auto flex items-end justify-between pt-1">
+                <div>
+                  <div className="text-xl font-semibold">{topPost.sessions}</div>
+                  <div className="text-[10px] text-muted-foreground">sessions</div>
+                </div>
+                <div className="text-right">
+                  <div className="text-sm font-medium">{topPost.users}</div>
+                  <div className="text-[10px] text-muted-foreground">users</div>
+                </div>
+              </div>
+            </div>
+          </button>
+        )}
 
-      <div className="rounded-xl border p-3">
-        <TrendChart points={dailyTotals} label="Sessions over time" />
-      </div>
-
-      <WorldMap groups={byCountry} />
-
-      <div className="flex flex-col gap-3 sm:flex-row">
-        <GroupTotalsCard title="By platform" groups={byPlatform} />
-        <GroupTotalsCard title="By category" groups={byCategory} />
-      </div>
-
-      {(byDevice.length > 0 || byCountry.length > 0) && (
-        <div className="flex flex-col gap-3 sm:flex-row">
-          <GroupTotalsCard title="By device" groups={byDevice} />
-          <GroupTotalsCard title="By country" groups={byCountry} />
+        <div className={cn("rounded-xl border p-3", topPost ? "lg:col-span-2" : "lg:col-span-3")}>
+          <TrendChart points={dailyTotals} label="Sessions over time" />
         </div>
-      )}
+      </div>
+
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+        <div className="lg:col-span-2">
+          <WorldMap groups={byCountry} />
+        </div>
+        <div className="flex flex-col gap-4 lg:col-span-1">
+          <GroupTotalsCard title="By platform" groups={byPlatform} />
+          <GroupTotalsCard title="By category" groups={byCategory} />
+          <GroupTotalsCard title="By device" groups={byDevice} />
+        </div>
+      </div>
 
       <div className="overflow-x-auto rounded-xl border">
         <table className="w-full whitespace-nowrap text-left text-sm">
