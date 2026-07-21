@@ -432,7 +432,7 @@ export function AnalyticsView() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <WorldMap groups={byCountry} />
         <div className="flex flex-col gap-4">
           <GroupTotalsCard title="By site" groups={bySite} />

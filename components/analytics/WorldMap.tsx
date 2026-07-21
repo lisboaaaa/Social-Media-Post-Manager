@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Maximize, ZoomIn, ZoomOut } from "lucide-react";
 import worldDotMap from "@/lib/analytics/worldDotMap.json";
 import { COUNTRY_COORDINATES } from "@/lib/analytics/countryCoordinates";
@@ -42,6 +42,23 @@ const ZOOM_STEP = 1.4;
 export function WorldMap({ groups }: { groups: CountryGroup[] }) {
   const [hovered, setHovered] = useState<{ x: number; y: number; label: string; sessions: number } | null>(null);
   const [zoom, setZoom] = useState(1);
+  const frameRef = useRef<HTMLDivElement>(null);
+  // Fills whatever height the grid row actually gives it (matching the
+  // sidebar next to it) instead of a fixed 2:1 ratio that left empty space
+  // below the map whenever the sidebar ended up taller. Falls back to 2
+  // before the first measurement lands.
+  const [containerAspect, setContainerAspect] = useState(2);
+
+  useEffect(() => {
+    const el = frameRef.current;
+    if (!el) return;
+    const observer = new ResizeObserver(([entry]) => {
+      const { width, height } = entry.contentRect;
+      if (width > 0 && height > 0) setContainerAspect(width / height);
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
 
   const markers = useMemo(() => {
     return groups
@@ -70,19 +87,20 @@ export function WorldMap({ groups }: { groups: CountryGroup[] }) {
       x0 -= (MIN_VIEW_WIDTH - w) / 2;
       w = MIN_VIEW_WIDTH;
     }
-    const minH = MIN_VIEW_WIDTH / 2;
+    const minH = MIN_VIEW_WIDTH / containerAspect;
     if (h < minH) {
       y0 -= (minH - h) / 2;
       h = minH;
     }
 
-    // Grow the shorter side to keep a 2:1 ratio rather than cropping/stretching.
-    if (w / h > 2) {
-      const targetH = w / 2;
+    // Grow the shorter side to match the container's real aspect ratio
+    // rather than cropping/stretching.
+    if (w / h > containerAspect) {
+      const targetH = w / containerAspect;
       y0 -= (targetH - h) / 2;
       h = targetH;
-    } else if (w / h < 2) {
-      const targetW = h * 2;
+    } else if (w / h < containerAspect) {
+      const targetW = h * containerAspect;
       x0 -= (targetW - w) / 2;
       w = targetW;
     }
@@ -92,7 +110,7 @@ export function WorldMap({ groups }: { groups: CountryGroup[] }) {
     y0 = Math.max(0, Math.min(y0, MAP_HEIGHT - h));
 
     return { x: x0, y: y0, w, h };
-  }, [markers]);
+  }, [markers, containerAspect]);
 
   // A filter/data change reshuffles which countries have markers at all —
   // start back at the auto-fit level rather than keeping a stale zoom that
@@ -107,23 +125,23 @@ export function WorldMap({ groups }: { groups: CountryGroup[] }) {
     const cx = baseView.x + baseView.w / 2;
     const cy = baseView.y + baseView.h / 2;
     const w = Math.min(MAP_WIDTH, baseView.w * zoom);
-    const h = w / 2;
+    const h = w / containerAspect;
     let x0 = cx - w / 2;
     let y0 = cy - h / 2;
     x0 = Math.max(0, Math.min(x0, MAP_WIDTH - w));
     y0 = Math.max(0, Math.min(y0, MAP_HEIGHT - h));
     return { x: x0, y: y0, w, h };
-  }, [baseView, zoom]);
+  }, [baseView, zoom, containerAspect]);
 
   if (markers.length === 0) return null;
 
   return (
-    <div className="flex flex-col rounded-xl border p-3">
+    <div className="flex h-full flex-col rounded-xl border p-3">
       <div className="mb-2 flex items-center justify-between">
         <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Where sessions come from</span>
         <span className="text-[10px] text-muted-foreground">bigger dot = more sessions</span>
       </div>
-      <div className="relative">
+      <div ref={frameRef} className="relative min-h-64 flex-1">
         <div className="absolute right-2 top-2 z-10 flex flex-col overflow-hidden rounded-md border bg-background shadow-sm">
           <button
             type="button"
@@ -153,7 +171,7 @@ export function WorldMap({ groups }: { groups: CountryGroup[] }) {
             <Maximize className="size-3" />
           </button>
         </div>
-        <svg viewBox={`${view.x} ${view.y} ${view.w} ${view.h}`} className="w-full" style={{ aspectRatio: "2 / 1" }}>
+        <svg viewBox={`${view.x} ${view.y} ${view.w} ${view.h}`} className="absolute inset-0 h-full w-full">
           <g className="fill-primary/25">
             {dots.map(([x, y], i) => (
               <circle key={i} cx={x} cy={y} r={0.9} />
