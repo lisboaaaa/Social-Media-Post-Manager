@@ -67,6 +67,18 @@ const SORT_OPTIONS = [
 ] as const;
 type SortKey = (typeof SORT_OPTIONS)[number]["value"];
 
+// A reporting window scoped to this page, deliberately separate from the
+// shared header's date filter — that one filters which POSTS qualify by
+// their scheduled target date (meaningful on Board/Calendar), not which
+// days of GA4 session data to sum, so reusing it here would answer a
+// different question than the one this page needs to ask.
+const WINDOW_OPTIONS = [
+  { value: 7, label: "Last 7 days" },
+  { value: 30, label: "Last 30 days" },
+  { value: 90, label: "Last 90 days" },
+] as const;
+type WindowDays = (typeof WINDOW_OPTIONS)[number]["value"];
+
 function daysAgo(n: number): string {
   const d = new Date();
   d.setDate(d.getDate() - n);
@@ -135,6 +147,8 @@ function titleCase(value: string): string {
 export function AnalyticsView() {
   const { filteredPosts, filters, categories, postAnalytics, postAnalyticsGeo, openPreview } = useStore();
   const [sortKey, setSortKey] = useState<SortKey>("sessions");
+  const [windowDays, setWindowDays] = useState<WindowDays>(30);
+  const windowStart = useMemo(() => daysAgo(windowDays), [windowDays]);
 
   const rows = useMemo<Row[]>(() => {
     const eligiblePostIds = new Set(filteredPosts.map((p) => p.id));
@@ -143,6 +157,7 @@ export function AnalyticsView() {
     for (const a of postAnalytics) {
       if (!eligiblePostIds.has(a.postId)) continue;
       if (filters.platform !== "all" && a.platform !== filters.platform) continue;
+      if (a.date < windowStart) continue;
       const key = `${a.postId}|${a.platform}`;
       const list = byPostPlatform.get(key) ?? [];
       list.push(a);
@@ -191,7 +206,7 @@ export function AnalyticsView() {
     }
 
     return result.sort((a, b) => b[sortKey] - a[sortKey]);
-  }, [filteredPosts, filters.platform, postAnalytics, sortKey]);
+  }, [filteredPosts, filters.platform, postAnalytics, sortKey, windowStart]);
 
   const totals = useMemo(
     () => ({
@@ -261,10 +276,11 @@ export function AnalyticsView() {
     for (const a of postAnalytics) {
       if (!eligiblePostIds.has(a.postId)) continue;
       if (filters.platform !== "all" && a.platform !== filters.platform) continue;
+      if (a.date < windowStart) continue;
       byDate.set(a.date, (byDate.get(a.date) ?? 0) + a.sessions);
     }
     return fillDateGaps(byDate);
-  }, [filteredPosts, filters.platform, postAnalytics]);
+  }, [filteredPosts, filters.platform, postAnalytics, windowStart]);
 
   const byCategory = useMemo<GroupTotal[]>(() => {
     const map = new Map<string, GroupTotal>();
@@ -291,13 +307,14 @@ export function AnalyticsView() {
     for (const g of postAnalyticsGeo) {
       if (!eligiblePostIds.has(g.postId)) continue;
       if (filters.platform !== "all" && g.platform !== filters.platform) continue;
+      if (g.date < windowStart) continue;
       const existing = map.get(g.deviceCategory) ?? { key: g.deviceCategory, label: titleCase(g.deviceCategory), sessions: 0, users: 0, pageViews: 0 };
       existing.sessions += g.sessions;
       existing.users += g.users;
       map.set(g.deviceCategory, existing);
     }
     return [...map.values()].sort((a, b) => b.sessions - a.sessions);
-  }, [filteredPosts, filters.platform, postAnalyticsGeo]);
+  }, [filteredPosts, filters.platform, postAnalyticsGeo, windowStart]);
 
   const byCountry = useMemo<GroupTotal[]>(() => {
     const eligiblePostIds = new Set(filteredPosts.map((p) => p.id));
@@ -305,13 +322,14 @@ export function AnalyticsView() {
     for (const g of postAnalyticsGeo) {
       if (!eligiblePostIds.has(g.postId)) continue;
       if (filters.platform !== "all" && g.platform !== filters.platform) continue;
+      if (g.date < windowStart) continue;
       const existing = map.get(g.country) ?? { key: g.country, label: g.country, sessions: 0, users: 0, pageViews: 0 };
       existing.sessions += g.sessions;
       existing.users += g.users;
       map.set(g.country, existing);
     }
     return [...map.values()].sort((a, b) => b.sessions - a.sessions);
-  }, [filteredPosts, filters.platform, postAnalyticsGeo]);
+  }, [filteredPosts, filters.platform, postAnalyticsGeo, windowStart]);
 
   if (rows.length === 0) {
     const hasAnyData = postAnalytics.length > 0;
@@ -320,7 +338,7 @@ export function AnalyticsView() {
         <h2 className="text-lg font-semibold">{hasAnyData ? "No results for these filters" : "No analytics yet"}</h2>
         <p className="text-sm text-muted-foreground">
           {hasAnyData
-            ? "There's analytics data, just none for the currently selected platform/category/date filters — try clearing them."
+            ? "There's analytics data, just none for the currently selected platform/category filters or reporting window — try clearing the filters or picking a longer window."
             : 'Tag a link in a post\'s description (the "Transform with UTM tags" hint) and run the GA4 sync from Dev Tools — numbers show up here once GA4 has data for it.'}
         </p>
       </div>
@@ -332,6 +350,18 @@ export function AnalyticsView() {
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold tracking-tight">Analytics</h1>
         <div className="flex items-center gap-2">
+          <Select value={String(windowDays)} onValueChange={(v) => setWindowDays(Number(v) as WindowDays)}>
+            <SelectTrigger size="sm" className="min-w-36">
+              <SelectValue>{(value: string) => WINDOW_OPTIONS.find((o) => String(o.value) === value)?.label}</SelectValue>
+            </SelectTrigger>
+            <SelectContent>
+              {WINDOW_OPTIONS.map((o) => (
+                <SelectItem key={o.value} value={String(o.value)}>
+                  {o.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
           <ArrowUpDown className="size-3.5 text-muted-foreground" />
           <Select value={sortKey} onValueChange={(v) => setSortKey(v as SortKey)}>
             <SelectTrigger size="sm" className="min-w-40">
