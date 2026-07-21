@@ -243,17 +243,6 @@ export function DevToolsPanel({ open, onOpenChange }: DevToolsPanelProps) {
             </div>
           </Section>
 
-          <Section title="Claude connection" icon={Sparkles}>
-            <p className="text-sm text-muted-foreground">
-              Generate or revoke tokens for connecting Claude Desktop/Code/claude.ai to this app — most people won&apos;t
-              need this if there&apos;s already a shared company-wide connector set up.
-            </p>
-            <Button type="button" variant="outline" onClick={() => setConnectOpen(true)} className="self-start">
-              <Sparkles className="size-3.5" />
-              Manage Claude tokens
-            </Button>
-          </Section>
-
           <Section title="Create test data" icon={FlaskConical}>
             <div className="flex flex-wrap gap-2">
               <Button type="button" variant="outline" onClick={handleCreateTestPost}>
@@ -323,6 +312,17 @@ export function DevToolsPanel({ open, onOpenChange }: DevToolsPanelProps) {
             {ga4Result && <p className="text-xs text-muted-foreground">{ga4Result}</p>}
             <Button type="button" size="sm" onClick={handleSyncGa4} disabled={syncingGa4} className="bg-emerald-600 text-white hover:bg-emerald-700">
               {syncingGa4 ? "Syncing…" : "Sync GA4 analytics now"}
+            </Button>
+          </Section>
+
+          <Section title="Claude connection" icon={Sparkles}>
+            <p className="text-sm text-muted-foreground">
+              Generate or revoke tokens for connecting Claude Desktop/Code/claude.ai to this app — most people won&apos;t
+              need this if there&apos;s already a shared company-wide connector set up.
+            </p>
+            <Button type="button" variant="outline" onClick={() => setConnectOpen(true)} className="self-start">
+              <Sparkles className="size-3.5" />
+              Manage Claude tokens
             </Button>
           </Section>
         </div>
