@@ -66,13 +66,10 @@ export function PostPreviewModal() {
     router.push(`/posts/${duplicate.id}`);
   };
 
-  const shareMessage = (() => {
-    if (!post) return "";
-    // /p/[id] is the public, no-login link — anyone who receives it can view
-    // and edit this one post without an account, unlike the rest of the app.
-    const link = `${typeof window !== "undefined" ? window.location.origin : ""}/p/${post.id}`;
-    return renderShareTemplate(getShareTemplate(), { title: post.title || "Untitled post", link });
-  })();
+  // /p/[id] is the public, no-login link — anyone who receives it can view
+  // and edit this one post without an account, unlike the rest of the app.
+  const shareLink = post ? `${typeof window !== "undefined" ? window.location.origin : ""}/p/${post.id}` : "";
+  const shareMessage = post ? renderShareTemplate(getShareTemplate(), { title: post.title || "Untitled post", link: shareLink }) : "";
 
   const handleShareCopy = (message: string) => {
     navigator.clipboard.writeText(message);
@@ -213,6 +210,7 @@ export function PostPreviewModal() {
     <ShareDialog
       open={shareDialogOpen}
       defaultMessage={shareMessage}
+      link={shareLink}
       onCancel={() => setShareDialogOpen(false)}
       onCopy={handleShareCopy}
     />

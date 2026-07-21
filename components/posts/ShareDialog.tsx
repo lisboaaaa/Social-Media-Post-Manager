@@ -9,11 +9,13 @@ import { Textarea } from "@/components/ui/textarea";
 export function ShareDialog({
   open,
   defaultMessage,
+  link,
   onCancel,
   onCopy,
 }: {
   open: boolean;
   defaultMessage: string;
+  link: string;
   onCancel: () => void;
   onCopy: (message: string) => void;
 }) {
@@ -38,13 +40,18 @@ export function ShareDialog({
           <Label htmlFor="share-message">Message</Label>
           <Textarea id="share-message" rows={4} value={message} onChange={(e) => setMessage(e.target.value)} autoFocus />
         </div>
-        <DialogFooter>
-          <Button variant="outline" onClick={onCancel}>
-            Cancel
+        <DialogFooter className="sm:justify-between">
+          <Button variant="ghost" onClick={() => onCopy(link)}>
+            Copy link only
           </Button>
-          <Button disabled={!message.trim()} onClick={() => message.trim() && onCopy(message.trim())}>
-            Copy
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={onCancel}>
+              Cancel
+            </Button>
+            <Button disabled={!message.trim()} onClick={() => message.trim() && onCopy(message.trim())}>
+              Copy
+            </Button>
+          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>
