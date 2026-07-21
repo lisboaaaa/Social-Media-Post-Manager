@@ -1,7 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { ArrowUpDown, ImageOff } from "lucide-react";
+import { useMemo, useState, type ReactNode } from "react";
+import { ArrowUpDown, ImageOff, Monitor, Smartphone, Tablet, Tag, HelpCircle } from "lucide-react";
 import { PlatformBadge, PlatformBadgeGroup, PLATFORM_ACCENT_HEX } from "@/components/posts/PlatformBadge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useStore } from "@/lib/store";
@@ -82,14 +82,36 @@ function formatPercent(value: number | null): string {
   return value === null ? "—" : `${(value * 100).toFixed(1)}%`;
 }
 
-function GroupTotalsCard({ title, groups }: { title: string; groups: GroupTotal[] }) {
+// A small violet tick on each section header — the brand's accent, used
+// sparingly for exactly this (a highlight, not a blanket interactive color).
+function GroupTotalsCard({
+  title,
+  groups,
+  iconFor,
+}: {
+  title: string;
+  groups: GroupTotal[];
+  iconFor?: (key: string) => ReactNode;
+}) {
   if (groups.length === 0) return null;
   return (
     <div className="flex flex-1 flex-col gap-2 rounded-xl border p-3">
-      <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{title}</h3>
-      <BarList items={groups.map((g) => ({ key: g.key, label: g.label, value: g.sessions, color: g.color }))} />
+      <h3 className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+        <span className="h-3 w-0.5 rounded-full bg-[#6b4fff]" />
+        {title}
+      </h3>
+      <BarList items={groups.map((g) => ({ key: g.key, label: g.label, value: g.sessions, color: g.color, icon: iconFor?.(g.key) }))} />
     </div>
   );
+}
+
+const DEVICE_ICONS: Record<string, ReactNode> = {
+  desktop: <Monitor className="size-3.5" />,
+  mobile: <Smartphone className="size-3.5" />,
+  tablet: <Tablet className="size-3.5" />,
+};
+function deviceIcon(key: string): ReactNode {
+  return DEVICE_ICONS[key.toLowerCase()] ?? <HelpCircle className="size-3.5" />;
 }
 
 // GA4 mostly returns lowercase device names ("mobile", "desktop") — just
@@ -382,8 +404,8 @@ export function AnalyticsView() {
         <WorldMap groups={byCountry} />
         <div className="flex flex-col gap-4">
           <GroupTotalsCard title="By platform" groups={byPlatform} />
-          <GroupTotalsCard title="By category" groups={byCategory} />
-          <GroupTotalsCard title="By device" groups={byDevice} />
+          <GroupTotalsCard title="By category" groups={byCategory} iconFor={() => <Tag className="size-3.5" />} />
+          <GroupTotalsCard title="By device" groups={byDevice} iconFor={deviceIcon} />
         </div>
       </div>
 
