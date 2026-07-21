@@ -1,11 +1,12 @@
 import { ArrowDown, ArrowUp } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-// Week-over-week change — only renders when there's something to actually
-// compare against (a previous period with at least some activity); a jump
-// from zero would be a meaningless "∞%".
+// Week-over-week change — a jump from zero would be a meaningless "∞%", so
+// with no prior-week activity to compare against this shows a plain dash
+// (matching the "—" used elsewhere for N/A) instead of silently rendering
+// nothing, which reads as "broken" rather than "no baseline yet".
 export function TrendIndicator({ current, previous }: { current: number; previous: number }) {
-  if (previous === 0) return null;
+  if (previous === 0) return <span className="text-xs text-muted-foreground">—</span>;
 
   const change = ((current - previous) / previous) * 100;
   const isFlat = Math.abs(change) < 1;

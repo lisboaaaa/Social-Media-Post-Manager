@@ -301,8 +301,8 @@ export function AnalyticsView() {
         </div>
       </div>
 
-      <div className="grid grid-cols-4 gap-3 rounded-xl bg-muted/40 p-4 text-center">
-        <div>
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <div className="rounded-xl border bg-background p-3 text-center">
           <div className="text-xl font-semibold">{totals.sessions}</div>
           <div className="flex items-center justify-center gap-1 text-xs text-muted-foreground">
             Sessions
@@ -310,7 +310,7 @@ export function AnalyticsView() {
           </div>
           <TrendIndicator current={totals.currentWeekSessions} previous={totals.previousWeekSessions} />
         </div>
-        <div>
+        <div className="rounded-xl border bg-background p-3 text-center">
           <div className="text-xl font-semibold">{totals.users}</div>
           <div className="flex items-center justify-center gap-1 text-xs text-muted-foreground">
             Users
@@ -318,7 +318,7 @@ export function AnalyticsView() {
           </div>
           <TrendIndicator current={totals.currentWeekUsers} previous={totals.previousWeekUsers} />
         </div>
-        <div>
+        <div className="rounded-xl border bg-background p-3 text-center">
           <div className="text-xl font-semibold">{totals.pageViews}</div>
           <div className="flex items-center justify-center gap-1 text-xs text-muted-foreground">
             Page views
@@ -326,7 +326,7 @@ export function AnalyticsView() {
           </div>
           <TrendIndicator current={totals.currentWeekPageViews} previous={totals.previousWeekPageViews} />
         </div>
-        <div>
+        <div className="rounded-xl border bg-background p-3 text-center">
           <div className="text-xl font-semibold">{totals.conversions}</div>
           <div className="flex items-center justify-center gap-1 text-xs text-muted-foreground">
             Conversions
@@ -336,7 +336,7 @@ export function AnalyticsView() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-4">
         {topPost && (
           <button
             type="button"
@@ -373,16 +373,14 @@ export function AnalyticsView() {
           </button>
         )}
 
-        <div className={cn("rounded-xl border p-3", topPost ? "lg:col-span-2" : "lg:col-span-3")}>
+        <div className={cn("rounded-xl border p-3", topPost ? "lg:col-span-3" : "lg:col-span-4")}>
           <TrendChart points={dailyTotals} label="Sessions over time" />
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-        <div className="lg:col-span-2">
-          <WorldMap groups={byCountry} />
-        </div>
-        <div className="flex flex-col gap-4 lg:col-span-1">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <WorldMap groups={byCountry} />
+        <div className="flex flex-col gap-4">
           <GroupTotalsCard title="By platform" groups={byPlatform} />
           <GroupTotalsCard title="By category" groups={byCategory} />
           <GroupTotalsCard title="By device" groups={byDevice} />

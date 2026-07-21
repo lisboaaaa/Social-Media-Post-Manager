@@ -61,6 +61,7 @@ export function TrendChart({ points, label }: { points: Point[]; label: string }
         <svg
           viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
           className="w-full text-primary"
+          style={{ aspectRatio: `${WIDTH} / ${HEIGHT}` }}
           onPointerMove={handleMove}
           onPointerLeave={() => setHoverIndex(null)}
         >
