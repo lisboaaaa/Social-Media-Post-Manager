@@ -14,11 +14,13 @@ import {
   Share2,
   HardDrive,
   Save,
+  Sparkles,
   Wifi,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Textarea } from "@/components/ui/textarea";
+import { ConnectClaudeModal } from "@/components/settings/ConnectClaudeModal";
 import { createClient } from "@/lib/supabase/client";
 import { useStore, type RealtimeStatus } from "@/lib/store";
 import { DEFAULT_SHARE_TEMPLATE, SHARE_TEMPLATE_STORAGE_KEY, getShareTemplate } from "@/lib/shareTemplate";
@@ -81,6 +83,7 @@ export function DevToolsPanel({ open, onOpenChange }: DevToolsPanelProps) {
   const [syncingGa4, setSyncingGa4] = useState(false);
   const [ga4Result, setGa4Result] = useState<string | null>(null);
   const [shareTemplate, setShareTemplate] = useState(DEFAULT_SHARE_TEMPLATE);
+  const [connectOpen, setConnectOpen] = useState(false);
 
   useEffect(() => {
     // Reading a saved preference on mount — legitimate sync-with-storage case.
@@ -240,6 +243,17 @@ export function DevToolsPanel({ open, onOpenChange }: DevToolsPanelProps) {
             </div>
           </Section>
 
+          <Section title="Claude connection" icon={Sparkles}>
+            <p className="text-sm text-muted-foreground">
+              Generate or revoke tokens for connecting Claude Desktop/Code/claude.ai to this app — most people won&apos;t
+              need this if there&apos;s already a shared company-wide connector set up.
+            </p>
+            <Button type="button" variant="outline" onClick={() => setConnectOpen(true)} className="self-start">
+              <Sparkles className="size-3.5" />
+              Manage Claude tokens
+            </Button>
+          </Section>
+
           <Section title="Create test data" icon={FlaskConical}>
             <div className="flex flex-wrap gap-2">
               <Button type="button" variant="outline" onClick={handleCreateTestPost}>
@@ -313,6 +327,7 @@ export function DevToolsPanel({ open, onOpenChange }: DevToolsPanelProps) {
           </Section>
         </div>
       </SheetContent>
+      <ConnectClaudeModal open={connectOpen} onOpenChange={setConnectOpen} />
     </Sheet>
   );
 }

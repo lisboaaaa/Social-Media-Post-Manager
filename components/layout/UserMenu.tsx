@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { BarChart3, Columns3, LogOut, Sparkles, Tag, Trash2, Wrench } from "lucide-react";
+import { BarChart3, Columns3, LogOut, Tag, Trash2, Wrench } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -14,7 +14,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { PersonalStatsModal } from "@/components/stats/PersonalStatsModal";
-import { ConnectClaudeModal } from "@/components/settings/ConnectClaudeModal";
 import { DevToolsPanel } from "@/components/devtools/DevToolsPanel";
 import { ManageStagesModal } from "@/components/board/ManageStagesModal";
 import { ManageCategoriesModal } from "@/components/filters/ManageCategoriesModal";
@@ -28,7 +27,6 @@ import { useStore } from "@/lib/store";
 export function UserMenu() {
   const { currentUser, signOut } = useStore();
   const [statsOpen, setStatsOpen] = useState(false);
-  const [connectOpen, setConnectOpen] = useState(false);
   const [devToolsOpen, setDevToolsOpen] = useState(false);
   const [manageStagesOpen, setManageStagesOpen] = useState(false);
   const [manageCategoriesOpen, setManageCategoriesOpen] = useState(false);
@@ -58,10 +56,6 @@ export function UserMenu() {
               <Tag className="size-3.5" />
               Manage categories
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => setConnectOpen(true)}>
-              <Sparkles className="size-3.5" />
-              Connect to Claude
-            </DropdownMenuItem>
             <DropdownMenuItem onClick={() => setDevToolsOpen(true)}>
               <Wrench className="size-3.5" />
               Dev Tools
@@ -84,7 +78,6 @@ export function UserMenu() {
       </DropdownMenu>
 
       <PersonalStatsModal open={statsOpen} onOpenChange={setStatsOpen} />
-      <ConnectClaudeModal open={connectOpen} onOpenChange={setConnectOpen} />
       <DevToolsPanel open={devToolsOpen} onOpenChange={setDevToolsOpen} />
       <ManageStagesModal open={manageStagesOpen} onOpenChange={setManageStagesOpen} />
       <ManageCategoriesModal open={manageCategoriesOpen} onOpenChange={setManageCategoriesOpen} />
