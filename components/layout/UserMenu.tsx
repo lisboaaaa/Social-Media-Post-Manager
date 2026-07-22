@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { BarChart3, Columns3, History, LogOut, Tag, Trash2, Wrench } from "lucide-react";
+import { BarChart3, Columns3, History, Link2, LogOut, Tag, Trash2, Wrench } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -18,6 +18,7 @@ import { DevToolsPanel } from "@/components/devtools/DevToolsPanel";
 import { ManageStagesModal } from "@/components/board/ManageStagesModal";
 import { ManageCategoriesModal } from "@/components/filters/ManageCategoriesModal";
 import { GlobalHistoryModal } from "@/components/settings/GlobalHistoryModal";
+import { UtmTagsModal } from "@/components/settings/UtmTagsModal";
 import { useStore } from "@/lib/store";
 
 // Everything that isn't part of daily work (admin/config actions, personal
@@ -32,6 +33,7 @@ export function UserMenu() {
   const [manageStagesOpen, setManageStagesOpen] = useState(false);
   const [manageCategoriesOpen, setManageCategoriesOpen] = useState(false);
   const [globalHistoryOpen, setGlobalHistoryOpen] = useState(false);
+  const [utmTagsOpen, setUtmTagsOpen] = useState(false);
 
   const handleSignOut = () => {
     if (confirm("Sign out?")) signOut();
@@ -62,6 +64,10 @@ export function UserMenu() {
               <History className="size-3.5" />
               Global history
             </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setUtmTagsOpen(true)}>
+              <Link2 className="size-3.5" />
+              UTM tags
+            </DropdownMenuItem>
             <DropdownMenuItem onClick={() => setDevToolsOpen(true)}>
               <Wrench className="size-3.5" />
               Dev Tools
@@ -88,6 +94,7 @@ export function UserMenu() {
       <ManageStagesModal open={manageStagesOpen} onOpenChange={setManageStagesOpen} />
       <ManageCategoriesModal open={manageCategoriesOpen} onOpenChange={setManageCategoriesOpen} />
       <GlobalHistoryModal open={globalHistoryOpen} onOpenChange={setGlobalHistoryOpen} />
+      <UtmTagsModal open={utmTagsOpen} onOpenChange={setUtmTagsOpen} />
     </div>
   );
 }

@@ -31,7 +31,7 @@ export function ShareDialog({
 
   return (
     <Dialog open={open} onOpenChange={(next) => !next && onCancel()}>
-      <DialogContent className="sm:max-w-sm">
+      <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>Share this post</DialogTitle>
         </DialogHeader>
@@ -41,7 +41,7 @@ export function ShareDialog({
           <Textarea id="share-message" rows={4} value={message} onChange={(e) => setMessage(e.target.value)} autoFocus />
         </div>
         <DialogFooter className="sm:justify-between">
-          <Button variant="ghost" onClick={() => onCopy(link)}>
+          <Button variant="outline" onClick={() => onCopy(link)}>
             Copy link only
           </Button>
           <div className="flex gap-2">

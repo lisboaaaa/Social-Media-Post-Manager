@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronDown } from "lucide-react";
+import { BarChart2, ChevronDown } from "lucide-react";
 import { InfoTooltip } from "@/components/analytics/InfoTooltip";
 import { METRIC_EXPLANATIONS } from "@/components/analytics/AnalyticsView";
 import { useStore } from "@/lib/store";
@@ -89,15 +89,23 @@ export function PostAnalyticsPanel({ postId, platforms }: { postId: string; plat
 
   if (byPlatform.length === 0) return null;
 
+  const totalSessions = byPlatform.reduce((sum, p) => sum + p.rows.reduce((s, r) => s + r.sessions, 0), 0);
+
   return (
     <div className="flex flex-col gap-2">
       <button
         type="button"
         onClick={() => setExpanded((v) => !v)}
-        className="flex w-fit items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground hover:text-foreground"
+        className="flex items-center justify-between gap-2 rounded-lg border bg-muted/30 px-3 py-2 text-left hover:bg-muted/50"
       >
-        <ChevronDown className={cn("size-3.5 transition-transform", expanded && "-rotate-180")} />
-        Analytics
+        <span className="flex items-center gap-1.5 text-sm font-semibold">
+          <BarChart2 className="size-4 text-primary" />
+          Analytics
+        </span>
+        <span className="flex items-center gap-2 text-xs text-muted-foreground">
+          {!expanded && <span>{totalSessions} sessions</span>}
+          <ChevronDown className={cn("size-4 transition-transform", expanded && "-rotate-180")} />
+        </span>
       </button>
 
       {expanded && (
