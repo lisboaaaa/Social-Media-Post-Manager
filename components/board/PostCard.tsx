@@ -14,7 +14,7 @@ import { cn } from "@/lib/utils";
 const DOUBLE_CLICK_MS = 250;
 
 export function PostCard({ post, index }: { post: Post; index: number }) {
-  const { profiles, categories, comments, currentUser, openPreview } = useStore();
+  const { profiles, categories, comments, openPreview } = useStore();
   const router = useRouter();
   // Opening the preview is delayed slightly so a second click can cancel it
   // and navigate to the edit page instead — without the delay, the first
@@ -37,7 +37,6 @@ export function PostCard({ post, index }: { post: Post; index: number }) {
   const assignee = profiles.find((p) => p.id === post.assigneeId);
   const postCategories = categories.filter((c) => post.categoryIds.includes(c.id));
   const showImageArea = post.status !== "backlog" && post.status !== "writing";
-  const isMine = post.assigneeId === currentUser.id;
   // The "reason" for Changes Requested is whatever comment was left after
   // the flag went up — not just the latest comment on the post (that could
   // predate this round of feedback entirely, or be unrelated small talk).
@@ -68,8 +67,6 @@ export function PostCard({ post, index }: { post: Post; index: number }) {
             snapshot.isDragging && "ring-2 ring-primary/40",
           )}
         >
-          {/* A sparing brand-violet tick — only for posts assigned to you, not a blanket highlight. */}
-          {isMine && <span className="absolute inset-y-0 left-0 w-1 bg-[#6b4fff]" />}
           <div className="mb-2.5 flex items-center justify-between gap-1.5">
             <div className="flex items-center gap-1.5">
               <PlatformBadgeGroup platforms={post.platforms} />

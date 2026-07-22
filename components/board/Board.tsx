@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, type CSSProperties } from "react";
+import { useRef, useState, type CSSProperties } from "react";
 import { DragDropContext, Draggable, Droppable, type DropResult } from "@hello-pangea/dnd";
 import { Column } from "./Column";
 import { ConfettiBurst } from "./ConfettiBurst";
@@ -26,26 +26,32 @@ export function Board() {
   const [pendingPublish, setPendingPublish] = useState<{ postId: string; status: PostStatus; index: number } | null>(null);
   const [confetti, setConfetti] = useState<{ x: number; y: number } | null>(null);
   const rowRef = useRef<HTMLDivElement>(null);
-  const pointerRef = useRef({ x: 0, y: 0 });
-
-  useEffect(() => {
-    const onPointerMove = (e: PointerEvent) => {
-      pointerRef.current = { x: e.clientX, y: e.clientY };
-    };
-    window.addEventListener("pointermove", onPointerMove);
-    return () => window.removeEventListener("pointermove", onPointerMove);
-  }, []);
 
   const stageById = (id: string) => stages.find((s) => s.id === id);
+
+  // Center of the dropped card itself, found via the drag library's own
+  // data attribute — read a couple frames after the move so the card has
+  // already animated into its new column position.
+  const cardCenter = (postId: string) => {
+    const el = document.querySelector(`[data-rfd-draggable-id="${postId}"]`);
+    if (!el) return null;
+    const rect = el.getBoundingClientRect();
+    return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+  };
 
   // A brief celebration the first time a post lands in the final stage —
   // pure delight, so it only fires on an actual transition into it (not a
   // reorder within it, and not on load), and never for anyone who's asked
   // the OS to reduce motion.
-  const celebrateIfPublished = (oldStage: Stage | undefined, targetStage: Stage) => {
+  const celebrateIfPublished = (oldStage: Stage | undefined, targetStage: Stage, postId: string) => {
     if (!targetStage.isArchiveStage || oldStage?.isArchiveStage) return;
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    setConfetti({ ...pointerRef.current });
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        const center = cardCenter(postId);
+        if (center) setConfetti(center);
+      });
+    });
   };
 
   const onDragEnd = (result: DropResult) => {
@@ -78,7 +84,7 @@ export function Board() {
 
     const oldStage = stageById(post.status);
     movePost(draggableId, newStatus, destination.index, oldStage ? needsChangesPatch(oldStage, targetStage) : {});
-    celebrateIfPublished(oldStage, targetStage);
+    celebrateIfPublished(oldStage, targetStage, draggableId);
   };
 
   return (
@@ -131,7 +137,7 @@ export function Board() {
             targetDate: date,
             ...(oldStage && newStage ? needsChangesPatch(oldStage, newStage) : {}),
           });
-          if (newStage) celebrateIfPublished(oldStage, newStage);
+          if (newStage) celebrateIfPublished(oldStage, newStage, pendingSchedule.postId);
           setPendingSchedule(null);
         }}
       />
@@ -149,7 +155,7 @@ export function Board() {
           movePost(pendingPublish.postId, pendingPublish.status, pendingPublish.index, {
             ...(oldStage && newStage ? needsChangesPatch(oldStage, newStage) : {}),
           });
-          if (newStage) celebrateIfPublished(oldStage, newStage);
+          if (newStage) celebrateIfPublished(oldStage, newStage, pendingPublish.postId);
           setPendingPublish(null);
         }}
         onConfirm={(urls) => {
@@ -161,7 +167,7 @@ export function Board() {
             publishedUrls: { ...(post?.publishedUrls ?? { linkedin: null, instagram: null, x: null }), ...urls },
             ...(oldStage && newStage ? needsChangesPatch(oldStage, newStage) : {}),
           });
-          if (newStage) celebrateIfPublished(oldStage, newStage);
+          if (newStage) celebrateIfPublished(oldStage, newStage, pendingPublish.postId);
           setPendingPublish(null);
         }}
       />
