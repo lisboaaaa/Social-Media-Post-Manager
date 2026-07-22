@@ -20,17 +20,21 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
 import { PLATFORM_BG_CLASSES, PlatformBadge, PlatformBadgeGroup } from "@/components/posts/PlatformBadge";
 
-const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const WEEKDAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 export function CalendarView() {
   const router = useRouter();
-  const { filteredPosts, openPreview, profiles, stages, addPost } = useStore();
+  const { filteredPosts, openPreview, profiles, stages, addPost, weekStartsOn, setWeekStartsOn } = useStore();
   const [cursor, setCursor] = useState(() => new Date());
   const [selectedDay, setSelectedDay] = useState<Date | null>(null);
+  // Weekday columns reordered to match the chosen start day, rather than
+  // always rendering Sun-first and just changing which days are grouped.
+  const orderedWeekdays = Array.from({ length: 7 }, (_, i) => (weekStartsOn + i) % 7);
   // Opening the preview is delayed slightly so a second click can cancel it
   // and navigate to the edit page instead — without the delay, the first
   // click's modal would already be open by the time the second click lands,
@@ -52,8 +56,8 @@ export function CalendarView() {
 
   const monthStart = startOfMonth(cursor);
   const monthEnd = endOfMonth(cursor);
-  const gridStart = startOfWeek(monthStart);
-  const gridEnd = endOfWeek(monthEnd);
+  const gridStart = startOfWeek(monthStart, { weekStartsOn });
+  const gridEnd = endOfWeek(monthEnd, { weekStartsOn });
   const days = eachDayOfInterval({ start: gridStart, end: gridEnd });
 
   const postsForDay = (day: Date) =>
@@ -92,6 +96,15 @@ export function CalendarView() {
       <div className="flex items-center justify-between border-b px-5 py-4">
         <h2 className="text-2xl font-bold tracking-tight">{format(cursor, "MMMM yyyy")}</h2>
         <div className="flex items-center gap-2">
+          <Select value={String(weekStartsOn)} onValueChange={(v) => setWeekStartsOn(Number(v) as 0 | 1)}>
+            <SelectTrigger size="sm" aria-label="Week starts on" className="w-[128px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="0">Week: Sun-Sat</SelectItem>
+              <SelectItem value="1">Week: Mon-Sun</SelectItem>
+            </SelectContent>
+          </Select>
           <Button size="default" onClick={() => setCursor(new Date())}>
             Today
           </Button>
@@ -105,15 +118,15 @@ export function CalendarView() {
       </div>
 
       <div className="grid grid-cols-7 border-b">
-        {WEEKDAYS.map((day, i) => (
+        {orderedWeekdays.map((dow) => (
           <div
-            key={day}
+            key={dow}
             className={cn(
               "px-2.5 py-2 font-mono text-[11px] font-semibold uppercase tracking-wide text-foreground/70",
-              (i === 0 || i === 6) && "bg-slate-50",
+              (dow === 0 || dow === 6) && "bg-slate-50",
             )}
           >
-            {day}
+            {WEEKDAY_LABELS[dow]}
           </div>
         ))}
       </div>

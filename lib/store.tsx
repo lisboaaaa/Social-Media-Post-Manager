@@ -43,6 +43,10 @@ export type RealtimeStatus = "connecting" | "connected" | "error";
 export type BoardViewMode = "board" | "list";
 const BOARD_VIEW_MODE_KEY = "boardViewMode";
 
+// Same kind of personal, localStorage-only preference — which day the
+// Calendar's week rows start on. 0 = Sunday, 1 = Monday.
+const WEEK_STARTS_ON_KEY = "weekStartsOn";
+
 type NewPostInput = Omit<
   Post,
   "id" | "postNumber" | "createdAt" | "updatedAt" | "createdBy" | "deletedAt" | "deletedBy" | "deleteReason"
@@ -97,6 +101,8 @@ interface StoreValue {
   signOut: () => void;
   boardViewMode: BoardViewMode;
   setBoardViewMode: (mode: BoardViewMode) => void;
+  weekStartsOn: 0 | 1;
+  setWeekStartsOn: (day: 0 | 1) => void;
 }
 
 const StoreContext = createContext<StoreValue | null>(null);
@@ -120,17 +126,26 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [profileError, setProfileError] = useState<string | null>(null);
   const [realtimeStatus, setRealtimeStatus] = useState<RealtimeStatus>("connecting");
   const [boardViewMode, setBoardViewModeState] = useState<BoardViewMode>("board");
+  const [weekStartsOn, setWeekStartsOnState] = useState<0 | 1>(0);
 
   useEffect(() => {
     // Reading a saved preference on mount — legitimate sync-with-storage case.
     const saved = window.localStorage.getItem(BOARD_VIEW_MODE_KEY);
     // eslint-disable-next-line react-hooks/set-state-in-effect
     if (saved === "board" || saved === "list") setBoardViewModeState(saved);
+
+    const savedWeekStart = window.localStorage.getItem(WEEK_STARTS_ON_KEY);
+    if (savedWeekStart === "0" || savedWeekStart === "1") setWeekStartsOnState(Number(savedWeekStart) as 0 | 1);
   }, []);
 
   const setBoardViewMode = (mode: BoardViewMode) => {
     setBoardViewModeState(mode);
     window.localStorage.setItem(BOARD_VIEW_MODE_KEY, mode);
+  };
+
+  const setWeekStartsOn = (day: 0 | 1) => {
+    setWeekStartsOnState(day);
+    window.localStorage.setItem(WEEK_STARTS_ON_KEY, String(day));
   };
 
   useEffect(() => {
@@ -986,6 +1001,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     signOut,
     boardViewMode,
     setBoardViewMode,
+    weekStartsOn,
+    setWeekStartsOn,
   };
 
   if (loading) {
