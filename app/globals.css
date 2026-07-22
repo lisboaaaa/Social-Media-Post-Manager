@@ -175,3 +175,15 @@
     scroll-snap-align: start;
   }
 }
+
+/* ConfettiBurst — a brief celebration when a post lands in the final stage. */
+@keyframes confetti-burst {
+  0% {
+    transform: translate(0, 0) rotate(0deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(var(--confetti-dx), var(--confetti-dy)) rotate(var(--confetti-rotate));
+    opacity: 0;
+  }
+}

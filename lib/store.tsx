@@ -546,6 +546,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     if ("status" in patch) columns.status = patch.status;
     if ("targetDate" in patch) columns.target_date = patch.targetDate;
     if ("needsChanges" in patch) columns.needs_changes = patch.needsChanges;
+    if ("needsChangesSetAt" in patch) columns.needs_changes_set_at = patch.needsChangesSetAt;
     if ("keepMedia" in patch) columns.keep_media = patch.keepMedia;
     if ("assigneeId" in patch) columns.assignee_id = patch.assigneeId;
     if ("requestedById" in patch) columns.requested_by_id = patch.requestedById;
@@ -867,6 +868,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       status: stages.find((s) => s.isDefaultNewPostStage)?.id ?? stages[0]?.id ?? "backlog",
       targetDate: null,
       needsChanges: false,
+      needsChangesSetAt: null,
       keepMedia: false,
       publishedUrls: { linkedin: null, instagram: null, x: null },
       assigneeId: null,

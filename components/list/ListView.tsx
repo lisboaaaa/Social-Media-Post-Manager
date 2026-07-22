@@ -36,7 +36,7 @@ const SORTERS: Record<SortKey, (a: Post, b: Post) => number> = {
 };
 
 export function ListView() {
-  const { filteredPosts, profiles, categories, stages, openPreview, movePost, getPostById, updateStage, reorderStages } = useStore();
+  const { filteredPosts, profiles, categories, stages, comments, openPreview, movePost, getPostById, updateStage, reorderStages } = useStore();
   const router = useRouter();
   const [collapsed, setCollapsed] = useState<Set<PostStatus>>(new Set());
   const [sortKey, setSortKey] = useState<SortKey>("default");
@@ -250,6 +250,14 @@ export function ListView() {
                                         post.targetDate < today &&
                                         !stage.requiresPublishedUrl &&
                                         !stage.locksEditing;
+                                      // Same "reason" logic as the board card — only a comment left
+                                      // after the flag went up counts, not just whatever's newest.
+                                      const changeReason =
+                                        post.needsChanges && post.needsChangesSetAt
+                                          ? comments
+                                              .filter((c) => c.postId === post.id && c.createdAt >= post.needsChangesSetAt!)
+                                              .sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0]
+                                          : undefined;
 
                                       return (
                                         <Draggable key={post.id} draggableId={post.id} index={rowIndex}>
@@ -299,7 +307,10 @@ export function ListView() {
                                                 <span className="flex min-w-0 items-center gap-2">
                                                   <span className="truncate font-medium">{post.title || "Untitled post"}</span>
                                                   {post.needsChanges && (
-                                                    <span className="size-2.5 shrink-0 rounded-full bg-amber-500" title="Needs changes" />
+                                                    <span
+                                                      className="size-2.5 shrink-0 rounded-full bg-amber-500"
+                                                      title={changeReason ? `Needs changes: ${changeReason.body}` : "Needs changes"}
+                                                    />
                                                   )}
                                                 </span>
                                               </span>

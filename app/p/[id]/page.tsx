@@ -110,6 +110,7 @@ export default function PublicPostPage() {
     status: "",
     targetDate: post.targetDate,
     needsChanges: false,
+    needsChangesSetAt: null,
     publishedUrls: { linkedin: null, instagram: null, x: null },
     assigneeId: null,
     requestedById: null,

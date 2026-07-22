@@ -56,6 +56,7 @@ export async function movePostTool(input: MovePostInput, profile: Profile, supab
     updated_at: new Date().toISOString(),
   };
   if (changesPatch.needsChanges !== undefined) columns.needs_changes = changesPatch.needsChanges;
+  if (changesPatch.needsChangesSetAt !== undefined) columns.needs_changes_set_at = changesPatch.needsChangesSetAt;
   if (input.targetDate) columns.target_date = input.targetDate;
 
   const { error } = await supabase.from("posts").update(columns).eq("id", current.id);

@@ -149,6 +149,7 @@ export interface Post {
   status: PostStatus;
   targetDate: string | null; // ISO date (yyyy-mm-dd)
   needsChanges: boolean;
+  needsChangesSetAt: string | null; // ISO datetime — when needsChanges last became true, so the UI can tell which comment (if any) explains why
   publishedUrls: Record<Platform, string | null>; // the live link per platform, once that platform's copy actually goes out
   assigneeId: string | null;
   requestedById: string | null;

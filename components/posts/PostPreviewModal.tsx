@@ -54,6 +54,7 @@ export function PostPreviewModal() {
       status: stages.find((s) => s.isDefaultNewPostStage)?.id ?? stages[0]?.id ?? "backlog",
       targetDate: null,
       needsChanges: false,
+      needsChangesSetAt: null,
       keepMedia: post.keepMedia,
       publishedUrls: { linkedin: null, instagram: null, x: null },
       assigneeId: null,

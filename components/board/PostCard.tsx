@@ -5,6 +5,7 @@ import { format } from "date-fns";
 import { ImageOff, Play } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { PlatformBadgeGroup } from "@/components/posts/PlatformBadge";
 import { useStore } from "@/lib/store";
 import type { Post } from "@/lib/types";
@@ -13,7 +14,7 @@ import { cn } from "@/lib/utils";
 const DOUBLE_CLICK_MS = 250;
 
 export function PostCard({ post, index }: { post: Post; index: number }) {
-  const { profiles, categories, openPreview } = useStore();
+  const { profiles, categories, comments, currentUser, openPreview } = useStore();
   const router = useRouter();
   // Opening the preview is delayed slightly so a second click can cancel it
   // and navigate to the edit page instead — without the delay, the first
@@ -36,6 +37,16 @@ export function PostCard({ post, index }: { post: Post; index: number }) {
   const assignee = profiles.find((p) => p.id === post.assigneeId);
   const postCategories = categories.filter((c) => post.categoryIds.includes(c.id));
   const showImageArea = post.status !== "backlog" && post.status !== "writing";
+  const isMine = post.assigneeId === currentUser.id;
+  // The "reason" for Changes Requested is whatever comment was left after
+  // the flag went up — not just the latest comment on the post (that could
+  // predate this round of feedback entirely, or be unrelated small talk).
+  const changeReason =
+    post.needsChanges && post.needsChangesSetAt
+      ? comments
+          .filter((c) => c.postId === post.id && c.createdAt >= post.needsChangesSetAt!)
+          .sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0]
+      : undefined;
   // A past target date only means something's late if it hasn't shipped yet —
   // Scheduled/Published posts are supposed to have a date in the past by then.
   const isOverdue =
@@ -53,22 +64,39 @@ export function PostCard({ post, index }: { post: Post; index: number }) {
           {...provided.dragHandleProps}
           onClick={handleClick}
           className={cn(
-            "cursor-pointer rounded-lg bg-background p-3 shadow-[0_1px_2px_rgba(0,0,0,0.06),0_8px_16px_-4px_rgba(0,0,0,0.12)] transition-all duration-150 ease-out hover:-translate-y-0.5 hover:shadow-[0_2px_4px_rgba(0,0,0,0.08),0_16px_28px_-6px_rgba(0,0,0,0.18)]",
+            "relative cursor-pointer overflow-hidden rounded-lg bg-background p-3 shadow-[0_1px_2px_rgba(0,0,0,0.06),0_8px_16px_-4px_rgba(0,0,0,0.12)] transition-all duration-150 ease-out hover:-translate-y-0.5 hover:shadow-[0_2px_4px_rgba(0,0,0,0.08),0_16px_28px_-6px_rgba(0,0,0,0.18)]",
             snapshot.isDragging && "ring-2 ring-primary/40",
           )}
         >
+          {/* A sparing brand-violet tick — only for posts assigned to you, not a blanket highlight. */}
+          {isMine && <span className="absolute inset-y-0 left-0 w-1 bg-[#6b4fff]" />}
           <div className="mb-2.5 flex items-center justify-between gap-1.5">
             <div className="flex items-center gap-1.5">
               <PlatformBadgeGroup platforms={post.platforms} />
             </div>
-            {post.needsChanges && (
-              <Badge
-                variant="outline"
-                className="border-amber-300 bg-amber-50 text-amber-700 font-mono text-[10px] font-semibold uppercase tracking-wide"
-              >
-                Changes
-              </Badge>
-            )}
+            {post.needsChanges &&
+              (changeReason ? (
+                <Tooltip>
+                  <TooltipTrigger
+                    render={
+                      <Badge
+                        variant="outline"
+                        className="cursor-help border-amber-300 bg-amber-50 text-amber-700 font-mono text-[10px] font-semibold uppercase tracking-wide"
+                      />
+                    }
+                  >
+                    Changes
+                  </TooltipTrigger>
+                  <TooltipContent className="max-w-56">{changeReason.body}</TooltipContent>
+                </Tooltip>
+              ) : (
+                <Badge
+                  variant="outline"
+                  className="border-amber-300 bg-amber-50 text-amber-700 font-mono text-[10px] font-semibold uppercase tracking-wide"
+                >
+                  Changes
+                </Badge>
+              ))}
           </div>
 
           {showImageArea &&

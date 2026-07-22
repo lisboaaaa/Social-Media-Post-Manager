@@ -9,8 +9,13 @@ import type { Stage } from "./types";
 // the isReviewStage flag rather than a hardcoded id, so it survives renames.
 // Shared between the board's drag-and-drop (components/board/Board.tsx) and
 // the MCP move_post tool (lib/mcp/tools/move-post.ts), which must agree.
-export function needsChangesPatch(oldStage: Stage, newStage: Stage): { needsChanges: boolean } | Record<string, never> {
-  if (oldStage.isReviewStage && newStage.position < oldStage.position) return { needsChanges: true };
-  if (newStage.position > oldStage.position) return { needsChanges: false };
+export function needsChangesPatch(
+  oldStage: Stage,
+  newStage: Stage,
+): { needsChanges: boolean; needsChangesSetAt: string | null } | Record<string, never> {
+  if (oldStage.isReviewStage && newStage.position < oldStage.position) {
+    return { needsChanges: true, needsChangesSetAt: new Date().toISOString() };
+  }
+  if (newStage.position > oldStage.position) return { needsChanges: false, needsChangesSetAt: null };
   return {};
 }

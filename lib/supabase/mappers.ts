@@ -124,6 +124,7 @@ interface PostRow {
   status: Post["status"];
   target_date: string | null;
   needs_changes: boolean;
+  needs_changes_set_at: string | null;
   keep_media: boolean;
   assignee_id: string | null;
   requested_by_id: string | null;
@@ -268,6 +269,7 @@ export function mapPostRow(row: PostRow): Post {
     status: row.status,
     targetDate: row.target_date,
     needsChanges: row.needs_changes,
+    needsChangesSetAt: row.needs_changes_set_at,
     keepMedia: row.keep_media,
     publishedUrls,
     assigneeId: row.assignee_id,

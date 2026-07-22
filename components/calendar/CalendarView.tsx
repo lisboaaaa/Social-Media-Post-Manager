@@ -75,6 +75,7 @@ export function CalendarView() {
       status: stages.find((s) => s.isDefaultNewPostStage)?.id ?? stages[0]?.id ?? "backlog",
       targetDate: format(selectedDay, "yyyy-MM-dd"),
       needsChanges: false,
+      needsChangesSetAt: null,
       keepMedia: false,
       publishedUrls: { linkedin: null, instagram: null, x: null },
       assigneeId: null,

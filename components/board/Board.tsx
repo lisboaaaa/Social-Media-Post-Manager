@@ -1,14 +1,15 @@
 "use client";
 
-import { useRef, useState, type CSSProperties } from "react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { DragDropContext, Draggable, Droppable, type DropResult } from "@hello-pangea/dnd";
 import { Column } from "./Column";
+import { ConfettiBurst } from "./ConfettiBurst";
 import { PublishedUrlDialog } from "./PublishedUrlDialog";
 import { ScheduleDateDialog } from "./ScheduleDateDialog";
 import { StickyScrollbar } from "./StickyScrollbar";
 import { useStore } from "@/lib/store";
 import { needsChangesPatch } from "@/lib/stageRules";
-import type { PostStatus } from "@/lib/types";
+import type { PostStatus, Stage } from "@/lib/types";
 
 const PUBLISHED_WINDOW_MS = 21 * 24 * 60 * 60 * 1000; // 3 weeks — older posts still live in the Archive tab
 
@@ -23,9 +24,29 @@ export function Board() {
   const { filteredPosts, stages, movePost, getPostById, updateStage, reorderStages } = useStore();
   const [pendingSchedule, setPendingSchedule] = useState<{ postId: string; status: PostStatus; index: number } | null>(null);
   const [pendingPublish, setPendingPublish] = useState<{ postId: string; status: PostStatus; index: number } | null>(null);
+  const [confetti, setConfetti] = useState<{ x: number; y: number } | null>(null);
   const rowRef = useRef<HTMLDivElement>(null);
+  const pointerRef = useRef({ x: 0, y: 0 });
+
+  useEffect(() => {
+    const onPointerMove = (e: PointerEvent) => {
+      pointerRef.current = { x: e.clientX, y: e.clientY };
+    };
+    window.addEventListener("pointermove", onPointerMove);
+    return () => window.removeEventListener("pointermove", onPointerMove);
+  }, []);
 
   const stageById = (id: string) => stages.find((s) => s.id === id);
+
+  // A brief celebration the first time a post lands in the final stage —
+  // pure delight, so it only fires on an actual transition into it (not a
+  // reorder within it, and not on load), and never for anyone who's asked
+  // the OS to reduce motion.
+  const celebrateIfPublished = (oldStage: Stage | undefined, targetStage: Stage) => {
+    if (!targetStage.isArchiveStage || oldStage?.isArchiveStage) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    setConfetti({ ...pointerRef.current });
+  };
 
   const onDragEnd = (result: DropResult) => {
     const { destination, source, draggableId, type } = result;
@@ -57,6 +78,7 @@ export function Board() {
 
     const oldStage = stageById(post.status);
     movePost(draggableId, newStatus, destination.index, oldStage ? needsChangesPatch(oldStage, targetStage) : {});
+    celebrateIfPublished(oldStage, targetStage);
   };
 
   return (
@@ -109,6 +131,7 @@ export function Board() {
             targetDate: date,
             ...(oldStage && newStage ? needsChangesPatch(oldStage, newStage) : {}),
           });
+          if (newStage) celebrateIfPublished(oldStage, newStage);
           setPendingSchedule(null);
         }}
       />
@@ -126,6 +149,7 @@ export function Board() {
           movePost(pendingPublish.postId, pendingPublish.status, pendingPublish.index, {
             ...(oldStage && newStage ? needsChangesPatch(oldStage, newStage) : {}),
           });
+          if (newStage) celebrateIfPublished(oldStage, newStage);
           setPendingPublish(null);
         }}
         onConfirm={(urls) => {
@@ -137,9 +161,11 @@ export function Board() {
             publishedUrls: { ...(post?.publishedUrls ?? { linkedin: null, instagram: null, x: null }), ...urls },
             ...(oldStage && newStage ? needsChangesPatch(oldStage, newStage) : {}),
           });
+          if (newStage) celebrateIfPublished(oldStage, newStage);
           setPendingPublish(null);
         }}
       />
+      {confetti && <ConfettiBurst x={confetti.x} y={confetti.y} onDone={() => setConfetti(null)} />}
     </>
   );
 }
