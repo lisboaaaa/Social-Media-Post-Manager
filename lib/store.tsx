@@ -101,8 +101,8 @@ interface StoreValue {
   signOut: () => void;
   boardViewMode: BoardViewMode;
   setBoardViewMode: (mode: BoardViewMode) => void;
-  weekStartsOn: 0 | 1;
-  setWeekStartsOn: (day: 0 | 1) => void;
+  weekStartsOn: 0 | 1 | 2 | 3 | 4 | 5 | 6;
+  setWeekStartsOn: (day: 0 | 1 | 2 | 3 | 4 | 5 | 6) => void;
 }
 
 const StoreContext = createContext<StoreValue | null>(null);
@@ -126,7 +126,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [profileError, setProfileError] = useState<string | null>(null);
   const [realtimeStatus, setRealtimeStatus] = useState<RealtimeStatus>("connecting");
   const [boardViewMode, setBoardViewModeState] = useState<BoardViewMode>("board");
-  const [weekStartsOn, setWeekStartsOnState] = useState<0 | 1>(0);
+  const [weekStartsOn, setWeekStartsOnState] = useState<0 | 1 | 2 | 3 | 4 | 5 | 6>(0);
 
   useEffect(() => {
     // Reading a saved preference on mount — legitimate sync-with-storage case.
@@ -134,8 +134,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     if (saved === "board" || saved === "list") setBoardViewModeState(saved);
 
-    const savedWeekStart = window.localStorage.getItem(WEEK_STARTS_ON_KEY);
-    if (savedWeekStart === "0" || savedWeekStart === "1") setWeekStartsOnState(Number(savedWeekStart) as 0 | 1);
+    const savedWeekStart = Number(window.localStorage.getItem(WEEK_STARTS_ON_KEY));
+    if (Number.isInteger(savedWeekStart) && savedWeekStart >= 0 && savedWeekStart <= 6) {
+      setWeekStartsOnState(savedWeekStart as 0 | 1 | 2 | 3 | 4 | 5 | 6);
+    }
   }, []);
 
   const setBoardViewMode = (mode: BoardViewMode) => {
@@ -143,7 +145,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     window.localStorage.setItem(BOARD_VIEW_MODE_KEY, mode);
   };
 
-  const setWeekStartsOn = (day: 0 | 1) => {
+  const setWeekStartsOn = (day: 0 | 1 | 2 | 3 | 4 | 5 | 6) => {
     setWeekStartsOnState(day);
     window.localStorage.setItem(WEEK_STARTS_ON_KEY, String(day));
   };

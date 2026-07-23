@@ -96,13 +96,19 @@ export function CalendarView() {
       <div className="flex items-center justify-between border-b px-5 py-4">
         <h2 className="text-2xl font-bold tracking-tight">{format(cursor, "MMMM yyyy")}</h2>
         <div className="flex items-center gap-2">
-          <Select value={String(weekStartsOn)} onValueChange={(v) => setWeekStartsOn(Number(v) as 0 | 1)}>
+          <Select
+            value={String(weekStartsOn)}
+            onValueChange={(v) => setWeekStartsOn(Number(v) as 0 | 1 | 2 | 3 | 4 | 5 | 6)}
+          >
             <SelectTrigger size="sm" aria-label="Week starts on" className="w-[132px]">
-              <SelectValue>{(value: string) => (value === "1" ? "Week: Mon-Sun" : "Week: Sun-Sat")}</SelectValue>
+              <SelectValue>{(value: string) => `Starts ${WEEKDAY_LABELS[Number(value)]}`}</SelectValue>
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="0">Week: Sun-Sat</SelectItem>
-              <SelectItem value="1">Week: Mon-Sun</SelectItem>
+              {WEEKDAY_LABELS.map((label, dow) => (
+                <SelectItem key={dow} value={String(dow)}>
+                  Starts {label}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
           <Button size="default" onClick={() => setCursor(new Date())}>
