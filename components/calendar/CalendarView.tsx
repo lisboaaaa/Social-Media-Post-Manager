@@ -20,7 +20,6 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
 import { PLATFORM_BG_CLASSES, PlatformBadge, PlatformBadgeGroup } from "@/components/posts/PlatformBadge";
@@ -29,7 +28,7 @@ const WEEKDAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 export function CalendarView() {
   const router = useRouter();
-  const { filteredPosts, openPreview, profiles, stages, addPost, weekStartsOn, setWeekStartsOn } = useStore();
+  const { filteredPosts, openPreview, profiles, stages, addPost, weekStartsOn } = useStore();
   const [cursor, setCursor] = useState(() => new Date());
   const [selectedDay, setSelectedDay] = useState<Date | null>(null);
   // Weekday columns reordered to match the chosen start day, rather than
@@ -96,21 +95,6 @@ export function CalendarView() {
       <div className="flex items-center justify-between border-b px-5 py-4">
         <h2 className="text-2xl font-bold tracking-tight">{format(cursor, "MMMM yyyy")}</h2>
         <div className="flex items-center gap-2">
-          <Select
-            value={String(weekStartsOn)}
-            onValueChange={(v) => setWeekStartsOn(Number(v) as 0 | 1 | 2 | 3 | 4 | 5 | 6)}
-          >
-            <SelectTrigger size="sm" aria-label="Week starts on" className="w-[132px]">
-              <SelectValue>{(value: string) => `Starts ${WEEKDAY_LABELS[Number(value)]}`}</SelectValue>
-            </SelectTrigger>
-            <SelectContent>
-              {WEEKDAY_LABELS.map((label, dow) => (
-                <SelectItem key={dow} value={String(dow)}>
-                  Starts {label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
           <Button size="default" onClick={() => setCursor(new Date())}>
             Today
           </Button>
