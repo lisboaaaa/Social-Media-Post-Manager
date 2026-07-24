@@ -47,6 +47,20 @@ const BOARD_VIEW_MODE_KEY = "boardViewMode";
 // Calendar's week rows start on. 0 = Sunday, 1 = Monday.
 const WEEK_STARTS_ON_KEY = "weekStartsOn";
 
+// Same kind of personal, localStorage-only preference — light/dark/system.
+// The actual .dark class toggle happens outside React (a blocking inline
+// script in app/layout.tsx, to avoid a flash of the wrong theme before this
+// context ever mounts) — this state exists so the Preferences UI can show
+// and change the current choice, and to react live to OS theme changes
+// while "system" is selected.
+export type Theme = "light" | "dark" | "system";
+const THEME_KEY = "theme";
+
+function applyTheme(theme: Theme) {
+  const isDark = theme === "dark" || (theme === "system" && window.matchMedia("(prefers-color-scheme: dark)").matches);
+  document.documentElement.classList.toggle("dark", isDark);
+}
+
 type NewPostInput = Omit<
   Post,
   "id" | "postNumber" | "createdAt" | "updatedAt" | "createdBy" | "deletedAt" | "deletedBy" | "deleteReason"
@@ -103,6 +117,8 @@ interface StoreValue {
   setBoardViewMode: (mode: BoardViewMode) => void;
   weekStartsOn: 0 | 1 | 2 | 3 | 4 | 5 | 6;
   setWeekStartsOn: (day: 0 | 1 | 2 | 3 | 4 | 5 | 6) => void;
+  theme: Theme;
+  setTheme: (theme: Theme) => void;
 }
 
 const StoreContext = createContext<StoreValue | null>(null);
@@ -127,6 +143,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [realtimeStatus, setRealtimeStatus] = useState<RealtimeStatus>("connecting");
   const [boardViewMode, setBoardViewModeState] = useState<BoardViewMode>("board");
   const [weekStartsOn, setWeekStartsOnState] = useState<0 | 1 | 2 | 3 | 4 | 5 | 6>(0);
+  const [theme, setThemeState] = useState<Theme>("system");
 
   useEffect(() => {
     // Reading a saved preference on mount — legitimate sync-with-storage case.
@@ -138,7 +155,22 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     if (Number.isInteger(savedWeekStart) && savedWeekStart >= 0 && savedWeekStart <= 6) {
       setWeekStartsOnState(savedWeekStart as 0 | 1 | 2 | 3 | 4 | 5 | 6);
     }
+
+    const savedTheme = window.localStorage.getItem(THEME_KEY);
+    if (savedTheme === "light" || savedTheme === "dark" || savedTheme === "system") setThemeState(savedTheme);
   }, []);
+
+  // Keeps the .dark class in sync with the current choice, and — while
+  // "system" is selected — with live OS theme changes too (the blocking
+  // script in app/layout.tsx only handles the very first paint).
+  useEffect(() => {
+    applyTheme(theme);
+    if (theme !== "system") return;
+    const media = window.matchMedia("(prefers-color-scheme: dark)");
+    const onChange = () => applyTheme("system");
+    media.addEventListener("change", onChange);
+    return () => media.removeEventListener("change", onChange);
+  }, [theme]);
 
   const setBoardViewMode = (mode: BoardViewMode) => {
     setBoardViewModeState(mode);
@@ -148,6 +180,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const setWeekStartsOn = (day: 0 | 1 | 2 | 3 | 4 | 5 | 6) => {
     setWeekStartsOnState(day);
     window.localStorage.setItem(WEEK_STARTS_ON_KEY, String(day));
+  };
+
+  const setTheme = (next: Theme) => {
+    setThemeState(next);
+    window.localStorage.setItem(THEME_KEY, next);
   };
 
   useEffect(() => {
@@ -1005,6 +1042,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     setBoardViewMode,
     weekStartsOn,
     setWeekStartsOn,
+    theme,
+    setTheme,
   };
 
   if (loading) {
