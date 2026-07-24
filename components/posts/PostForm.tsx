@@ -397,11 +397,13 @@ export function PostForm({ post }: { post?: Post }) {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value={NONE}>Unassigned</SelectItem>
-                {profiles.map((p) => (
-                  <SelectItem key={p.id} value={p.id}>
-                    {p.fullName}
-                  </SelectItem>
-                ))}
+                {profiles
+                  .filter((p) => p.isMarketing)
+                  .map((p) => (
+                    <SelectItem key={p.id} value={p.id}>
+                      {p.fullName}
+                    </SelectItem>
+                  ))}
               </SelectContent>
             </Select>
           </div>

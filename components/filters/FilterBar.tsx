@@ -84,11 +84,13 @@ export function FilterBar() {
         </SelectTrigger>
         <SelectContent>
           <SelectItem value="all">Everyone</SelectItem>
-          {profiles.map((profile) => (
-            <SelectItem key={profile.id} value={profile.id}>
-              {profile.fullName}
-            </SelectItem>
-          ))}
+          {profiles
+            .filter((profile) => profile.isMarketing)
+            .map((profile) => (
+              <SelectItem key={profile.id} value={profile.id}>
+                {profile.fullName}
+              </SelectItem>
+            ))}
         </SelectContent>
       </Select>
 
