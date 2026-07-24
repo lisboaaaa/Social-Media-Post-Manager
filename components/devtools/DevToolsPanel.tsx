@@ -23,6 +23,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { ConnectClaudeModal } from "@/components/settings/ConnectClaudeModal";
 import { createClient } from "@/lib/supabase/client";
 import { useStore, type RealtimeStatus } from "@/lib/store";
+import { weightedAverage } from "@/lib/postAnalyticsMath";
 import { DEFAULT_SHARE_TEMPLATE, SHARE_TEMPLATE_STORAGE_KEY, getShareTemplate } from "@/lib/shareTemplate";
 import { PLATFORM_LABELS } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -74,7 +75,7 @@ interface DevToolsPanelProps {
 }
 
 export function DevToolsPanel({ open, onOpenChange }: DevToolsPanelProps) {
-  const { posts, comments, suggestions, profiles, categories, stages, realtimeStatus, addPost, addComment } = useStore();
+  const { posts, comments, suggestions, profiles, categories, stages, postAnalytics, realtimeStatus, addPost, addComment } = useStore();
   const [pagesExpanded, setPagesExpanded] = useState(false);
   const [stats, setStats] = useState<{ fileCount: number; totalBytes: number } | null>(null);
   const [loadingStats, setLoadingStats] = useState(false);
@@ -184,16 +185,41 @@ export function DevToolsPanel({ open, onOpenChange }: DevToolsPanelProps) {
 
   const handleExportCsv = () => {
     const escape = (value: string) => `"${value.replace(/"/g, '""')}"`;
-    const headers = ["Title", "Platforms", "Status", "Target date", "Assignee", "Categories", "Published URL"];
-    const rows = posts.map((p) => [
-      p.title,
-      p.platforms.map((platform) => PLATFORM_LABELS[platform]).join("/"),
-      p.status,
-      p.targetDate ?? "",
-      profiles.find((pr) => pr.id === p.assigneeId)?.fullName ?? "",
-      p.categoryIds.map((id) => categories.find((c) => c.id === id)?.name).filter(Boolean).join(", "),
-      p.platforms.map((platform) => p.publishedUrls[platform]).filter(Boolean).join(" | "),
-    ]);
+    const formatPercent = (value: number | null) => (value === null ? "" : `${(value * 100).toFixed(1)}%`);
+    const headers = [
+      "Title",
+      "Platforms",
+      "Status",
+      "Target date",
+      "Assignee",
+      "Categories",
+      "Published URL",
+      "Sessions",
+      "Users",
+      "Page views",
+      "Engagement rate",
+      "Bounce rate",
+    ];
+    const rows = posts.map((p) => {
+      // Lifetime totals across every platform/day synced for this post — this
+      // export has no reporting-window concept like the Analytics page does,
+      // it's a full raw dump, same spirit as the other columns here.
+      const analytics = postAnalytics.filter((a) => a.postId === p.id);
+      return [
+        p.title,
+        p.platforms.map((platform) => PLATFORM_LABELS[platform]).join("/"),
+        p.status,
+        p.targetDate ?? "",
+        profiles.find((pr) => pr.id === p.assigneeId)?.fullName ?? "",
+        p.categoryIds.map((id) => categories.find((c) => c.id === id)?.name).filter(Boolean).join(", "),
+        p.platforms.map((platform) => p.publishedUrls[platform]).filter(Boolean).join(" | "),
+        String(analytics.reduce((sum, a) => sum + a.sessions, 0)),
+        String(analytics.reduce((sum, a) => sum + a.users, 0)),
+        String(analytics.reduce((sum, a) => sum + a.pageViews, 0)),
+        formatPercent(weightedAverage(analytics, (a) => a.sessions, (a) => a.engagementRate)),
+        formatPercent(weightedAverage(analytics, (a) => a.sessions, (a) => a.bounceRate)),
+      ];
+    });
     const csv = [headers, ...rows].map((row) => row.map((value) => escape(String(value))).join(",")).join("\n");
 
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
@@ -275,7 +301,7 @@ export function DevToolsPanel({ open, onOpenChange }: DevToolsPanelProps) {
           </Section>
 
           <Section title="Export data" icon={Download}>
-            <p className="text-sm text-muted-foreground">Download every post as a CSV file.</p>
+            <p className="text-sm text-muted-foreground">Download every post as a CSV file, including its lifetime analytics totals.</p>
             <Button type="button" variant="outline" onClick={handleExportCsv} className="self-start">
               <Download className="size-3.5" />
               Export {posts.length} posts as CSV
