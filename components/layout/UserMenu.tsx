@@ -53,7 +53,7 @@ export function UserMenu() {
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-56">
           <DropdownMenuGroup>
-            <DropdownMenuLabel>Advanced settings</DropdownMenuLabel>
+            <DropdownMenuLabel>Settings</DropdownMenuLabel>
             <DropdownMenuItem onClick={() => setManageStagesOpen(true)}>
               <Columns3 className="size-3.5" />
               Manage stages
