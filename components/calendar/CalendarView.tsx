@@ -113,7 +113,7 @@ export function CalendarView() {
             key={dow}
             className={cn(
               "px-2.5 py-2 font-mono text-[11px] font-semibold uppercase tracking-wide text-foreground/70",
-              (dow === 0 || dow === 6) && "bg-slate-50",
+              (dow === 0 || dow === 6) && "bg-muted/50",
             )}
           >
             {WEEKDAY_LABELS[dow]}
@@ -141,7 +141,7 @@ export function CalendarView() {
               }}
               className={cn(
                 "flex min-h-[124px] cursor-pointer flex-col gap-1.5 border-b border-r p-2 last:border-r-0 hover:bg-muted/40",
-                (!inMonth || isWeekend) && "bg-slate-50",
+                (!inMonth || isWeekend) && "bg-muted/50",
               )}
             >
               <span

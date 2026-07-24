@@ -212,9 +212,9 @@ export function ListView() {
                             className={cn(
                               "rounded-full px-2 py-0.5 font-mono text-[11px] font-medium",
                               stage.isArchiveStage
-                                ? "bg-emerald-100 text-emerald-700"
+                                ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400"
                                 : stage.isReviewStage
-                                  ? "bg-amber-100 text-amber-700"
+                                  ? "bg-amber-100 text-amber-700 dark:bg-amber-950/50 dark:text-amber-400"
                                   : "bg-muted text-muted-foreground",
                             )}
                           >
@@ -278,14 +278,14 @@ export function ListView() {
                                               className={cn(
                                                 "group grid w-full cursor-pointer items-center border-b px-4 py-2 text-left text-sm last:border-b-0 hover:bg-muted/40",
                                                 GRID_COLS,
-                                                isOverdue && "bg-red-50",
+                                                isOverdue && "bg-red-50 dark:bg-red-950/30",
                                                 postDragSnapshot.isDragging && "bg-background shadow-lg ring-2 ring-primary/40",
                                               )}
                                             >
                                               <span
                                                 className={cn(
                                                   "sticky left-0 z-10 col-span-2 flex min-w-0 items-center gap-2 border-r pr-3",
-                                                  isOverdue && !postDragSnapshot.isDragging ? "bg-red-50" : "bg-background",
+                                                  isOverdue && !postDragSnapshot.isDragging ? "bg-red-50 dark:bg-red-950/30" : "bg-background",
                                                 )}
                                               >
                                                 {showThumbnail && (

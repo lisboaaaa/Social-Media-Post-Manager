@@ -78,7 +78,7 @@ export function PostCard({ post, index }: { post: Post; index: number }) {
                     render={
                       <Badge
                         variant="outline"
-                        className="cursor-help border-amber-300 bg-amber-50 text-amber-700 font-mono text-[10px] font-semibold uppercase tracking-wide"
+                        className="cursor-help border-amber-300 bg-amber-50 text-amber-700 dark:border-amber-800/60 dark:bg-amber-950/50 dark:text-amber-400 font-mono text-[10px] font-semibold uppercase tracking-wide"
                       />
                     }
                   >
@@ -89,7 +89,7 @@ export function PostCard({ post, index }: { post: Post; index: number }) {
               ) : (
                 <Badge
                   variant="outline"
-                  className="border-amber-300 bg-amber-50 text-amber-700 font-mono text-[10px] font-semibold uppercase tracking-wide"
+                  className="border-amber-300 bg-amber-50 text-amber-700 dark:border-amber-800/60 dark:bg-amber-950/50 dark:text-amber-400 font-mono text-[10px] font-semibold uppercase tracking-wide"
                 >
                   Changes
                 </Badge>

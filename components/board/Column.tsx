@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
 // over per-status colors, colored backgrounds, and icons — all tried and
 // rejected). The vertical divider between columns is what's carrying
 // separation now.
-const BADGE_CLASS = "bg-slate-100 text-slate-500";
+const BADGE_CLASS = "bg-muted text-muted-foreground";
 
 export function Column({
   status,
@@ -73,13 +73,13 @@ export function Column({
                 if (e.key === "Enter") (e.target as HTMLInputElement).blur();
                 if (e.key === "Escape") setDraft(null);
               }}
-              className="min-w-0 rounded-md bg-slate-100 px-2 py-1 text-base font-semibold tracking-wide text-foreground outline-none ring-1 ring-primary"
+              className="min-w-0 rounded-md bg-muted px-2 py-1 text-base font-semibold tracking-wide text-foreground outline-none ring-1 ring-primary"
             />
           ) : (
             <h2
               onClick={() => setDraft(label)}
               title="Click to rename"
-              className="cursor-text truncate rounded-md bg-slate-100 px-2 py-1 text-base font-semibold tracking-wide text-foreground hover:ring-1 hover:ring-border"
+              className="cursor-text truncate rounded-md bg-muted px-2 py-1 text-base font-semibold tracking-wide text-foreground hover:ring-1 hover:ring-border"
             >
               {label}
             </h2>

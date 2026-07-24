@@ -97,7 +97,7 @@ export function PostPreviewModal() {
                 <div className="flex items-center gap-2">
                   <PlatformBadgeGroup platforms={post.platforms} />
                   {post.needsChanges && (
-                    <Badge variant="outline" className="border-amber-300 bg-amber-50 text-amber-700 font-mono text-[10px] uppercase tracking-wide">
+                    <Badge variant="outline" className="border-amber-300 bg-amber-50 text-amber-700 dark:border-amber-800/60 dark:bg-amber-950/50 dark:text-amber-400 font-mono text-[10px] uppercase tracking-wide">
                       Needs changes
                     </Badge>
                   )}

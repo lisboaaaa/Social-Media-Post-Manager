@@ -90,13 +90,13 @@ export function ConnectClaudeModal({ open, onOpenChange }: ConnectClaudeModalPro
         </DialogHeader>
 
         {freshToken && (
-          <div className="flex flex-col gap-3 rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm">
-            <p className="font-medium text-amber-900">
+          <div className="flex flex-col gap-3 rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm dark:border-amber-800/60 dark:bg-amber-950/50">
+            <p className="font-medium text-amber-900 dark:text-amber-400">
               Copy what you need now — you won&apos;t be able to see this token again after closing this.
             </p>
 
             <div>
-              <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-amber-900/80">
+              <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-amber-900/80 dark:text-amber-400/80">
                 claude.ai or Claude Desktop — paste as the server URL
               </p>
               <div className="flex items-center gap-2">
@@ -109,7 +109,7 @@ export function ConnectClaudeModal({ open, onOpenChange }: ConnectClaudeModalPro
             </div>
 
             <div>
-              <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-amber-900/80">
+              <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-amber-900/80 dark:text-amber-400/80">
                 Claude Code — run in a terminal
               </p>
               <div className="flex items-center gap-2">
